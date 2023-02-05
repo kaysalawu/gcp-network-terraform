@@ -1,0 +1,15 @@
+# health check
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: health-check
+  namespace: prod
+  labels:
+    env: prod
+    lab: a205
+spec:
+  healthCheck:
+    checkIntervalSec: 15
+    port: 80
+    type: HTTP
+    requestPath: /healthz

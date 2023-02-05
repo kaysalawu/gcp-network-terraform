@@ -1,0 +1,37 @@
+%{~ for k,v in HOSTFILE_RECORDS }
+${k}. {
+  hosts {
+    ${v.record} ${v.name}
+  }
+}
+%{~ endfor }
+${ONPREM_ZONE}. {
+  hosts {
+    %{~ for data in ONPREM_RECORDS ~}
+    ${data.record} ${data.name}.${ONPREM_ZONE}
+    %{~ endfor ~}
+  }
+}
+${CLOUD_ZONE}. {
+  forward . ${CLOUD_NS_TARGETS}
+  log
+  errors
+}
+%{~ for host in FORWARDED_GOOGLEAPIS }
+${host}.googleapis.com. {
+  rewrite name exact ${host}.googleapis.com. ${CLOUD_PSC_HOST}.p.googleapis.com.
+  forward . ${CLOUD_NS_TARGETS}
+  log
+  errors
+}
+%{~ endfor }
+p.googleapis.com. {
+  forward . ${CLOUD_NS_TARGETS}
+  log
+  errors
+}
+. {
+  forward . 8.8.8.8 8.8.4.4
+  log
+  errors
+}

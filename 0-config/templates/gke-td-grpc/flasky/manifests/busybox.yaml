@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    run: client
+  name: busybox
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: client
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        run: client
+    spec:
+      containers:
+      - name: busybox
+        image: gcr.io/google-containers/busybox
+        command: ["/bin/sh"]
+        args:
+          - -c
+          - while true; do sleep 1; done
+      - name: envoy
+        image: envoyproxy/envoy:v1.18.3
+        imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: "2"
+            memory: 1Gi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        env:
+        - name: ENVOY_UID
+          value: "1337"
+        volumeMounts:
+          - mountPath: /etc/envoy
+            name: envoy-bootstrap
+      initContainers:
+      - name: td-bootstrap-writer
+        image: gcr.io/trafficdirector-prod/xds-client-bootstrap-generator
+        imagePullPolicy: Always
+        args:
+          - --project_number=${PROJECT_NUMBER}
+          - --network_name=${NETWORK_NAME}
+          - --bootstrap_file_output_path=/var/lib/data/envoy.yaml
+          - --traffic_director_url=trafficdirector.googleapis.com:443
+        volumeMounts:
+          - mountPath: /var/lib/data
+            name: envoy-bootstrap
+      - name: istio-init
+        image: istio/proxyv2:1.7.0
+        imagePullPolicy: IfNotPresent
+        args:
+          - istio-iptables
+          - -p
+          - "15001"
+          - -u
+          - "1337"
+          - -m
+          - REDIRECT
+          - -i
+          - '*'
+          - -x
+          - ""
+          - -d
+          - 15090,15021,15020
+        resources:
+          limits:
+            cpu: 100m
+            memory: 50Mi
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - NET_ADMIN
+            - NET_RAW
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: false
+          runAsGroup: 0
+          runAsNonRoot: false
+          runAsUser: 0
+      volumes:
+        - name: envoy-bootstrap
+          emptyDir: {}

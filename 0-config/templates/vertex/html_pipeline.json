@@ -1,0 +1,157 @@
+{
+  "pipelineSpec": {
+    "components": {
+      "comp-html-get-comp": {
+        "executorLabel": "exec-html-get-comp",
+        "inputDefinitions": {
+          "parameters": {
+            "http_url": {
+              "type": "STRING"
+            }
+          }
+        },
+        "outputDefinitions": {
+          "artifacts": {
+            "report": {
+              "artifactType": {
+                "schemaTitle": "system.HTML",
+                "schemaVersion": "0.0.1"
+              }
+            }
+          }
+        }
+      },
+      "comp-html-get-comp-2": {
+        "executorLabel": "exec-html-get-comp-2",
+        "inputDefinitions": {
+          "parameters": {
+            "http_url": {
+              "type": "STRING"
+            }
+          }
+        },
+        "outputDefinitions": {
+          "artifacts": {
+            "report": {
+              "artifactType": {
+                "schemaTitle": "system.HTML",
+                "schemaVersion": "0.0.1"
+              }
+            }
+          }
+        }
+      }
+    },
+    "deploymentSpec": {
+      "executors": {
+        "exec-html-get-comp": {
+          "container": {
+            "args": [
+              "--executor_input",
+              "{{$}}",
+              "--function_to_execute",
+              "html_get_comp"
+            ],
+            "command": [
+              "sh",
+              "-c",
+              "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip || python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet     --no-warn-script-location 'kfp==1.8.11' && \"$0\" \"$@\"\n",
+              "sh",
+              "-ec",
+              "program_path=$(mktemp -d)\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\npython3 -m kfp.v2.components.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
+              "\nimport kfp\nfrom kfp.v2 import dsl\nfrom kfp.v2.dsl import *\nfrom typing import *\n\ndef html_get_comp( \n    http_url: str,\n    report: Output[HTML]\n)  -> None:\n\n    import urllib.request\n\n    fp = urllib.request.urlopen(http_url)\n    mybytes = fp.read()\n\n    mystr = mybytes.decode(\"utf8\")\n    fp.close()\n\n    #print(mystr)\n    with open(report.path, 'w') as f:\n        f.write(mystr)\n\n    return \n\n"
+            ],
+            "image": "python:3.9"
+          }
+        },
+        "exec-html-get-comp-2": {
+          "container": {
+            "args": [
+              "--executor_input",
+              "{{$}}",
+              "--function_to_execute",
+              "html_get_comp"
+            ],
+            "command": [
+              "sh",
+              "-c",
+              "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip || python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet     --no-warn-script-location 'kfp==1.8.11' && \"$0\" \"$@\"\n",
+              "sh",
+              "-ec",
+              "program_path=$(mktemp -d)\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\npython3 -m kfp.v2.components.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
+              "\nimport kfp\nfrom kfp.v2 import dsl\nfrom kfp.v2.dsl import *\nfrom typing import *\n\ndef html_get_comp( \n    http_url: str,\n    report: Output[HTML]\n)  -> None:\n\n    import urllib.request\n\n    fp = urllib.request.urlopen(http_url)\n    mybytes = fp.read()\n\n    mystr = mybytes.decode(\"utf8\")\n    fp.close()\n\n    #print(mystr)\n    with open(report.path, 'w') as f:\n        f.write(mystr)\n\n    return \n\n"
+            ],
+            "image": "python:3.9"
+          }
+        }
+      }
+    },
+    "pipelineInfo": {
+      "name": "html-get-pipeline"
+    },
+    "root": {
+      "dag": {
+        "tasks": {
+          "html-get-comp": {
+            "cachingOptions": {
+              "enableCache": true
+            },
+            "componentRef": {
+              "name": "comp-html-get-comp"
+            },
+            "inputs": {
+              "parameters": {
+                "http_url": {
+                  "componentInputParameter": "http_url"
+                }
+              }
+            },
+            "taskInfo": {
+              "name": "html-get-comp"
+            }
+          },
+          "html-get-comp-2": {
+            "cachingOptions": {
+              "enableCache": true
+            },
+            "componentRef": {
+              "name": "comp-html-get-comp-2"
+            },
+            "inputs": {
+              "parameters": {
+                "http_url": {
+                  "componentInputParameter": "prem_url"
+                }
+              }
+            },
+            "taskInfo": {
+              "name": "html-get-comp-2"
+            }
+          }
+        }
+      },
+      "inputDefinitions": {
+        "parameters": {
+          "http_url": {
+            "type": "STRING"
+          },
+          "prem_url": {
+            "type": "STRING"
+          }
+        }
+      }
+    },
+    "schemaVersion": "2.0.0",
+    "sdkVersion": "kfp-1.8.11"
+  },
+  "runtimeConfig": {
+    "parameters": {
+      "http_url": {
+        "stringValue": "http://www.python.org"
+      },
+      "prem_url": {
+        "stringValue": "http://10.10.1.20"
+      }
+    }
+  }
+}

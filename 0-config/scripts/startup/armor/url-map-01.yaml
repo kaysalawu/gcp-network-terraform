@@ -1,0 +1,48 @@
+kind: compute#urlMap
+name: ${URL_MAP_NAME}
+defaultService: ${BES_MIG_GOOD_JUICE}
+hostRules:
+- hosts:
+  - ${HOST_GOOD}
+  pathMatcher: good
+- hosts:
+  - ${HOST_BAD}
+  pathMatcher: bad
+- hosts:
+  - ${HOST_GOOD_JUICE}
+  pathMatcher: good-juice
+- hosts:
+  - ${HOST_BAD_JUICE}
+  pathMatcher: bad-juice
+pathMatchers:
+- defaultService: ${BES_MIG_GOOD}
+  name: good
+  routeRules:
+  - matchRules:
+    - prefixMatch: /onprem
+    priority: 1
+    routeAction:
+      urlRewrite:
+        pathPrefixRewrite: /
+    service: ${BES_NEG_GOOD}
+- defaultService: ${BES_MIG_BAD}
+  name: bad
+  routeRules:
+  - matchRules:
+    - prefixMatch: /
+    priority: 2
+    service: ${BES_MIG_BAD}
+- defaultService: ${BES_MIG_GOOD_JUICE}
+  name: good-juice
+  routeRules:
+  - matchRules:
+    - prefixMatch: /
+    priority: 3
+    service: ${BES_MIG_GOOD_JUICE}
+- defaultService: ${BES_MIG_BAD_JUICE}
+  name: bad-juice
+  routeRules:
+  - matchRules:
+    - prefixMatch: /
+    priority: 4
+    service: ${BES_MIG_BAD_JUICE}

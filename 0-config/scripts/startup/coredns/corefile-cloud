@@ -1,0 +1,12 @@
+# onprem zone
+${ONPREM_ZONE} {
+  forward ${ONPREM_ZONE} ${ONPREM_NS1} ${ONPREM_NS2}
+  log
+  errors
+}
+# catch all
+. {
+  forward . 169.254.169.254
+  log
+  errors
+}
