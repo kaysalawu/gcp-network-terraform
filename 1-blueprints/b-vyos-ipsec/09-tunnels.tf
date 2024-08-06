@@ -180,7 +180,7 @@ module "vpn_spoke2_to_hub_us" {
 # hub
 
 locals {
-  hub_eu_router_startup = templatefile("scripts/vyos/vyos.sh", {
+  hub_eu_router_startup = templatefile("../../scripts/vyos/vyos.sh", {
     PASSWORD         = "changeme"
     LOCAL_ASN        = local.hub_eu_router_asn
     LOOPBACK_IP      = local.hub_eu_router_lo_addr
@@ -300,7 +300,7 @@ resource "local_file" "hub_eu_router_startup" {
 # site1
 
 locals {
-  site1_router_startup = templatefile("scripts/vyos/vyos.sh", {
+  site1_router_startup = templatefile("../../scripts/vyos/vyos.sh", {
     PASSWORD         = "changeme"
     LOCAL_ASN        = local.site1_asn
     LOOPBACK_IP      = local.site1_router_lo_addr
@@ -417,7 +417,7 @@ resource "google_compute_route" "site1_router_routes" {
 # hub
 
 locals {
-  hub_us_router_startup = templatefile("scripts/vyos/vyos.sh", {
+  hub_us_router_startup = templatefile("../../scripts/vyos/vyos.sh", {
     PASSWORD         = "changeme"
     LOCAL_ASN        = local.hub_us_router_asn
     LOOPBACK_IP      = local.hub_us_router_lo_addr
@@ -537,7 +537,7 @@ resource "local_file" "hub_us_router_startup" {
 # site2
 
 locals {
-  site2_router_startup = templatefile("scripts/vyos/vyos.sh", {
+  site2_router_startup = templatefile("../../scripts/vyos/vyos.sh", {
     PASSWORD         = "changeme"
     LOCAL_ASN        = local.site2_asn
     LOOPBACK_IP      = local.site2_router_lo_addr

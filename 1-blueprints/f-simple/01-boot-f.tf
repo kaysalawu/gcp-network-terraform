@@ -3,7 +3,7 @@
 #---------------------------------
 
 locals {
-  vm_startup = templatefile("scripts/startup/gce.sh", {
+  vm_startup = templatefile("../../scripts/startup/gce.sh", {
     ENABLE_PROBES = true
     SCRIPTS = {
       targets_app   = local.targets_app
@@ -22,7 +22,7 @@ locals {
       health_check_response = local.uhc_config.response
     }
   })
-  td_client_startup = templatefile("scripts/startup/client.sh", {
+  td_client_startup = templatefile("../../scripts/startup/client.sh", {
     TD_PROJECT_NUMBER = data.google_project.hub_project_number.number
     TD_NETWORK_NAME   = "${local.hub_prefix}vpc"
     TARGETS_GRPC      = local.targets_grpc
@@ -75,7 +75,7 @@ locals {
 # unbound config
 
 locals {
-  site1_unbound_config = templatefile("scripts/startup/unbound/site.sh", {
+  site1_unbound_config = templatefile("../../scripts/startup/unbound/site.sh", {
     ONPREM_LOCAL_RECORDS = local.onprem_local_records
     REDIRECTED_HOSTS     = local.onprem_redirected_hosts
     FORWARD_ZONES        = local.onprem_forward_zones
@@ -109,7 +109,7 @@ module "site1_sa" {
 # unbound config
 
 locals {
-  site2_unbound_config = templatefile("scripts/startup/unbound/site.sh", {
+  site2_unbound_config = templatefile("../../scripts/startup/unbound/site.sh", {
     ONPREM_LOCAL_RECORDS = local.onprem_local_records
     REDIRECTED_HOSTS     = local.onprem_redirected_hosts
     FORWARD_ZONES        = local.onprem_forward_zones
@@ -146,7 +146,7 @@ data "google_project" "hub_project_number" {
 
 locals {
   hub_eu_run_flasky_host = module.hub_eu_run_flasky.service.status.0.url
-  hub_unbound_config = templatefile("scripts/startup/unbound/cloud.sh", {
+  hub_unbound_config = templatefile("../../scripts/startup/unbound/cloud.sh", {
     FORWARD_ZONES = local.cloud_forward_zones
   })
   cloud_forward_zones = [
@@ -204,14 +204,14 @@ locals {
   hub_eu_run_flasky_port        = 8080
   hub_eu_run_flasky_gcr_host    = "gcr.io"
   hub_eu_run_flasky_repo        = "${local.hub_eu_run_flasky_gcr_host}/${var.project_id_hub}/${local.hub_prefix}flasky:v1"
-  hub_eu_run_flasky_repo_create = templatefile("templates/run/flasky/create.sh", local.hub_eu_run_flasky_repo_vars)
-  hub_eu_run_flasky_repo_delete = templatefile("templates/run/flasky/delete.sh", local.hub_eu_run_flasky_repo_vars)
+  hub_eu_run_flasky_repo_create = templatefile("../../templates/run/flasky/create.sh", local.hub_eu_run_flasky_repo_vars)
+  hub_eu_run_flasky_repo_delete = templatefile("../../templates/run/flasky/delete.sh", local.hub_eu_run_flasky_repo_vars)
   hub_eu_run_flasky_repo_vars = {
     PROJECT        = var.project_id_hub
     GCR_HOST       = local.hub_eu_run_flasky_gcr_host
     IMAGE_REPO     = local.hub_eu_run_flasky_repo
     CONTAINER_PORT = local.hub_eu_run_flasky_port
-    DOCKERFILE_DIR = "templates/run/flasky"
+    DOCKERFILE_DIR = "../../templates/run/flasky"
   }
 }
 
@@ -231,7 +231,7 @@ resource "null_resource" "hub_eu_run_flasky_repo" {
 
 module "hub_eu_run_flasky" {
   depends_on = [null_resource.hub_eu_run_flasky_repo]
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/cloud-run"
+  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/cloud-run?ref=v15.0.0"
   project_id = var.project_id_hub
   name       = "${local.hub_prefix}eu-run-flasky"
   region     = local.hub_eu_region

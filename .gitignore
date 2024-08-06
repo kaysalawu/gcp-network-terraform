@@ -4,7 +4,7 @@
 *.tfstate.backup
 .terraform/
 *.hcl
-terraform.tfvars
+*.tfvars
 vars.tfvars
 #*.json
 #*backend*
@@ -15,24 +15,31 @@ modulez/
 # Module directory
 
 # Other files
-*apply.sh
-*destroy.sh
-plan.sh
 *rendered
 *keys/
-*test/
 *credentials/
 plugins/
 *plugins/
-*.x
 *scrap*
 *reference*
 *artifact
-*certs
 *anthos-keys
+backend.tf
+*certs/
+*.pem
+*.crt
+*.key
+*.cer
+*.pfx
+*.log
 
 # Skaffold
 bin/
+include/
+lib/
+lib64/
+share/
+pyvenv.cfg
 pkg/
 .DS_Store
 *.pyc
@@ -47,4 +54,4 @@ _run.*
 _dev.*
 _delete.*
 _env.txt
-*poc*
+

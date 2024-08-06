@@ -86,7 +86,7 @@ No requirements.
 | disk\_size | disk size | `string` | `"10"` | no |
 | disk\_type | disk type | `string` | `"pd-ssd"` | no |
 | gre\_range | gre interface ip cidr ranges. | `map(string)` | <pre>{<br>  "cidr1": "172.16.1.0/24",<br>  "cidr2": "172.16.2.0/24",<br>  "cidr3": "172.16.3.0/24",<br>  "cidr4": "172.16.4.0/24",<br>  "cidr5": "172.16.5.0/24",<br>  "cidr6": "172.16.6.0/24",<br>  "cidr7": "172.16.7.0/24",<br>  "cidr8": "172.16.8.0/24"<br>}</pre> | no |
-| image\_debian | vm instance image | `string` | `"debian-cloud/debian-10"` | no |
+| image\_debian | vm instance image | `string` | `"debian-cloud/debian-12"` | no |
 | image\_panos | palo alto image from gcp marketplace | `string` | `"https://www.googleapis.com/compute/v1/projects/paloaltonetworksgcp-public/global/images/vmseries-bundle1-810"` | no |
 | image\_ubuntu | vm instance image | `string` | `"ubuntu-os-cloud/ubuntu-1804-lts"` | no |
 | image\_vyos | vyos image from gcp marketplace | `string` | `"https://www.googleapis.com/compute/v1/projects/sentrium-public/global/images/vyos-1-2-6-s1"` | no |

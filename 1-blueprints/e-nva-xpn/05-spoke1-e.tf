@@ -66,11 +66,11 @@ locals {
       policy_data = "${local.spoke1_dns_rr1};${local.spoke1_dns_rr2}"
     }
   }
-  spoke1_dns_routing_create = templatefile("scripts/dns/record-create.sh", {
+  spoke1_dns_routing_create = templatefile("../../scripts/dns/record-create.sh", {
     PROJECT = var.project_id_spoke1
     RECORDS = local.spoke1_dns_routing_data
   })
-  spoke1_dns_routing_delete = templatefile("scripts/dns/record-delete.sh", {
+  spoke1_dns_routing_delete = templatefile("../../scripts/dns/record-delete.sh", {
     PROJECT = var.project_id_spoke1
     RECORDS = local.spoke1_dns_routing_data
   })
@@ -241,14 +241,14 @@ resource "google_compute_instance_group" "spoke1_eu_ilb7_ig" {
 locals {
   spoke1_eu_ilb7_psc_api_neg_name      = "${local.spoke1_prefix}eu-ilb7-psc-api-neg"
   spoke1_eu_ilb7_psc_api_neg_self_link = "projects/${var.project_id_spoke1}/regions/${local.spoke1_eu_region}/networkEndpointGroups/${local.spoke1_eu_ilb7_psc_api_neg_name}"
-  spoke1_eu_ilb7_psc_api_neg_create = templatefile("scripts/neg/psc/create.sh", {
+  spoke1_eu_ilb7_psc_api_neg_create = templatefile("../../scripts/neg/psc/create.sh", {
     PROJECT_ID     = var.project_id_spoke1
     NETWORK        = google_compute_network.hub_int_vpc.self_link
     REGION         = local.spoke1_eu_region
     NEG_NAME       = local.spoke1_eu_ilb7_psc_api_neg_name
     TARGET_SERVICE = local.spoke1_eu_psc_https_ctrl_run_dns
   })
-  spoke1_eu_ilb7_psc_api_neg_delete = templatefile("scripts/neg/psc/delete.sh", {
+  spoke1_eu_ilb7_psc_api_neg_delete = templatefile("../../scripts/neg/psc/delete.sh", {
     PROJECT_ID = var.project_id_spoke1
     REGION     = local.spoke1_eu_region
     NEG_NAME   = local.spoke1_eu_ilb7_psc_api_neg_name
@@ -274,7 +274,7 @@ resource "null_resource" "spoke1_eu_ilb7_psc_api_neg" {
 locals {
   spoke1_us_ilb7_psc_vpc_neg_name      = "${local.spoke1_prefix}us-ilb7-psc-vpc-neg"
   spoke1_us_ilb7_psc_vpc_neg_self_link = "projects/${var.project_id_spoke1}/regions/${local.spoke1_us_region}/networkEndpointGroups/${local.spoke1_us_ilb7_psc_vpc_neg_name}"
-  spoke1_us_ilb7_psc_vpc_neg_create = templatefile("scripts/neg/psc/create.sh", {
+  spoke1_us_ilb7_psc_vpc_neg_create = templatefile("../../scripts/neg/psc/create.sh", {
     PROJECT_ID     = var.project_id_spoke1
     NETWORK        = google_compute_network.spoke1_vpc.self_link
     REGION         = local.spoke1_us_region
@@ -282,7 +282,7 @@ locals {
     TARGET_SERVICE = local.spoke1_us_psc_https_ctrl_run_dns
     #TARGET_SERVICE = google_compute_service_attachment.spoke2_us_producer_svc_attach.self_link
   })
-  spoke1_us_ilb7_psc_vpc_neg_delete = templatefile("scripts/neg/psc/delete.sh", {
+  spoke1_us_ilb7_psc_vpc_neg_delete = templatefile("../../scripts/neg/psc/delete.sh", {
     PROJECT_ID = var.project_id_spoke1
     REGION     = local.spoke1_us_region
     NEG_NAME   = local.spoke1_us_ilb7_psc_vpc_neg_name

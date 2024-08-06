@@ -1,1 +1,0 @@
-../../0-config/spoke1.tf

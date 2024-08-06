@@ -60,7 +60,7 @@ locals {
 # nva
 
 locals {
-  hub_nva_eu_startup = templatefile("scripts/startup/nva.sh", {
+  hub_nva_eu_startup = templatefile("../../scripts/startup/nva.sh", {
     GOOGLE_RANGES        = concat(local.netblocks.gfe, local.netblocks.dns)
     ENS5_LINKED_NETWORKS = [local.spoke1_supernet]
     ENS6_LINKED_NETWORKS = [local.hub_mgt_subnets["${local.hub_prefix}mgt-us-subnet1"].ip_cidr_range] # eu-subnet1 is directly attached and not included
@@ -84,7 +84,7 @@ locals {
     TARGETS_PSC = local.targets_psc
     TARGETS_PGA = local.targets_pga
   })
-  hub_nva_us_startup = templatefile("scripts/startup/nva.sh", {
+  hub_nva_us_startup = templatefile("../../scripts/startup/nva.sh", {
     GOOGLE_RANGES        = concat(local.netblocks.gfe, local.netblocks.dns)
     ENS5_LINKED_NETWORKS = [local.spoke2_supernet]
     ENS6_LINKED_NETWORKS = [local.hub_mgt_subnets["${local.hub_prefix}mgt-eu-subnet1"].ip_cidr_range] # us-subnet1 is directly attached and not included

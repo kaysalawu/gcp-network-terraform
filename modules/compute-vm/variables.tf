@@ -48,7 +48,7 @@ variable "boot_disk" {
     type  = string
   })
   default = {
-    image = "debian-cloud/debian-10"
+    image = "debian-cloud/debian-12"
     type  = "pd-ssd"
     size  = 10
   }

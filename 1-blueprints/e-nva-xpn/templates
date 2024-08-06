@@ -1,1 +1,6 @@
-../../0-config/templates/
+../../0-templates/00-config.tf
+../../0-templates/01-boot.tf
+../../0-templates/02-site1.tf
+../../0-templates/02-site2.tf
+../../0-templates/variables.tf
+../../0-templates/terraform.tfvars
