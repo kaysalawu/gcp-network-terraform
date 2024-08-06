@@ -531,7 +531,7 @@ resource "google_compute_instance" "spoke2_us_ilb4_vm" {
   tags         = [local.tag_ssh, local.tag_gfe]
   boot_disk {
     initialize_params {
-      image = var.image_debian
+      image = var.image_ubuntu
       size  = var.disk_size
       type  = var.disk_type
     }
@@ -570,6 +570,8 @@ resource "google_compute_instance_group" "spoke2_us_ilb4_ig" {
     port = local.svc_web.port
   }
 }
+
+# ilb4
 
 module "spoke2_us_ilb4" {
   source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-ilb?ref=v15.0.0"
@@ -637,7 +639,7 @@ resource "google_compute_instance" "spoke2_us_ilb7_vm" {
   tags         = [local.tag_ssh, local.tag_gfe]
   boot_disk {
     initialize_params {
-      image = var.image_debian
+      image = var.image_ubuntu
       size  = var.disk_size
       type  = var.disk_type
     }
@@ -677,7 +679,7 @@ resource "google_compute_instance_group" "spoke2_us_ilb7_ig" {
   }
 }
 
-# psc neg
+# psc api neg
 
 locals {
   spoke2_us_ilb7_psc_api_neg_name      = "${local.spoke2_prefix}us-ilb7-psc-api-neg"
@@ -824,7 +826,7 @@ resource "google_compute_instance" "spoke2_eu_test_vm" {
   tags         = [local.tag_ssh, local.tag_gfe]
   boot_disk {
     initialize_params {
-      image = var.image_debian
+      image = var.image_ubuntu
       size  = var.disk_size
       type  = var.disk_type
     }

@@ -267,12 +267,11 @@ locals {
 }
 
 module "site1_vertex_vm" {
-  source        = "../../modules/compute-vm"
-  project_id    = var.project_id_onprem
-  name          = "${local.site1_prefix}vertex-vm"
-  zone          = "${local.site1_region}-b"
-  tags          = [local.tag_ssh, ]
-  instance_type = "e2-micro"
+  source     = "../../modules/compute-vm"
+  project_id = var.project_id_onprem
+  name       = "${local.site1_prefix}vertex-vm"
+  zone       = "${local.site1_region}-b"
+  tags       = [local.tag_ssh, ]
   boot_disk = {
     image = var.image_debian
     type  = var.disk_type

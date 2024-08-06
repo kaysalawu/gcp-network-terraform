@@ -268,22 +268,22 @@ locals {
   }
 }
 
-# resource "null_resource" "hub_eu_run_flasky_repo" {
-#   triggers = {
-#     create = local.hub_eu_run_flasky_repo_create
-#     delete = local.hub_eu_run_flasky_repo_delete
-#   }
-#   provisioner "local-exec" {
-#     command = self.triggers.create
-#   }
-#   provisioner "local-exec" {
-#     when    = destroy
-#     command = self.triggers.delete
-#   }
-# }
+resource "null_resource" "hub_eu_run_flasky_repo" {
+  triggers = {
+    create = local.hub_eu_run_flasky_repo_create
+    delete = local.hub_eu_run_flasky_repo_delete
+  }
+  provisioner "local-exec" {
+    command = self.triggers.create
+  }
+  provisioner "local-exec" {
+    when    = destroy
+    command = self.triggers.delete
+  }
+}
 
 module "hub_eu_run_flasky" {
-  # depends_on = [null_resource.hub_eu_run_flasky_repo]
+  depends_on = [null_resource.hub_eu_run_flasky_repo]
   source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/cloud-run?ref=v15.0.0"
   project_id = var.project_id_hub
   name       = "${local.hub_prefix}eu-run-flasky"
@@ -416,23 +416,23 @@ locals {
   }
 }
 
-# resource "null_resource" "spoke1_eu_run_flasky_repo" {
-#   depends_on = [null_resource.hub_eu_run_flasky_repo]
-#   triggers = {
-#     create = local.spoke1_eu_run_flasky_repo_create
-#     delete = local.spoke1_eu_run_flasky_repo_delete
-#   }
-#   provisioner "local-exec" {
-#     command = self.triggers.create
-#   }
-#   provisioner "local-exec" {
-#     when    = destroy
-#     command = self.triggers.delete
-#   }
-# }
+resource "null_resource" "spoke1_eu_run_flasky_repo" {
+  depends_on = [null_resource.hub_eu_run_flasky_repo]
+  triggers = {
+    create = local.spoke1_eu_run_flasky_repo_create
+    delete = local.spoke1_eu_run_flasky_repo_delete
+  }
+  provisioner "local-exec" {
+    command = self.triggers.create
+  }
+  provisioner "local-exec" {
+    when    = destroy
+    command = self.triggers.delete
+  }
+}
 
 module "spoke1_eu_run_flasky" {
-  # depends_on = [null_resource.spoke1_eu_run_flasky_repo]
+  depends_on = [null_resource.spoke1_eu_run_flasky_repo]
   source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/cloud-run?ref=v15.0.0"
   project_id = var.project_id_spoke1
   name       = "${local.spoke1_prefix}eu-run-flasky"
@@ -533,20 +533,20 @@ locals {
   }
 }
 
-# resource "null_resource" "spoke2_us_run_flasky_repo" {
-#   depends_on = [null_resource.spoke1_eu_run_flasky_repo]
-#   triggers = {
-#     create = local.spoke2_us_run_flasky_repo_create
-#     delete = local.spoke2_us_run_flasky_repo_delete
-#   }
-#   provisioner "local-exec" {
-#     command = self.triggers.create
-#   }
-#   provisioner "local-exec" {
-#     when    = destroy
-#     command = self.triggers.delete
-#   }
-# }
+resource "null_resource" "spoke2_us_run_flasky_repo" {
+  depends_on = [null_resource.spoke1_eu_run_flasky_repo]
+  triggers = {
+    create = local.spoke2_us_run_flasky_repo_create
+    delete = local.spoke2_us_run_flasky_repo_delete
+  }
+  provisioner "local-exec" {
+    command = self.triggers.create
+  }
+  provisioner "local-exec" {
+    when    = destroy
+    command = self.triggers.delete
+  }
+}
 
 module "spoke2_us_run_flasky" {
   # depends_on = [null_resource.spoke2_us_run_flasky_repo]

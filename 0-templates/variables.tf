@@ -39,7 +39,7 @@ variable "image_debian" {
 variable "image_ubuntu" {
   description = "vm instance image"
   type        = string
-  default     = "ubuntu-os-cloud/ubuntu-1804-lts"
+  default     = "ubuntu-os-cloud/ubuntu-2404-lts-amd64"
 }
 
 variable "image_cos" {
@@ -57,7 +57,7 @@ variable "disk_type" {
 variable "disk_size" {
   description = "disk size"
   type        = string
-  default     = "10"
+  default     = "20"
 }
 
 variable "bgp_range" {

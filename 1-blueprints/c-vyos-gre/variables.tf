@@ -57,7 +57,7 @@ variable "disk_type" {
 variable "disk_size" {
   description = "disk size"
   type        = string
-  default     = "10"
+  default     = "20"
 }
 
 variable "bgp_range" {

@@ -29,31 +29,14 @@ server:
         access-control: 172.16.0.0/12 allow
         access-control: 35.199.192.0/19 allow
 
-        # local data records
-        %{~ for tuple in ONPREM_LOCAL_RECORDS ~}
-        local-data: "${tuple.name} 3600 IN A ${tuple.record}"
-        %{~ endfor ~}
-
-        # hosts redirected to PSC
-        %{~ for tuple in REDIRECTED_HOSTS ~}
-        %{~ for host in tuple.hosts ~}
-        local-zone: ${host} redirect
-        %{~ endfor ~}
-        %{~ endfor ~}
-
-        %{~ for tuple in REDIRECTED_HOSTS ~}
-        %{~ for host in tuple.hosts ~}
-        local-data: "${host} ${tuple.ttl} ${tuple.class} ${tuple.type} ${tuple.record}"
-        %{~ endfor ~}
-        %{~ endfor ~}
-
-%{~ for tuple in FORWARD_ZONES }
 forward-zone:
-        name: "${tuple.zone}"
-        %{~ for target in tuple.targets ~}
-        forward-addr: ${target}
-        %{~ endfor ~}
-%{~ endfor ~}
+        name: "onprem."
+        forward-addr: 10.10.1.5
+        forward-addr: 10.20.1.5
+
+forward-zone:
+        name: "."
+        forward-addr: 169.254.169.254
 EOF
 
 systemctl enable unbound

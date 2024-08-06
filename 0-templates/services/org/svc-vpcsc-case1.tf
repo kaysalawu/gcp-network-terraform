@@ -332,7 +332,6 @@ module "hub_eu_vertex_natgw" {
   name           = "${local.hub_prefix}eu-vertex-natgw"
   zone           = "${local.hub_eu_region}-b"
   tags           = [local.tag_ssh, "nat"]
-  instance_type  = "e2-micro"
   can_ip_forward = true
   boot_disk = {
     image = var.image_debian

@@ -121,7 +121,7 @@ variable "iam" {
 variable "instance_type" {
   description = "Instance type."
   type        = string
-  default     = "e2-micro"
+  default     = "e2-small"
 }
 
 variable "labels" {

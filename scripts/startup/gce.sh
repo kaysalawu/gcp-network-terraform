@@ -1,16 +1,13 @@
 #! /bin/bash
 
 apt update -y
-apt install -y wget tcpdump fping dnsutils apache2-utils python3-pip python3-dev
-pip3 install Flask requests
+apt install -y wget tcpdump fping bind9-dnsutils apache2-utils python3-pip python3-dev
+apt install -y python3-flask python3-requests
 
 # web server
 #---------------------------------------------------
 
-mkdir /var/flaskapp
-mkdir /var/flaskapp/flaskapp
-mkdir /var/flaskapp/flaskapp/static
-mkdir /var/flaskapp/flaskapp/templates
+mkdir -p /var/flaskapp/flaskapp/{static,templates}
 
 cat <<EOF > /var/flaskapp/flaskapp/__init__.py
 import socket
@@ -35,30 +32,40 @@ def ${WEB_SERVER.health_check_path}():
 if __name__ == "__main__":
     app.run(host= '0.0.0.0', port=${WEB_SERVER.port}, debug = True)
 EOF
-nohup python3 /var/flaskapp/flaskapp/__init__.py &
 
-cat <<EOF > /var/tmp/startup.sh
-nohup python3 /var/flaskapp/flaskapp/__init__.py &
+cat <<EOF > /etc/systemd/system/flaskapp.service
+[Unit]
+Description=Script for flaskapp service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /var/flaskapp/flaskapp/__init__.py
+ExecStop=/usr/bin/pkill -f /var/flaskapp/flaskapp/__init__.py
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target
 EOF
 
-echo "@reboot source /var/tmp/startup.sh" >> /var/tmp/crontab_flask.txt
-crontab /var/tmp/crontab_flask.txt
+systemctl daemon-reload
+systemctl enable flaskapp.service
+systemctl restart flaskapp.service
 
 # playz (curl scripts)
 #---------------------------------------------------
 
-cat <<EOF > /usr/local/bin/playz
+cat <<'EOF' > /usr/local/bin/playz
 echo -e "\n apps ...\n"
 %{ for target in SCRIPTS.targets_app ~}
-echo  "\$(curl -kL --max-time 2.0 -H 'Cache-Control: no-cache' -w "%%{http_code} (%%{time_total}s) - %%{remote_ip}" -s -o /dev/null ${target}) - ${target}"
+echo  "$(curl -kL --max-time 2.0 -H 'Cache-Control: no-cache' -w "%%{http_code} (%%{time_total}s) - %%{remote_ip}" -s -o /dev/null ${target}) - ${target}"
 %{ endfor ~}
 echo -e "\n psc4 ...\n"
 %{ for target in SCRIPTS.targets_psc ~}
-echo  "\$(curl -kL --max-time 2.0 -H 'Cache-Control: no-cache' -w "%%{http_code} (%%{time_total}s) - %%{remote_ip}" -s -o /dev/null ${target}) - ${target}"
+echo  "$(curl -kL --max-time 2.0 -H 'Cache-Control: no-cache' -w "%%{http_code} (%%{time_total}s) - %%{remote_ip}" -s -o /dev/null ${target}) - ${target}"
 %{ endfor ~}
 echo -e "\n apis ...\n"
 %{ for target in SCRIPTS.targets_pga ~}
-echo  "\$(curl -kL --max-time 2.0 -H 'Cache-Control: no-cache' -w "%%{http_code} (%%{time_total}s) - %%{remote_ip}" -s -o /dev/null ${target}) - ${target}"
+echo  "$(curl -kL --max-time 2.0 -H 'Cache-Control: no-cache' -w "%%{http_code} (%%{time_total}s) - %%{remote_ip}" -s -o /dev/null ${target}) - ${target}"
 %{ endfor ~}
 echo ""
 EOF
@@ -66,10 +73,10 @@ chmod a+x /usr/local/bin/playz
 
 # pingz
 #-----------------------------------
-cat <<EOF > /usr/local/bin/pingz
+cat <<'EOF' > /usr/local/bin/pingz
 echo -e "\n ping ...\n"
 %{ for target in SCRIPTS.targets_ping ~}
-echo ${target} - \$(ping -qc2 -W1 ${target} 2>&1 | awk -F'/' 'END{ print (/^rtt/? "OK "\$5" ms":"NA") }')
+echo ${target} - $(ping -qc2 -W1 ${target} 2>&1 | awk -F'/' 'END{ print (/^rtt/? "OK "$5" ms":"NA") }')
 %{ endfor ~}
 EOF
 chmod a+x /usr/local/bin/pingz
@@ -77,10 +84,10 @@ chmod a+x /usr/local/bin/pingz
 # bucketz (gcs bucket test script)
 #---------------------------------------------------
 
-cat <<EOF > /usr/local/bin/bucketz
+cat <<'EOF' > /usr/local/bin/bucketz
 echo ""
 %{ for env,bucket in SCRIPTS.targets_bucket ~}
-echo -e "${env} : \$(gsutil cat gs://${bucket})\n"
+echo -e "${env} : $(gsutil cat gs://${bucket})\n"
 %{ endfor ~}
 EOF
 chmod a+x /usr/local/bin/bucketz
@@ -144,12 +151,12 @@ EOF
 # probe
 #---------------------------------------------------
 
-cat <<EOF > /usr/local/bin/probez
+cat <<'EOF' > /usr/local/bin/probez
 #! /bin/bash
 i=0
-while [ \$i -lt 3 ]; do
+while [ $i -lt 3 ]; do
   %{ for target in SCRIPTS.targets_probe ~}
-  ab -n \$1 -c \$2 ${target} > /dev/null 2>&1
+  ab -n $1 -c $2 ${target} > /dev/null 2>&1
   %{ endfor ~}
   let i=i+1
   sleep 3
