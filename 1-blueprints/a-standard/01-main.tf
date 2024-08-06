@@ -250,7 +250,7 @@ data "google_project" "hub_project_number" {
 }
 
 locals {
-  hub_eu_run_httpbin_host = module.hub_eu_run_httpbin.service.status.0.url
+  hub_eu_run_httpbin_host = try(module.hub_eu_run_httpbin.service.status.0.url, "")
   hub_unbound_config = templatefile("../../scripts/startup/unbound/cloud.sh", {
     FORWARD_ZONES = local.cloud_forward_zones
   })
@@ -390,7 +390,7 @@ data "google_project" "spoke1_project_number" {
 }
 
 locals {
-  spoke1_eu_run_httpbin_host = module.spoke1_eu_run_httpbin.service.status.0.url
+  spoke1_eu_run_httpbin_host = try(module.spoke1_eu_run_httpbin.service.status.0.url, "")
   spoke1_psc_api_fr_name = (
     local.spoke1_psc_api_secure ?
     local.spoke1_psc_api_sec_fr_name :
@@ -477,7 +477,7 @@ data "google_project" "spoke2_project_number" {
 }
 
 locals {
-  spoke2_us_run_httpbin_host = module.spoke2_us_run_httpbin.service.status.0.url
+  spoke2_us_run_httpbin_host = try(module.spoke2_us_run_httpbin.service.status.0.url, "")
   spoke2_psc_api_fr_name = (
     local.spoke2_psc_api_secure ?
     local.spoke2_psc_api_sec_fr_name :
