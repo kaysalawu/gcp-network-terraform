@@ -409,8 +409,8 @@ locals {
   spoke2_dns_rr1 = "${local.spoke2_eu_region}=${local.spoke2_eu_td_envoy_bridge_ilb4_addr}"
   spoke2_dns_rr2 = "${local.spoke2_us_region}=${local.spoke2_us_td_envoy_bridge_ilb4_addr}"
   spoke2_dns_routing_data = {
-    ("${local.spoke2_td_envoy_bridge_ilb4_dns}.${module.spoke2_dns_private_zone.domain}") = {
-      zone        = module.spoke2_dns_private_zone.name,
+    ("${local.spoke2_td_envoy_bridge_ilb4_dns}.${local.spoke2_domain}.${local.cloud_domain}.") = {
+      zone        = "${local.spoke2_prefix}private",
       policy_type = "GEO", ttl = 300, type = "A",
       policy_data = "${local.spoke2_dns_rr1};${local.spoke2_dns_rr2}"
     }
@@ -437,6 +437,9 @@ resource "null_resource" "spoke2_dns_routing" {
     when    = destroy
     command = self.triggers.delete
   }
+  depends_on = [
+    module.spoke2_dns_private_zone,
+  ]
 }
 
 # reverse zone
@@ -531,7 +534,7 @@ resource "google_compute_instance" "spoke2_us_ilb4_vm" {
   tags         = [local.tag_ssh, local.tag_gfe]
   boot_disk {
     initialize_params {
-      image = var.image_debian
+      image = var.image_ubuntu
       size  = var.disk_size
       type  = var.disk_type
     }
@@ -570,6 +573,8 @@ resource "google_compute_instance_group" "spoke2_us_ilb4_ig" {
     port = local.svc_web.port
   }
 }
+
+# ilb4
 
 module "spoke2_us_ilb4" {
   source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-ilb?ref=v15.0.0"
@@ -637,7 +642,7 @@ resource "google_compute_instance" "spoke2_us_ilb7_vm" {
   tags         = [local.tag_ssh, local.tag_gfe]
   boot_disk {
     initialize_params {
-      image = var.image_debian
+      image = var.image_ubuntu
       size  = var.disk_size
       type  = var.disk_type
     }
@@ -677,7 +682,7 @@ resource "google_compute_instance_group" "spoke2_us_ilb7_ig" {
   }
 }
 
-# psc neg
+# psc api neg
 
 locals {
   spoke2_us_ilb7_psc_api_neg_name      = "${local.spoke2_prefix}us-ilb7-psc-api-neg"
@@ -824,7 +829,7 @@ resource "google_compute_instance" "spoke2_eu_test_vm" {
   tags         = [local.tag_ssh, local.tag_gfe]
   boot_disk {
     initialize_params {
-      image = var.image_debian
+      image = var.image_ubuntu
       size  = var.disk_size
       type  = var.disk_type
     }

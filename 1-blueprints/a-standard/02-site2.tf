@@ -179,7 +179,7 @@ resource "google_compute_instance" "site2_vm" {
   tags         = [local.tag_ssh, local.tag_http]
   boot_disk {
     initialize_params {
-      image = "debian-cloud/debian-12"
+      image = var.image_ubuntu
       size  = var.disk_size
       type  = var.disk_type
     }

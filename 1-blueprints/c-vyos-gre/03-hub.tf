@@ -261,7 +261,7 @@ resource "google_compute_instance" "hub_eu_dns" {
   tags         = [local.tag_dns, local.tag_ssh]
   boot_disk {
     initialize_params {
-      image = var.image_debian
+      image = var.image_ubuntu
       type  = var.disk_type
       size  = var.disk_size
     }
@@ -294,7 +294,7 @@ resource "google_compute_instance" "hub_us_dns" {
   tags         = [local.tag_dns, local.tag_ssh]
   boot_disk {
     initialize_params {
-      image = var.image_debian
+      image = var.image_ubuntu
       type  = var.disk_type
       size  = var.disk_size
     }
@@ -558,7 +558,7 @@ resource "google_compute_instance" "hub_eu_ilb4_vm" {
   tags         = [local.tag_ssh, local.tag_gfe]
   boot_disk {
     initialize_params {
-      image = var.image_debian
+      image = var.image_ubuntu
       size  = var.disk_size
       type  = var.disk_type
     }
@@ -637,7 +637,7 @@ resource "google_compute_instance" "hub_us_ilb4_vm" {
   tags         = [local.tag_ssh, local.tag_gfe]
   boot_disk {
     initialize_params {
-      image = var.image_debian
+      image = var.image_ubuntu
       size  = var.disk_size
       type  = var.disk_type
     }
@@ -723,7 +723,7 @@ resource "google_compute_instance" "hub_eu_ilb7_vm" {
   tags         = [local.tag_ssh, local.tag_gfe]
   boot_disk {
     initialize_params {
-      image = var.image_debian
+      image = var.image_ubuntu
       size  = var.disk_size
       type  = var.disk_type
     }
@@ -912,7 +912,7 @@ resource "google_compute_instance" "hub_us_ilb7_vm" {
   tags         = [local.tag_ssh, local.tag_gfe]
   boot_disk {
     initialize_params {
-      image = var.image_debian
+      image = var.image_ubuntu
       size  = var.disk_size
       type  = var.disk_type
     }
@@ -1079,4 +1079,20 @@ module "hub_us_ilb7_frontend" {
     address = local.hub_us_ilb7_addr
     ssl     = { self_cert = true, domains = local.hub_us_ilb7_domains }
   }
+}
+
+####################################################
+# output files
+####################################################
+
+locals {
+  hub_files = {
+    "output/hub-unbound.sh" = local.hub_unbound_config
+  }
+}
+
+resource "local_file" "hub_files" {
+  for_each = local.hub_files
+  filename = each.key
+  content  = each.value
 }

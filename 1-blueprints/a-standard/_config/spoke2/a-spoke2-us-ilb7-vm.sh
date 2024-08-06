@@ -76,9 +76,9 @@ echo  "$(curl -kL --max-time 2.0 -H 'Cache-Control: no-cache' -w "%{http_code} (
 echo  "$(curl -kL --max-time 2.0 -H 'Cache-Control: no-cache' -w "%{http_code} (%{time_total}s) - %{remote_ip}" -s -o /dev/null us-west2-run.googleapis.com/generate_204) - us-west2-run.googleapis.com/generate_204"
 echo  "$(curl -kL --max-time 2.0 -H 'Cache-Control: no-cache' -w "%{http_code} (%{time_total}s) - %{remote_ip}" -s -o /dev/null europe-west2-run.googleapis.com/generate_204) - europe-west2-run.googleapis.com/generate_204"
 echo  "$(curl -kL --max-time 2.0 -H 'Cache-Control: no-cache' -w "%{http_code} (%{time_total}s) - %{remote_ip}" -s -o /dev/null us-west2-run.googleapis.com/generate_204) - us-west2-run.googleapis.com/generate_204"
-echo  "$(curl -kL --max-time 2.0 -H 'Cache-Control: no-cache' -w "%{http_code} (%{time_total}s) - %{remote_ip}" -s -o /dev/null module.hub_eu_run_flasky.service.status.0.url/) - module.hub_eu_run_flasky.service.status.0.url/"
-echo  "$(curl -kL --max-time 2.0 -H 'Cache-Control: no-cache' -w "%{http_code} (%{time_total}s) - %{remote_ip}" -s -o /dev/null module.spoke1_eu_run_flasky.service.status.0.url/) - module.spoke1_eu_run_flasky.service.status.0.url/"
-echo  "$(curl -kL --max-time 2.0 -H 'Cache-Control: no-cache' -w "%{http_code} (%{time_total}s) - %{remote_ip}" -s -o /dev/null module.spoke2_us_run_flasky.service.status.0.url/) - module.spoke2_us_run_flasky.service.status.0.url/"
+echo  "$(curl -kL --max-time 2.0 -H 'Cache-Control: no-cache' -w "%{http_code} (%{time_total}s) - %{remote_ip}" -s -o /dev/null https://a-hub-eu-run-httpbin-i6ankopyoa-nw.a.run.app/) - https://a-hub-eu-run-httpbin-i6ankopyoa-nw.a.run.app/"
+echo  "$(curl -kL --max-time 2.0 -H 'Cache-Control: no-cache' -w "%{http_code} (%{time_total}s) - %{remote_ip}" -s -o /dev/null https://a-spoke1-eu-run-httpbin-2zcsnlaqcq-nw.a.run.app/) - https://a-spoke1-eu-run-httpbin-2zcsnlaqcq-nw.a.run.app/"
+echo  "$(curl -kL --max-time 2.0 -H 'Cache-Control: no-cache' -w "%{http_code} (%{time_total}s) - %{remote_ip}" -s -o /dev/null https://a-spoke2-us-run-httpbin-bttbo6m6za-wl.a.run.app/) - https://a-spoke2-us-run-httpbin-bttbo6m6za-wl.a.run.app/"
 echo  "$(curl -kL --max-time 2.0 -H 'Cache-Control: no-cache' -w "%{http_code} (%{time_total}s) - %{remote_ip}" -s -o /dev/null ahuball.p.googleapis.com/generate_204) - ahuball.p.googleapis.com/generate_204"
 echo  "$(curl -kL --max-time 2.0 -H 'Cache-Control: no-cache' -w "%{http_code} (%{time_total}s) - %{remote_ip}" -s -o /dev/null aspoke1sec.p.googleapis.com/generate_204) - aspoke1sec.p.googleapis.com/generate_204"
 echo  "$(curl -kL --max-time 2.0 -H 'Cache-Control: no-cache' -w "%{http_code} (%{time_total}s) - %{remote_ip}" -s -o /dev/null aspoke2sec.p.googleapis.com/generate_204) - aspoke2sec.p.googleapis.com/generate_204"
@@ -190,9 +190,9 @@ while [ $i -lt 3 ]; do
     ab -n $1 -c $2 us-west2-run.googleapis.com/generate_204 > /dev/null 2>&1
     ab -n $1 -c $2 europe-west2-run.googleapis.com/generate_204 > /dev/null 2>&1
     ab -n $1 -c $2 us-west2-run.googleapis.com/generate_204 > /dev/null 2>&1
-    ab -n $1 -c $2 module.hub_eu_run_flasky.service.status.0.url/ > /dev/null 2>&1
-    ab -n $1 -c $2 module.spoke1_eu_run_flasky.service.status.0.url/ > /dev/null 2>&1
-    ab -n $1 -c $2 module.spoke2_us_run_flasky.service.status.0.url/ > /dev/null 2>&1
+    ab -n $1 -c $2 https://a-hub-eu-run-httpbin-i6ankopyoa-nw.a.run.app/ > /dev/null 2>&1
+    ab -n $1 -c $2 https://a-spoke1-eu-run-httpbin-2zcsnlaqcq-nw.a.run.app/ > /dev/null 2>&1
+    ab -n $1 -c $2 https://a-spoke2-us-run-httpbin-bttbo6m6za-wl.a.run.app/ > /dev/null 2>&1
     ab -n $1 -c $2 ahuball.p.googleapis.com/generate_204 > /dev/null 2>&1
     ab -n $1 -c $2 aspoke1sec.p.googleapis.com/generate_204 > /dev/null 2>&1
     ab -n $1 -c $2 aspoke2sec.p.googleapis.com/generate_204 > /dev/null 2>&1

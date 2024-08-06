@@ -328,7 +328,7 @@ resource "google_compute_instance" "spoke1_eu_ilb4_vm" {
   tags         = [local.tag_ssh, local.tag_gfe]
   boot_disk {
     initialize_params {
-      image = var.image_debian
+      image = var.image_ubuntu
       size  = var.disk_size
       type  = var.disk_type
     }
@@ -421,7 +421,7 @@ resource "google_compute_instance" "spoke1_eu_ilb7_vm" {
   tags         = [local.tag_ssh, local.tag_gfe]
   boot_disk {
     initialize_params {
-      image = var.image_debian
+      image = var.image_ubuntu
       size  = var.disk_size
       type  = var.disk_type
     }

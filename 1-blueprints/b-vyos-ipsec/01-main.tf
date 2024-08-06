@@ -1,6 +1,39 @@
+####################################################
+# lab
+####################################################
 
-# common
-#---------------------------------
+locals {
+  prefix       = "b"
+  eu_ar_host   = "eu-docker.pkg.dev"
+  us_ar_host   = "us-docker.pkg.dev"
+  eu_repo_name = google_artifact_registry_repository.eu_repo.name
+  us_repo_name = google_artifact_registry_repository.us_repo.name
+  flasky_port  = 80
+}
+
+
+####################################################
+# common resources
+####################################################
+
+# artifacts registry
+
+resource "google_artifact_registry_repository" "eu_repo" {
+  project       = var.project_id_hub
+  location      = local.hub_eu_region
+  repository_id = "eu-repo"
+  format        = "DOCKER"
+}
+
+resource "google_artifact_registry_repository" "us_repo" {
+  project       = var.project_id_hub
+  location      = local.hub_us_region
+  repository_id = "us-repo"
+  format        = "DOCKER"
+}
+
+# vm startup scripts
+#----------------------------
 
 locals {
   vm_startup = templatefile("../../scripts/startup/gce.sh", {
@@ -78,12 +111,52 @@ locals {
       password     = local.spoke1_cloudsql_users.admin.password
     },
   ]
+  targets_app = [
+    "${local.site1_app1_dns}.${local.site1_domain}.${local.onprem_domain}:${local.svc_web.port}/",
+    "${local.site2_app1_dns}.${local.site2_domain}.${local.onprem_domain}:${local.svc_web.port}/",
+    "${local.hub_eu_ilb4_dns}.${local.hub_domain}.${local.cloud_domain}:${local.svc_web.port}/",
+    "${local.hub_us_ilb4_dns}.${local.hub_domain}.${local.cloud_domain}:${local.svc_web.port}/",
+    "${local.hub_eu_ilb7_dns}.${local.hub_domain}.${local.cloud_domain}/",
+    "${local.hub_us_ilb7_dns}.${local.hub_domain}.${local.cloud_domain}/",
+    "${local.spoke1_eu_ilb4_dns}.${local.spoke1_domain}.${local.cloud_domain}:${local.svc_web.port}/",
+    "${local.spoke2_us_ilb4_dns}.${local.spoke2_domain}.${local.cloud_domain}:${local.svc_web.port}/",
+    "${local.spoke1_eu_ilb7_dns}.${local.spoke1_domain}.${local.cloud_domain}/",
+    "${local.spoke2_us_ilb7_dns}.${local.spoke2_domain}.${local.cloud_domain}/",
+  ]
+  targets_ping = [
+    "${local.site1_app1_dns}.${local.site1_domain}.${local.onprem_domain}",
+    "${local.site2_app1_dns}.${local.site2_domain}.${local.onprem_domain}",
+    "${local.hub_eu_ilb4_dns}.${local.hub_domain}.${local.cloud_domain}",
+    "${local.hub_us_ilb4_dns}.${local.hub_domain}.${local.cloud_domain}",
+    "${local.hub_eu_ilb7_dns}.${local.hub_domain}.${local.cloud_domain}",
+    "${local.hub_us_ilb7_dns}.${local.hub_domain}.${local.cloud_domain}",
+    "${local.spoke1_eu_ilb4_dns}.${local.spoke1_domain}.${local.cloud_domain}",
+    "${local.spoke2_us_ilb4_dns}.${local.spoke2_domain}.${local.cloud_domain}",
+    "${local.spoke1_eu_ilb7_dns}.${local.spoke1_domain}.${local.cloud_domain}",
+    "${local.spoke2_us_ilb7_dns}.${local.spoke2_domain}.${local.cloud_domain}",
+  ]
+  targets_pga = [
+    "www.googleapis.com/generate_204",
+    "storage.googleapis.com/generate_204",
+    "${local.spoke1_eu_psc_https_ctrl_run_dns}/generate_204",        # custom psc ilb7 access to regional service
+    "${local.spoke2_us_psc_https_ctrl_run_dns}/generate_204",        # custom psc ilb7 access to regional service
+    "${local.hub_eu_psc_https_ctrl_run_dns}/generate_204",           # custom psc ilb7 access to regional service
+    "${local.hub_us_psc_https_ctrl_run_dns}/generate_204",           # custom psc ilb7 access to regional service
+    "${local.hub_eu_run_flasky_host}/",                              # cloud run in hub project
+    "${local.spoke1_eu_run_flasky_host}/",                           # cloud run in spoke1 project
+    "${local.spoke2_us_run_flasky_host}/",                           # cloud run in spoke1 project
+    "${local.hub_psc_api_fr_name}.p.googleapis.com/generate_204",    # psc/api endpoint in hub project
+    "${local.spoke1_psc_api_fr_name}.p.googleapis.com/generate_204", # psc/api endpoint in spoke1 project
+    "${local.spoke2_psc_api_fr_name}.p.googleapis.com/generate_204"  # psc/api endpoint in spoke2 project
+  ]
 }
 
+############################################
 # on-premises
-#---------------------------------
+############################################
 
 # unbound config
+#---------------------------------
 
 locals {
   onprem_local_records = [
@@ -119,16 +192,6 @@ locals {
 # site1
 #---------------------------------
 
-# unbound config
-
-locals {
-  site1_unbound_config = templatefile("../../scripts/startup/unbound/site.sh", {
-    ONPREM_LOCAL_RECORDS = local.onprem_local_records
-    REDIRECTED_HOSTS     = local.onprem_redirected_hosts
-    FORWARD_ZONES        = local.onprem_forward_zones
-  })
-}
-
 # addresses
 
 resource "google_compute_address" "site1_router" {
@@ -155,16 +218,6 @@ module "site1_sa" {
 # site2
 #---------------------------------
 
-# unbound config
-
-locals {
-  site2_unbound_config = templatefile("../../scripts/startup/unbound/site.sh", {
-    ONPREM_LOCAL_RECORDS = local.onprem_local_records
-    REDIRECTED_HOSTS     = local.onprem_redirected_hosts
-    FORWARD_ZONES        = local.onprem_forward_zones
-  })
-}
-
 # addresses
 
 resource "google_compute_address" "site2_router" {
@@ -188,8 +241,9 @@ module "site2_sa" {
   }
 }
 
+############################################
 # hub
-#---------------------------------
+############################################
 
 data "google_project" "hub_project_number" {
   project_id = var.project_id_hub
@@ -253,50 +307,53 @@ module "hub_sa" {
 
 # cloud run
 
-locals {
-  hub_eu_run_flasky_port        = 8080
-  hub_eu_run_flasky_gcr_host    = "gcr.io"
-  hub_eu_run_flasky_repo        = "${local.hub_eu_run_flasky_gcr_host}/${var.project_id_hub}/${local.hub_prefix}flasky:v1"
-  hub_eu_run_flasky_repo_create = templatefile("../../templates/run/flasky/create.sh", local.hub_eu_run_flasky_repo_vars)
-  hub_eu_run_flasky_repo_delete = templatefile("../../templates/run/flasky/delete.sh", local.hub_eu_run_flasky_repo_vars)
-  hub_eu_run_flasky_repo_vars = {
-    PROJECT        = var.project_id_hub
-    GCR_HOST       = local.hub_eu_run_flasky_gcr_host
-    IMAGE_REPO     = local.hub_eu_run_flasky_repo
-    CONTAINER_PORT = local.hub_eu_run_flasky_port
-    DOCKERFILE_DIR = "../../templates/run/flasky"
-  }
-}
+# locals {
+#   hub_eu_run_flasky_repo = "${local.eu_ar_host}/${var.project_id_hub}/${local.eu_repo_name}/${local.hub_prefix}flasky:v1"
+# }
 
-resource "null_resource" "hub_eu_run_flasky_repo" {
-  triggers = {
-    create = local.hub_eu_run_flasky_repo_create
-    delete = local.hub_eu_run_flasky_repo_delete
-  }
-  provisioner "local-exec" {
-    command = self.triggers.create
-  }
-  provisioner "local-exec" {
-    when    = destroy
-    command = self.triggers.delete
-  }
-}
+# resource "null_resource" "hub_eu_run_flasky_repo" {
+#   triggers = {
+#     create = <<EOT
+#       gcloud config set project ${var.project_id_hub}
+#       gcloud -q auth configure-docker ${local.eu_ar_host}
+#       gcloud builds submit --project ${var.project_id_hub} --tag ${local.hub_eu_run_flasky_repo} "../../templates/run/flasky"
+#       gcloud config unset project
+#     EOT
+#     delete = <<EOT
+#       gcloud config set project ${var.project_id_hub}
+#       gcloud -q auth configure-docker ${local.eu_ar_host}
+#       gcloud artifacts docker images delete ${local.hub_eu_run_flasky_repo} --quiet
+#       gcloud config unset project
+#     EOT
+#   }
 
-module "hub_eu_run_flasky" {
-  depends_on = [null_resource.hub_eu_run_flasky_repo]
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/cloud-run?ref=v15.0.0"
-  project_id = var.project_id_hub
-  name       = "${local.hub_prefix}eu-run-flasky"
-  region     = local.hub_eu_region
-  iam        = { "roles/run.invoker" = ["allUsers"] }
-  containers = [{
-    image         = local.hub_eu_run_flasky_repo
-    options       = { command = null, args = null, env = {}, env_from = null }
-    ports         = [{ name = "http1", protocol = "TCP", container_port = local.hub_eu_run_flasky_port }]
-    resources     = null
-    volume_mounts = null
-  }]
-}
+#   provisioner "local-exec" {
+#     command = self.triggers.create
+#   }
+
+#   provisioner "local-exec" {
+#     when    = destroy
+#     command = self.triggers.delete
+#   }
+# }
+
+# module "hub_eu_run_flasky" {
+#   source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/cloud-run?ref=v15.0.0"
+#   project_id = var.project_id_hub
+#   name       = "${local.hub_prefix}eu-run-flasky"
+#   region     = local.hub_eu_region
+#   iam        = { "roles/run.invoker" = ["allUsers"] }
+#   containers = [{
+#     image         = local.hub_eu_run_flasky_repo
+#     options       = { command = null, args = null, env = {}, env_from = null }
+#     ports         = [{ name = "http1", protocol = "TCP", container_port = local.flasky_port }]
+#     resources     = null
+#     volume_mounts = null
+#   }]
+#   # depends_on = [
+#   #   null_resource.hub_eu_run_flasky_repo
+#   # ]
+# }
 
 # storage
 
@@ -349,16 +406,17 @@ resource "google_storage_bucket_object" "hub_us_storage_bucket_file" {
   content = "<--- HUB US --->"
 }
 
+############################################
 # host
-#---------------------------------
+############################################
 
 data "google_project" "host_project_number" {
   project_id = var.project_id_host
 }
 
-
+############################################
 # spoke1
-#---------------------------------
+############################################
 
 data "google_project" "spoke1_project_number" {
   project_id = var.project_id_spoke1
@@ -401,51 +459,53 @@ module "spoke1_sa" {
 
 # cloud run
 
-locals {
-  spoke1_eu_run_flasky_port        = 8080
-  spoke1_eu_run_flasky_gcr_host    = "gcr.io"
-  spoke1_eu_run_flasky_repo        = "${local.spoke1_eu_run_flasky_gcr_host}/${var.project_id_spoke1}/${local.spoke1_prefix}flasky:v1"
-  spoke1_eu_run_flasky_repo_create = templatefile("../../templates/run/flasky/create.sh", local.spoke1_eu_run_flasky_repo_vars)
-  spoke1_eu_run_flasky_repo_delete = templatefile("../../templates/run/flasky/delete.sh", local.spoke1_eu_run_flasky_repo_vars)
-  spoke1_eu_run_flasky_repo_vars = {
-    PROJECT        = var.project_id_spoke1
-    GCR_HOST       = local.spoke1_eu_run_flasky_gcr_host
-    IMAGE_REPO     = local.spoke1_eu_run_flasky_repo
-    CONTAINER_PORT = local.spoke1_eu_run_flasky_port
-    DOCKERFILE_DIR = "../../templates/run/flasky"
-  }
-}
+# locals {
+#   spoke1_eu_run_flasky_repo = "${local.eu_ar_host}/${var.project_id_spoke1}/${local.eu_repo_name}/${local.spoke1_prefix}flasky:v1"
+# }
 
-resource "null_resource" "spoke1_eu_run_flasky_repo" {
-  depends_on = [null_resource.hub_eu_run_flasky_repo]
-  triggers = {
-    create = local.spoke1_eu_run_flasky_repo_create
-    delete = local.spoke1_eu_run_flasky_repo_delete
-  }
-  provisioner "local-exec" {
-    command = self.triggers.create
-  }
-  provisioner "local-exec" {
-    when    = destroy
-    command = self.triggers.delete
-  }
-}
+# resource "null_resource" "spoke1_eu_run_flasky_repo" {
+#   triggers = {
+#     create = <<EOT
+#       gcloud config set project ${var.project_id_spoke1}
+#       gcloud -q auth configure-docker ${local.eu_ar_host}
+#       gcloud builds submit --project ${var.project_id_spoke1} --tag ${local.spoke1_eu_run_flasky_repo} "../../templates/run/flasky"
+#       gcloud config unset project
+#     EOT
+#     delete = <<EOT
+#       gcloud config set project ${var.project_id_spoke1}
+#       gcloud -q auth configure-docker ${local.eu_ar_host}
+#       gcloud artifacts docker images delete ${local.spoke1_eu_run_flasky_repo} --quiet
+#       gcloud config unset project
+#     EOT
+#   }
 
-module "spoke1_eu_run_flasky" {
-  depends_on = [null_resource.spoke1_eu_run_flasky_repo]
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/cloud-run?ref=v15.0.0"
-  project_id = var.project_id_spoke1
-  name       = "${local.spoke1_prefix}eu-run-flasky"
-  region     = local.spoke1_eu_region
-  iam        = { "roles/run.invoker" = ["allUsers"] }
-  containers = [{
-    image         = local.spoke1_eu_run_flasky_repo
-    options       = { command = null, args = null, env = {}, env_from = null }
-    ports         = [{ name = "http1", protocol = "TCP", container_port = local.spoke1_eu_run_flasky_port }]
-    resources     = null
-    volume_mounts = null
-  }]
-}
+#   provisioner "local-exec" {
+#     command = self.triggers.create
+#   }
+
+#   provisioner "local-exec" {
+#     when    = destroy
+#     command = self.triggers.delete
+#   }
+# }
+
+# module "spoke1_eu_run_flasky" {
+#   source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/cloud-run?ref=v15.0.0"
+#   project_id = var.project_id_spoke1
+#   name       = "${local.spoke1_prefix}eu-run-flasky"
+#   region     = local.spoke1_eu_region
+#   iam        = { "roles/run.invoker" = ["allUsers"] }
+#   containers = [{
+#     image         = local.spoke1_eu_run_flasky_repo
+#     options       = { command = null, args = null, env = {}, env_from = null }
+#     ports         = [{ name = "http1", protocol = "TCP", container_port = local.flasky_port }]
+#     resources     = null
+#     volume_mounts = null
+#   }]
+#   # depends_on = [
+#   #   null_resource.spoke1_eu_run_flasky_repo
+#   # ]
+# }
 
 # storage
 
@@ -474,8 +534,9 @@ resource "google_storage_bucket_object" "spoke1_eu_storage_bucket_file" {
   content = "<--- SPOKE 1 --->"
 }
 
+############################################
 # spoke2
-#---------------------------------
+############################################
 
 data "google_project" "spoke2_project_number" {
   project_id = var.project_id_spoke2
@@ -518,51 +579,53 @@ module "spoke2_sa" {
 
 # cloud run
 
-locals {
-  spoke2_us_run_flasky_port        = 8080
-  spoke2_us_run_flasky_gcr_host    = "gcr.io"
-  spoke2_us_run_flasky_repo        = "${local.spoke2_us_run_flasky_gcr_host}/${var.project_id_spoke2}/${local.spoke2_prefix}flasky:v1"
-  spoke2_us_run_flasky_repo_create = templatefile("../../templates/run/flasky/create.sh", local.spoke2_us_run_flasky_repo_vars)
-  spoke2_us_run_flasky_repo_delete = templatefile("../../templates/run/flasky/delete.sh", local.spoke2_us_run_flasky_repo_vars)
-  spoke2_us_run_flasky_repo_vars = {
-    PROJECT        = var.project_id_spoke2
-    GCR_HOST       = local.spoke2_us_run_flasky_gcr_host
-    IMAGE_REPO     = local.spoke2_us_run_flasky_repo
-    CONTAINER_PORT = local.spoke2_us_run_flasky_port
-    DOCKERFILE_DIR = "../../templates/run/flasky"
-  }
-}
+# locals {
+#   spoke2_us_run_flasky_repo = "${local.eu_ar_host}/${var.project_id_spoke2}/${local.eu_repo_name}/${local.spoke2_prefix}flasky:v1"
+# }
 
-resource "null_resource" "spoke2_us_run_flasky_repo" {
-  depends_on = [null_resource.spoke1_eu_run_flasky_repo]
-  triggers = {
-    create = local.spoke2_us_run_flasky_repo_create
-    delete = local.spoke2_us_run_flasky_repo_delete
-  }
-  provisioner "local-exec" {
-    command = self.triggers.create
-  }
-  provisioner "local-exec" {
-    when    = destroy
-    command = self.triggers.delete
-  }
-}
+# resource "null_resource" "spoke2_us_run_flasky_repo" {
+#   triggers = {
+#     create = <<EOT
+#       gcloud config set project ${var.project_id_spoke2}
+#       gcloud -q auth configure-docker ${local.eu_ar_host}
+#       gcloud builds submit --project ${var.project_id_spoke2} --tag ${local.spoke2_us_run_flasky_repo} "../../templates/run/flasky"
+#       gcloud config unset project
+#     EOT
+#     delete = <<EOT
+#       gcloud config set project ${var.project_id_spoke2}
+#       gcloud -q auth configure-docker ${local.eu_ar_host}
+#       gcloud artifacts docker images delete ${local.spoke2_us_run_flasky_repo} --quiet
+#       gcloud config unset project
+#     EOT
+#   }
 
-module "spoke2_us_run_flasky" {
-  depends_on = [null_resource.spoke2_us_run_flasky_repo]
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/cloud-run?ref=v15.0.0"
-  project_id = var.project_id_spoke2
-  name       = "${local.spoke2_prefix}us-run-flasky"
-  region     = local.spoke2_us_region
-  iam        = { "roles/run.invoker" = ["allUsers"] }
-  containers = [{
-    image         = local.spoke2_us_run_flasky_repo
-    options       = { command = null, args = null, env = {}, env_from = null }
-    ports         = [{ name = "http1", protocol = "TCP", container_port = local.spoke2_us_run_flasky_port }]
-    resources     = null
-    volume_mounts = null
-  }]
-}
+#   provisioner "local-exec" {
+#     command = self.triggers.create
+#   }
+
+#   provisioner "local-exec" {
+#     when    = destroy
+#     command = self.triggers.delete
+#   }
+# }
+
+# module "spoke2_us_run_flasky" {
+#   source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/cloud-run?ref=v15.0.0"
+#   project_id = var.project_id_spoke2
+#   name       = "${local.spoke2_prefix}us-run-flasky"
+#   region     = local.spoke2_us_region
+#   iam        = { "roles/run.invoker" = ["allUsers"] }
+#   containers = [{
+#     image         = local.spoke2_us_run_flasky_repo
+#     options       = { command = null, args = null, env = {}, env_from = null }
+#     ports         = [{ name = "http1", protocol = "TCP", container_port = local.flasky_port }]
+#     resources     = null
+#     volume_mounts = null
+#   }]
+#   # depends_on = [
+#   #   null_resource.spoke2_us_run_flasky_repo
+#   # ]
+# }
 
 # storage
 
@@ -589,4 +652,20 @@ resource "google_storage_bucket_object" "spoke2_us_storage_bucket_file" {
   name    = "${local.spoke2_prefix}object.txt"
   bucket  = module.spoke2_us_storage_bucket.name
   content = "<--- SPOKE 2 --->"
+}
+
+####################################################
+# output files
+####################################################
+
+locals {
+  main_files = {
+    "output/vm-startup.sh" = local.vm_startup
+  }
+}
+
+resource "local_file" "main_files" {
+  for_each = local.main_files
+  filename = each.key
+  content  = each.value
 }

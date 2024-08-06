@@ -83,7 +83,7 @@ module "site2_vpc_firewall" {
       rules                = [{ protocol = "tcp", ports = [22] }]
       extra_attributes     = {}
     }
-    "${local.site2_prefix}dns-egress" = {
+    "${local.site2_prefix}dns-ingress" = {
       description          = "allow dns egress proxy"
       direction            = "INGRESS"
       action               = "allow"
@@ -100,15 +100,27 @@ module "site2_vpc_firewall" {
 # custom dns
 #---------------------------------
 
+# unbound config
+
+locals {
+  site2_unbound_config = templatefile("../../scripts/startup/unbound/site.sh", {
+    ONPREM_LOCAL_RECORDS = local.onprem_local_records
+    REDIRECTED_HOSTS     = local.onprem_redirected_hosts
+    FORWARD_ZONES        = local.onprem_forward_zones
+  })
+}
+
+# unbound instance
+
 resource "google_compute_instance" "site2_dns" {
   project      = var.project_id_onprem
   name         = "${local.site2_prefix}dns"
-  machine_type = "e2-micro"
+  machine_type = var.machine_type
   zone         = "${local.site2_region}-b"
   tags         = [local.tag_dns, local.tag_ssh]
   boot_disk {
     initialize_params {
-      image = var.image_debian
+      image = var.image_ubuntu
       type  = var.disk_type
       size  = var.disk_size
     }
@@ -162,7 +174,7 @@ module "site2_dns_forward_to_dns" {
 resource "google_compute_instance" "site2_vm" {
   project      = var.project_id_onprem
   name         = "${local.site2_prefix}vm"
-  machine_type = "e2-micro"
+  machine_type = var.machine_type
   zone         = "${local.site2_region}-b"
   tags         = [local.tag_ssh, local.tag_http]
   boot_disk {
@@ -241,3 +253,19 @@ resource "google_compute_instance_from_template" "site2_td_client" {
   }
   source_instance_template = data.google_compute_instance_template.site2_td_client_tpl.name
 }*/
+
+####################################################
+# output files
+####################################################
+
+locals {
+  site2_files = {
+    "output/site2-unbound.sh" = local.site2_unbound_config
+  }
+}
+
+resource "local_file" "site2_files" {
+  for_each = local.site2_files
+  filename = each.key
+  content  = each.value
+}

@@ -409,8 +409,8 @@ locals {
   spoke2_dns_rr1 = "${local.spoke2_eu_region}=${local.spoke2_eu_td_envoy_bridge_ilb4_addr}"
   spoke2_dns_rr2 = "${local.spoke2_us_region}=${local.spoke2_us_td_envoy_bridge_ilb4_addr}"
   spoke2_dns_routing_data = {
-    ("${local.spoke2_td_envoy_bridge_ilb4_dns}.${module.spoke2_dns_private_zone.domain}") = {
-      zone        = module.spoke2_dns_private_zone.name,
+    ("${local.spoke2_td_envoy_bridge_ilb4_dns}.${local.spoke2_domain}.${local.cloud_domain}.") = {
+      zone        = "${local.spoke2_prefix}private",
       policy_type = "GEO", ttl = 300, type = "A",
       policy_data = "${local.spoke2_dns_rr1};${local.spoke2_dns_rr2}"
     }
@@ -437,6 +437,9 @@ resource "null_resource" "spoke2_dns_routing" {
     when    = destroy
     command = self.triggers.delete
   }
+  depends_on = [
+    module.spoke2_dns_private_zone,
+  ]
 }
 
 # reverse zone
