@@ -1,0 +1,9 @@
+apiVersion: networking.gke.io/v1beta1
+kind: FrontendConfig
+metadata:
+  name: a205-hub-ssl-policy-compatible
+  labels:
+    env: prod
+    lab: a205
+spec:
+  sslPolicy: a205-hub-ssl-policy-compatible

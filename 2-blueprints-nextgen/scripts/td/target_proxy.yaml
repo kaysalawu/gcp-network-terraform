@@ -1,0 +1,3 @@
+name: ${TARGET_PROXY_NAME}
+proxyBind: true
+urlMap: ${URL_MAP}

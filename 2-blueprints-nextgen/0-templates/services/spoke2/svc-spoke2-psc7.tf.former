@@ -1,0 +1,16 @@
+
+module "spoke2_psc_api_ilb7_api" {
+  source         = "../modules/psc-api-ilb7"
+  project_id     = var.project_id_spoke2
+  name           = "${local.spoke2_prefix}us-psc-api-ilb7"
+  network        = google_compute_network.spoke2_vpc.self_link
+  subnetwork     = local.spoke2_us_subnet1.self_link
+  region         = local.spoke2_us_region
+  zone           = "${local.spoke2_us_region}-b"
+  port_range     = 443
+  target_service = local.spoke2_us_psc_api_ilb7_svc
+  service_dns    = local.spoke2_eu_psc_api_ilb7_dns # for cert san and url-map
+
+  service_directory_namespace    = google_service_directory_namespace.spoke2_psc.id
+  service_directory_service_name = local.spoke2_psc_api_ilb7_host
+}

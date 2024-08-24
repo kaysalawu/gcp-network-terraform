@@ -1,0 +1,5 @@
+project_id_onprem = "prj-onprem-x"
+project_id_hub    = "prj-hub-x"
+project_id_host   = "prj-central-x"
+project_id_spoke1 = "prj-spoke1-x"
+project_id_spoke2 = "prj-spoke2-x"

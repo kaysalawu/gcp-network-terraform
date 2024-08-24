@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mango-deploy
+  namespace: prod
+  labels:
+    app: mango
+    env: prod
+    lab: a205
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mango
+  template:
+    metadata:
+      labels:
+        app: mango
+    spec:
+      volumes:
+      #- name: google-cloud-key
+      #  secret:
+      #    secretName: clust-w1-key
+      - name: pod-info
+        downwardAPI:
+          items:
+            - path: "name"
+              fieldRef:
+                fieldPath: metadata.name
+            - path: "namespace"
+              fieldRef:
+                fieldPath: metadata.namespace
+            - path: "uid"
+              fieldRef:
+                fieldPath: metadata.uid
+            - path: "labels"
+              fieldRef:
+                fieldPath: metadata.labels
+            - path: "annotations"
+              fieldRef:
+                fieldPath: metadata.annotations
+      containers:
+      - image: mango
+        name: mango-container
+        ports:
+        - containerPort: 80
+          protocol: TCP
+        volumeMounts:
+        #- name: google-cloud-key
+        #  mountPath: /var/secrets/google
+        - name: pod-info
+          mountPath: /etc/podinfo
+          readOnly: false
+        env:
+        #- name: GOOGLE_APPLICATION_CREDENTIALS
+        #  value: /var/secrets/google/key.json
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: HOST_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: SERVICE_ACCOUNT_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.serviceAccountName

@@ -1,0 +1,23 @@
+# mango
+apiVersion: v1
+kind: Service
+metadata:
+  name: mango-svc
+  namespace: prod
+  labels:
+    app: mango
+    env: prod
+    lab: a205
+  annotations:
+    cloud.google.com/neg: '{"ingress": true}'
+    cloud.google.com/backend-config: '{"default": "custom-headers"}'
+    #cloud.google.com/backend-config: '{"default": "custom-headers", "ports": {"80": "health-check"}}'
+spec:
+  type: NodePort
+  selector:
+    app: mango
+  ports:
+  - name: mango-http
+    port: 80
+    protocol: TCP
+    targetPort: 80
