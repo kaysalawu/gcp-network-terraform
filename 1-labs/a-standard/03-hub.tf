@@ -303,13 +303,19 @@ module "hub_dns_psc" {
   project_id  = var.project_id_hub
   type        = "private"
   name        = "${local.hub_prefix}psc"
-  domain      = "${local.hub_psc_api_fr_name}.p.googleapis.com."
   description = "psc"
-  client_networks = [
-    module.hub_vpc.self_link,
-  ]
+
+  zone_config = {
+    domain = "${local.hub_psc_api_fr_name}.p.googleapis.com."
+    private = {
+      client_networks = [
+        module.hub_vpc.self_link,
+      ]
+    }
+  }
   recordsets = {
-    "A " = { ttl = 300, records = [local.hub_psc_api_fr_addr] }
+    "A localhost" = { records = ["127.0.0.1"] }
+    "A myhost"    = { ttl = 600, records = ["10.0.0.120"] }
   }
   depends_on = [
     time_sleep.hub_dns_forward_to_dns_wait
@@ -317,7 +323,7 @@ module "hub_dns_psc" {
 }
 
 # onprem zone
-
+/*
 module "hub_dns_forward_to_onprem" {
   source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
   project_id  = var.project_id_hub
@@ -909,4 +915,4 @@ resource "local_file" "hub_files" {
   filename = each.key
   content  = each.value
 }
-
+*/
