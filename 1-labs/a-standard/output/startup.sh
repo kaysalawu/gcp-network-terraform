@@ -1,7 +1,6 @@
 #! /bin/bash
 
-start_time=$(date +%s)
-exec > /var/log/gcp-startup.log
+exec > /var/log/gcp-startup.log 2>&1
 export DEBIAN_FRONTEND=noninteractive
 
 apt update
@@ -367,7 +366,3 @@ cat <<'EOF' > /etc/cron.d/traffic-gen
 EOF
 
 crontab /etc/cron.d/traffic-gen
-
-end=$(date +%s)
-elapsed=$(( end - start ))
-echo "Completed in $((elapsed/60))m $((elapsed%60))s!" | tee -a /var/log/gcp-startup.log

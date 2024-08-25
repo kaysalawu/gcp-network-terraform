@@ -111,9 +111,13 @@ locals {
       ["127.0.0.0/8", "35.199.192.0/19", "fd00::/8", ]
     )
   }
+  app_init_vars = {
+    health_check_path     = local.uhc_config.request_path
+    health_check_response = local.uhc_config.response
+  }
   vm_init_files = {
-    "${local.init_dir}/fastapi/docker-compose-app1-80.yml"   = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/fastapi/docker-compose-app1-80.yml", {}) }
-    "${local.init_dir}/fastapi/docker-compose-app2-8080.yml" = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/fastapi/docker-compose-app2-8080.yml", {}) }
+    "${local.init_dir}/fastapi/docker-compose-http-80.yml"   = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/fastapi/docker-compose-http-80.yml", {}) }
+    "${local.init_dir}/fastapi/docker-compose-http-8080.yml" = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/fastapi/docker-compose-http-8080.yml", {}) }
     "${local.init_dir}/fastapi/app/app/Dockerfile"           = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/fastapi/app/app/Dockerfile", {}) }
     "${local.init_dir}/fastapi/app/app/_app.py"              = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/fastapi/app/app/_app.py", {}) }
     "${local.init_dir}/fastapi/app/app/main.py"              = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/fastapi/app/app/main.py", {}) }
@@ -149,8 +153,8 @@ module "vm_cloud_init" {
   ]
   run_commands = [
     ". ${local.init_dir}/init/startup.sh",
-    "docker-compose -f ${local.init_dir}/fastapi/docker-compose-app1-80.yml up -d",
-    "docker-compose -f ${local.init_dir}/fastapi/docker-compose-app2-8080.yml up -d",
+    "HOSTNAME=$(hostname) docker-compose -f ${local.init_dir}/fastapi/docker-compose-http-80.yml up -d",
+    "HOSTNAME=$(hostname) docker-compose -f ${local.init_dir}/fastapi/docker-compose-http-8080.yml up -d",
   ]
 }
 
@@ -165,8 +169,8 @@ module "probe_vm_cloud_init" {
   ]
   run_commands = [
     ". ${local.init_dir}/init/startup.sh",
-    "docker-compose -f ${local.init_dir}/fastapi/docker-compose-app1-80.yml up -d",
-    "docker-compose -f ${local.init_dir}/fastapi/docker-compose-app2-8080.yml up -d",
+    "HOSTNAME=$(hostname) docker-compose -f ${local.init_dir}/fastapi/docker-compose-http-80.yml up -d",
+    "HOSTNAME=$(hostname) docker-compose -f ${local.init_dir}/fastapi/docker-compose-http-8080.yml up -d",
   ]
 }
 
@@ -231,7 +235,7 @@ locals {
     { hosts = [local.spoke2_us_psc_https_ctrl_run_dns], class = "IN", ttl = "3600", type = "A", rdata = local.spoke2_us_ilb7_addr },
   ]
   onprem_forward_zones = [
-    { zone = "gcp.", targets = [local.hub_eu_ns_addr, local.hub_us_ns_addr] },
+    { zone = "${local.cloud_domain}.", targets = [local.hub_eu_ns_addr, local.hub_us_ns_addr] },
     { zone = "${local.hub_psc_api_fr_name}.p.googleapis.com", targets = [local.hub_eu_ns_addr, local.hub_us_ns_addr] },
     { zone = ".", targets = ["8.8.8.8", "8.8.4.4"] },
   ]

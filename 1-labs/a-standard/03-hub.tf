@@ -49,7 +49,7 @@ resource "google_compute_address" "hub_eu_main_addresses" {
   name         = each.key
   subnetwork   = module.hub_vpc.subnet_ids["${local.hub_eu_region}/eu-main"]
   address_type = "INTERNAL"
-  address      = each.value.addr
+  address      = each.value.ipv4
   region       = local.hub_eu_region
 }
 
@@ -59,7 +59,7 @@ resource "google_compute_address" "hub_us_main_addresses" {
   name         = each.key
   subnetwork   = module.hub_vpc.subnet_ids["${local.hub_us_region}/us-main"]
   address_type = "INTERNAL"
-  address      = each.value.addr
+  address      = each.value.ipv4
   region       = local.hub_us_region
 }
 
@@ -301,41 +301,39 @@ module "dns-policy" {
 module "hub_dns_psc" {
   source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
   project_id  = var.project_id_hub
-  type        = "private"
   name        = "${local.hub_prefix}psc"
   description = "psc"
-
   zone_config = {
     domain = "${local.hub_psc_api_fr_name}.p.googleapis.com."
     private = {
-      client_networks = [
-        module.hub_vpc.self_link,
-      ]
+      client_networks = [module.hub_vpc.self_link, ]
     }
   }
   recordsets = {
-    "A localhost" = { records = ["127.0.0.1"] }
-    "A myhost"    = { ttl = 600, records = ["10.0.0.120"] }
+    "A " = { ttl = 300, records = [local.hub_psc_api_fr_addr] }
   }
   depends_on = [
-    time_sleep.hub_dns_forward_to_dns_wait
+    time_sleep.hub_dns_forward_to_dns_wait,
   ]
 }
 
 # onprem zone
-/*
+
 module "hub_dns_forward_to_onprem" {
   source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
   project_id  = var.project_id_hub
-  type        = "forwarding"
   name        = "${local.hub_prefix}to-onprem"
-  domain      = "${local.onprem_domain}."
   description = "local data"
-  forwarders = {
-    (local.hub_eu_ns_addr) = "private"
-    (local.hub_us_ns_addr) = "private"
+  zone_config = {
+    domain = "${local.onprem_domain}."
+    forwarding = {
+      client_networks = [module.hub_vpc.self_link, ]
+      forwarders = {
+        (local.hub_eu_ns_addr) = "private"
+        (local.hub_us_ns_addr) = "private"
+      }
+    }
   }
-  client_networks = [module.hub_vpc.self_link]
 }
 
 # local zone
@@ -343,14 +341,17 @@ module "hub_dns_forward_to_onprem" {
 module "hub_dns_private_zone" {
   source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
   project_id  = var.project_id_hub
-  type        = "private"
   name        = "${local.hub_prefix}private"
-  domain      = "${local.hub_domain}.${local.cloud_domain}."
   description = "local data"
-  client_networks = [
-    module.hub_vpc.self_link,
-  ]
+  zone_config = {
+    domain = "${local.hub_dns_zone}."
+    private = {
+      client_networks = [module.hub_vpc.self_link, ]
+    }
+  }
   recordsets = {
+    "A ${local.hub_eu_vm_dns_prefix}"   = { ttl = 300, records = [local.hub_eu_vm_addr] },
+    "A ${local.hub_us_vm_dns_prefix}"   = { ttl = 300, records = [local.hub_us_vm_addr] },
     "A ${local.hub_eu_ilb4_dns_prefix}" = { ttl = 300, records = [local.hub_eu_ilb4_addr] },
     "A ${local.hub_us_ilb4_dns_prefix}" = { ttl = 300, records = [local.hub_us_ilb4_addr] },
     "A ${local.hub_eu_ilb7_dns_prefix}" = { ttl = 300, records = [local.hub_eu_ilb7_addr] },
@@ -358,218 +359,194 @@ module "hub_dns_private_zone" {
   }
 }
 
-# sd zone
-
-module "hub_sd_td" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
-  project_id  = var.project_id_hub
-  type        = "service-directory"
-  name        = "${local.hub_prefix}sd-td"
-  domain      = "${local.hub_td_domain}."
-  description = google_service_directory_namespace.hub_td.id
-  client_networks = [
-    module.hub_vpc.self_link,
-  ]
-  service_directory_namespace = google_service_directory_namespace.hub_td.id
-}
-
-module "hub_sd_psc" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
-  project_id  = var.project_id_hub
-  type        = "service-directory"
-  name        = "${local.hub_prefix}sd-psc"
-  domain      = "${local.hub_psc_domain}."
-  description = google_service_directory_namespace.hub_psc.id
-  client_networks = [
-    module.hub_vpc.self_link,
-  ]
-  service_directory_namespace = google_service_directory_namespace.hub_psc.id
-}
-
 # ilb4 - eu
 #---------------------------------
 
 # instance
 
-resource "google_compute_instance" "hub_eu_ilb4_vm" {
-  project      = var.project_id_hub
-  name         = "${local.hub_prefix}eu-ilb4-vm"
-  zone         = "${local.hub_eu_region}-b"
-  machine_type = var.machine_type
-  tags         = [local.tag_ssh, local.tag_gfe]
-  boot_disk {
-    initialize_params {
-      image = var.image_ubuntu
-      size  = var.disk_size
-      type  = var.disk_type
-    }
-  }
-  network_interface {
+module "hub_eu_vm" {
+  source     = "../../modules/compute-vm"
+  project_id = var.project_id_hub
+  name       = "${local.hub_prefix}eu-vm"
+  zone       = "${local.hub_eu_region}-b"
+  tags       = [local.tag_ssh, local.tag_gfe]
+  network_interfaces = [{
     network    = module.hub_vpc.self_link
     subnetwork = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
-  }
-  service_account {
+    addresses  = { internal = local.hub_eu_vm_addr }
+  }]
+  service_account = {
     email  = module.hub_sa.email
     scopes = ["cloud-platform"]
   }
-  metadata_startup_script   = local.vm_startup
-  allow_stopping_for_update = true
+  metadata = {
+    user-data = module.vm_cloud_init.cloud_config
+  }
 }
 
-# # instance group
+# instance group
 
-# resource "google_compute_instance_group" "hub_eu_ilb4_ig" {
-#   project   = var.project_id_hub
-#   zone      = "${local.hub_eu_region}-b"
-#   name      = "${local.hub_prefix}eu-ilb4-ig"
-#   instances = [google_compute_instance.hub_eu_ilb4_vm.self_link]
-#   named_port {
-#     name = local.svc_web.name
-#     port = local.svc_web.port
-#   }
-# }
+resource "google_compute_instance_group" "hub_eu_ilb4_ig" {
+  project = var.project_id_hub
+  zone    = "${local.hub_eu_region}-b"
+  name    = "${local.hub_prefix}eu-ilb4-ig"
+  instances = [
+    module.hub_eu_vm.self_link,
+  ]
+  named_port {
+    name = local.svc_web.name
+    port = local.svc_web.port
+  }
+}
 
-# # ilb4
+# ilb4
 
-# module "hub_eu_ilb4" {
-#   source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-ilb?ref=v33.0.0"
-#   project_id    = var.project_id_hub
-#   region        = local.hub_eu_region
-#   name          = "${local.hub_prefix}eu-ilb4"
-#   service_label = "${local.hub_prefix}eu-ilb4"
-#   network       = module.hub_vpc.self_link
-#   subnetwork    = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
-#   address       = local.hub_eu_ilb4_addr
-#   backends = [{
-#     failover       = false
-#     group          = google_compute_instance_group.hub_eu_ilb4_ig.self_link
-#     balancing_mode = "CONNECTION"
-#   }]
-#   health_check_config = {
-#     type    = "http"
-#     config  = {}
-#     logging = true
-#     check = {
-#       port_specification = "USE_FIXED_PORT"
-#       port               = local.svc_web.port
-#       host               = local.uhc_config.host
-#       request_path       = "/${local.uhc_config.request_path}"
-#       response           = local.uhc_config.response
-#     }
-#   }
-#   global_access = true
-# }
+module "hub_eu_ilb4" {
+  source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-int?ref=v33.0.0"
+  project_id    = var.project_id_hub
+  region        = local.hub_eu_region
+  name          = "${local.hub_prefix}eu-ilb4"
+  service_label = "${local.hub_prefix}eu-ilb4"
+
+  vpc_config = {
+    network    = module.hub_vpc.self_link
+    subnetwork = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
+  }
+  forwarding_rules_config = {
+    fr = {
+      address  = local.hub_eu_ilb4_addr
+      target   = google_compute_instance_group.hub_eu_ilb4_ig.self_link
+      protocol = "L3_DEFAULT"
+    }
+  }
+  backends = [{
+    failover = false
+    group    = google_compute_instance_group.hub_eu_ilb4_ig.self_link
+  }]
+  health_check_config = {
+    http = {
+      host               = local.uhc_config.host
+      port               = local.svc_web.port
+      port_specification = "USE_FIXED_PORT"
+      request_path       = "/${local.uhc_config.request_path}"
+      response           = local.uhc_config.response
+    }
+    enable_logging = true
+  }
+}
 
 # ilb4: hub-us
 #---------------------------------
 
 # instance
 
-resource "google_compute_instance" "hub_us_ilb4_vm" {
-  project      = var.project_id_hub
-  name         = "${local.hub_prefix}us-ilb4-vm"
-  zone         = "${local.hub_us_region}-b"
-  machine_type = var.machine_type
-  tags         = [local.tag_ssh, local.tag_gfe]
-  boot_disk {
-    initialize_params {
-      image = var.image_ubuntu
-      size  = var.disk_size
-      type  = var.disk_type
-    }
-  }
-  network_interface {
+module "hub_us_vm" {
+  source     = "../../modules/compute-vm"
+  project_id = var.project_id_hub
+  name       = "${local.hub_prefix}us-vm"
+  zone       = "${local.hub_us_region}-b"
+  tags       = [local.tag_ssh, local.tag_gfe]
+  network_interfaces = [{
     network    = module.hub_vpc.self_link
     subnetwork = module.hub_vpc.subnet_self_links["${local.hub_us_region}/us-main"]
-  }
-  service_account {
+    addresses  = { internal = local.hub_us_vm_addr }
+  }]
+  service_account = {
     email  = module.hub_sa.email
     scopes = ["cloud-platform"]
   }
-  metadata_startup_script   = local.vm_startup
-  allow_stopping_for_update = true
+  metadata = {
+    user-data = module.vm_cloud_init.cloud_config
+  }
 }
 
-# # instance group
+# instance group
 
-# resource "google_compute_instance_group" "hub_us_ilb4_ig" {
-#   project   = var.project_id_hub
-#   zone      = "${local.hub_us_region}-b"
-#   name      = "${local.hub_prefix}us-ilb4-ig"
-#   instances = [google_compute_instance.hub_us_ilb4_vm.self_link]
-#   named_port {
-#     name = local.svc_web.name
-#     port = local.svc_web.port
-#   }
-# }
+resource "google_compute_instance_group" "hub_us_ilb4_ig" {
+  project = var.project_id_hub
+  zone    = "${local.hub_us_region}-b"
+  name    = "${local.hub_prefix}us-ilb4-ig"
+  instances = [
+    module.hub_us_vm.self_link,
+  ]
+  named_port {
+    name = local.svc_web.name
+    port = local.svc_web.port
+  }
+}
 
-# # ilb4
+# ilb4
 
-# module "hub_us_ilb4" {
-#   source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-ilb?ref=v33.0.0"
-#   project_id    = var.project_id_hub
-#   region        = local.hub_us_region
-#   name          = "${local.hub_prefix}us-ilb4"
-#   service_label = "${local.hub_prefix}us-ilb4"
-#   network       = module.hub_vpc.self_link
-#   subnetwork    = module.hub_vpc.subnet_self_links["${local.hub_us_region}/us-main"]
-#   address       = local.hub_us_ilb4_addr
-#   backends = [{
-#     failover       = false
-#     group          = google_compute_instance_group.hub_us_ilb4_ig.self_link
-#     balancing_mode = "CONNECTION"
-#   }]
-#   health_check_config = {
-#     type    = "http"
-#     config  = {}
-#     logging = true
-#     check = {
-#       port_specification = "USE_FIXED_PORT"
-#       port               = local.svc_web.port
-#       host               = local.uhc_config.host
-#       request_path       = "/${local.uhc_config.request_path}"
-#       response           = local.uhc_config.response
-#     }
-#   }
-#   global_access = true
-# }
+module "hub_us_ilb4" {
+  source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-int?ref=v33.0.0"
+  project_id    = var.project_id_hub
+  region        = local.hub_us_region
+  name          = "${local.hub_prefix}us-ilb4"
+  service_label = "${local.hub_prefix}us-ilb4"
+
+  vpc_config = {
+    network    = module.hub_vpc.self_link
+    subnetwork = module.hub_vpc.subnet_self_links["${local.hub_us_region}/us-main"]
+  }
+  forwarding_rules_config = {
+    fr = {
+      address  = local.hub_us_ilb4_addr
+      target   = google_compute_instance_group.hub_us_ilb4_ig.self_link
+      protocol = "L3_DEFAULT"
+    }
+  }
+  backends = [{
+    failover = false
+    group    = google_compute_instance_group.hub_us_ilb4_ig.self_link
+  }]
+  health_check_config = {
+    http = {
+      host               = local.uhc_config.host
+      port               = local.svc_web.port
+      port_specification = "USE_FIXED_PORT"
+      request_path       = "/${local.uhc_config.request_path}"
+      response           = local.uhc_config.response
+    }
+    enable_logging = true
+  }
+}
 
 # ilb7: hub-eu
 #---------------------------------
 
-locals {
-  hub_eu_ilb7_domains = [
-    "${local.hub_eu_ilb7_dns_prefix}.${local.hub_domain}.${local.cloud_domain}",
-    local.hub_eu_psc_https_ctrl_run_dns
-  ]
-}
+# locals {
+#   hub_eu_ilb7_domains = [
+#     "${local.hub_eu_ilb7_dns_prefix}.${local.hub_domain}.${local.cloud_domain}",
+#     local.hub_eu_psc_https_ctrl_run_dns
+#   ]
+# }
 
-# instance
+# # instance
 
-resource "google_compute_instance" "hub_eu_ilb7_vm" {
-  project      = var.project_id_hub
-  name         = "${local.hub_prefix}eu-ilb7-vm"
-  zone         = "${local.hub_eu_region}-b"
-  machine_type = var.machine_type
-  tags         = [local.tag_ssh, local.tag_gfe]
-  boot_disk {
-    initialize_params {
-      image = var.image_ubuntu
-      size  = var.disk_size
-      type  = var.disk_type
-    }
-  }
-  network_interface {
-    network    = module.hub_vpc.self_link
-    subnetwork = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
-  }
-  service_account {
-    email  = module.hub_sa.email
-    scopes = ["cloud-platform"]
-  }
-  metadata_startup_script   = local.vm_startup
-  allow_stopping_for_update = true
-}
+# resource "google_compute_instance" "hub_eu_ilb7_vm" {
+#   project      = var.project_id_hub
+#   name         = "${local.hub_prefix}eu-ilb7-vm"
+#   zone         = "${local.hub_eu_region}-b"
+#   machine_type = var.machine_type
+#   tags         = [local.tag_ssh, local.tag_gfe]
+#   boot_disk {
+#     initialize_params {
+#       image = var.image_ubuntu
+#       size  = var.disk_size
+#       type  = var.disk_type
+#     }
+#   }
+#   network_interface {
+#     network    = module.hub_vpc.self_link
+#     subnetwork = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
+#   }
+#   service_account {
+#     email  = module.hub_sa.email
+#     scopes = ["cloud-platform"]
+#   }
+#   metadata_startup_script   = local.vm_startup
+#   allow_stopping_for_update = true
+# }
 
 # # ig
 
@@ -720,39 +697,39 @@ resource "google_compute_instance" "hub_eu_ilb7_vm" {
 # ilb7: hub-us
 #---------------------------------
 
-locals {
-  hub_us_ilb7_domains = [
-    "${local.hub_us_ilb7_dns_prefix}.${local.hub_domain}.${local.cloud_domain}",
-    local.hub_us_psc_https_ctrl_run_dns
-  ]
-}
+# locals {
+#   hub_us_ilb7_domains = [
+#     "${local.hub_us_ilb7_dns_prefix}.${local.hub_domain}.${local.cloud_domain}",
+#     local.hub_us_psc_https_ctrl_run_dns
+#   ]
+# }
 
-# instance
+# # instance
 
-resource "google_compute_instance" "hub_us_ilb7_vm" {
-  project      = var.project_id_hub
-  name         = "${local.hub_prefix}us-ilb7-vm"
-  zone         = "${local.hub_us_region}-b"
-  machine_type = var.machine_type
-  tags         = [local.tag_ssh, local.tag_gfe]
-  boot_disk {
-    initialize_params {
-      image = var.image_ubuntu
-      size  = var.disk_size
-      type  = var.disk_type
-    }
-  }
-  network_interface {
-    network    = module.hub_vpc.self_link
-    subnetwork = module.hub_vpc.subnet_self_links["${local.hub_us_region}/us-main"]
-  }
-  service_account {
-    email  = module.hub_sa.email
-    scopes = ["cloud-platform"]
-  }
-  metadata_startup_script   = local.vm_startup
-  allow_stopping_for_update = true
-}
+# resource "google_compute_instance" "hub_us_ilb7_vm" {
+#   project      = var.project_id_hub
+#   name         = "${local.hub_prefix}us-ilb7-vm"
+#   zone         = "${local.hub_us_region}-b"
+#   machine_type = var.machine_type
+#   tags         = [local.tag_ssh, local.tag_gfe]
+#   boot_disk {
+#     initialize_params {
+#       image = var.image_ubuntu
+#       size  = var.disk_size
+#       type  = var.disk_type
+#     }
+#   }
+#   network_interface {
+#     network    = module.hub_vpc.self_link
+#     subnetwork = module.hub_vpc.subnet_self_links["${local.hub_us_region}/us-main"]
+#   }
+#   service_account {
+#     email  = module.hub_sa.email
+#     scopes = ["cloud-platform"]
+#   }
+#   metadata_startup_script   = local.vm_startup
+#   allow_stopping_for_update = true
+# }
 
 # # ig
 
@@ -915,4 +892,3 @@ resource "local_file" "hub_files" {
   filename = each.key
   content  = each.value
 }
-*/

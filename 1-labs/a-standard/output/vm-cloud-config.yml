@@ -28,20 +28,33 @@ write_files:
       
       router = APIRouter()
       
-      hostname = socket.gethostname()
-      ipv4_address = socket.gethostbyname(hostname)
+      def get_ipv4_address():
+          try:
+              with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                  s.connect(('8.8.8.8', 80))
+                  return s.getsockname()[0]
+          except Exception:
+              return "NotFound"
       
-      try:
-          ipv6_address = socket.getaddrinfo(hostname, None, socket.AF_INET6)[0][4][0]
-      except socket.gaierror:
-          ipv6_address = "NotFound"
+      def get_ipv6_address():
+          try:
+              with socket.socket(socket.AF_INET6, socket.SOCK_DGRAM) as s:
+                  s.connect(('2001:4860:4860::8888', 80))
+                  return s.getsockname()[0]
+          except Exception:
+              return "NotFound"
+      
+      hostname = socket.gethostname()
+      ipv4_address = get_ipv4_address()
+      ipv6_address = get_ipv6_address()
       
       def generate_data_dict(app_name, request):
           return {
               'app': app_name,
-              'hostname': os.getenv('HOST_HOSTNAME', hostname),
-              'server-ipv4': os.getenv('HOST_IPV4', ipv4_address),
-              'server-ipv6': os.getenv('HOST_IPV6', ipv6_address),
+              'hostname': os.getenv('HOST_HOSTNAME', 'Unknown'),
+              'c-hostname': hostname,
+              'ipv4': os.getenv('HOST_IPV4', ipv4_address),
+              'ipv6': os.getenv('HOST_IPV6', ipv6_address),
               'remote-addr': request.client.host,
               'headers': dict(request.headers)
           }
@@ -113,48 +126,58 @@ write_files:
       fastapi==0.105.0
       uvicorn==0.25.0
       
-  - path: /var/lib/gcp/fastapi/docker-compose-app1-80.yml
+  - path: /var/lib/gcp/fastapi/docker-compose-http-80.yml
     owner: root
     permissions: 0744
     content: |
-      version: '3'
       services:
-        app1-80:
-          container_name: app1-80
+        http-80:
+          container_name: http-80
+          hostname: -DCK-http-80
           build:
             context: ./app/app
             dockerfile: Dockerfile
+          environment:
+            HOST_HOSTNAME: ${HOSTNAME}
           network_mode: host
           command: uvicorn main:app --host '0.0.0.0' --port 80
           restart: always
-        app1-ipv6-80:
-          container_name: app1-ipv6-80
+        http-ipv6-80:
+          container_name: http-ipv6-80
+          hostname: -DCK-http-ipv6-80
           build:
             context: ./app/app
             dockerfile: Dockerfile
+          environment:
+            HOST_HOSTNAME: ${HOSTNAME}
           network_mode: host
           command: uvicorn main:app --host '::' --port 80
           restart: always
       
-  - path: /var/lib/gcp/fastapi/docker-compose-app2-8080.yml
+  - path: /var/lib/gcp/fastapi/docker-compose-http-8080.yml
     owner: root
     permissions: 0744
     content: |
-      version: '3'
       services:
-        app2-8080:
-          container_name: app2-8080
+        http-8080:
+          container_name: http-8080
+          hostname: -DCK-http-8080
           build:
             context: ./app/app
             dockerfile: Dockerfile
+          environment:
+            HOST_HOSTNAME: ${HOSTNAME}
           network_mode: host
           command: uvicorn main:app --host '0.0.0.0' --port 8080
           restart: always
-        app2-ipv6-8080:
-          container_name: app2-ipv6-8080
+        http-ipv6-8080:
+          container_name: http-ipv6-8080
+          hostname: -DCK-http-ipv6-8080
           build:
             context: ./app/app
             dockerfile: Dockerfile
+          environment:
+            HOST_HOSTNAME: ${HOSTNAME}
           network_mode: host
           command: uvicorn main:app --host '::' --port 8080
           restart: always
@@ -165,8 +188,7 @@ write_files:
     content: |
       #! /bin/bash
       
-      start_time=$(date +%s)
-      exec > /var/log/gcp-startup.log
+      exec > /var/log/gcp-startup.log 2>&1
       export DEBIAN_FRONTEND=noninteractive
       
       apt update
@@ -533,12 +555,8 @@ write_files:
       
       crontab /etc/cron.d/traffic-gen
       
-      end=$(date +%s)
-      elapsed=$(( end - start ))
-      echo "Completed in $((elapsed/60))m $((elapsed%60))s!" | tee -a /var/log/gcp-startup.log
-      
 
 runcmd:
   - . /var/lib/gcp/init/startup.sh
-  - docker-compose -f /var/lib/gcp/fastapi/docker-compose-app1-80.yml up -d
-  - docker-compose -f /var/lib/gcp/fastapi/docker-compose-app2-8080.yml up -d
+  - HOSTNAME=$(hostname) docker-compose -f /var/lib/gcp/fastapi/docker-compose-http-80.yml up -d
+  - HOSTNAME=$(hostname) docker-compose -f /var/lib/gcp/fastapi/docker-compose-http-8080.yml up -d

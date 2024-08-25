@@ -108,30 +108,23 @@ locals {
 
 # unbound instance
 
-resource "google_compute_instance" "site2_dns" {
-  project      = var.project_id_onprem
-  name         = "${local.site2_prefix}dns"
-  machine_type = var.machine_type
-  zone         = "${local.site2_region}-b"
-  tags         = [local.tag_dns, local.tag_ssh]
-  boot_disk {
-    initialize_params {
-      image = var.image_ubuntu
-      type  = var.disk_type
-      size  = var.disk_size
-    }
-  }
-  network_interface {
+module "site2_dns" {
+  source     = "../../modules/compute-vm"
+  project_id = var.project_id_onprem
+  name       = "${local.site2_prefix}dns"
+  zone       = "${local.site2_region}-b"
+  tags       = [local.tag_dns, local.tag_ssh]
+
+  network_interfaces = [{
     network    = module.site2_vpc.self_link
     subnetwork = module.site2_vpc.subnet_self_links["${local.site2_region}/main"]
-    network_ip = local.site2_ns_addr
-  }
-  service_account {
+    addresses  = { internal = local.site2_ns_addr }
+  }]
+  service_account = {
     email  = module.site2_sa.email
     scopes = ["cloud-platform"]
   }
-  metadata_startup_script   = local.site2_unbound_startup
-  allow_stopping_for_update = true
+  metadata_startup_script = local.site2_unbound_startup
 }
 
 # cloud dns
@@ -139,7 +132,7 @@ resource "google_compute_instance" "site2_dns" {
 
 resource "time_sleep" "site2_dns_forward_to_dns_wait_120s" {
   create_duration = "120s"
-  depends_on      = [google_compute_instance.site2_dns]
+  depends_on      = [module.site2_dns, ]
 }
 
 module "site2_dns_forward_to_dns" {
@@ -174,9 +167,7 @@ module "site2_vm" {
   network_interfaces = [{
     network    = module.site2_vpc.self_link
     subnetwork = module.site2_vpc.subnet_self_links["${local.site2_region}/main"]
-    addresses = {
-      internal = local.site2_vm_addr
-    }
+    addresses  = { internal = local.site2_vm_addr }
   }]
   service_account = {
     email  = module.site2_sa.email

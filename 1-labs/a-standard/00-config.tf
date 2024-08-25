@@ -33,7 +33,28 @@ locals {
     internal = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10", ]
   }
 
-  uhc_config     = { host = "probe.${local.cloud_domain}", request_path = "healthz", response = "pass" }
+  bgp_range1 = "169.254.101.0/30"
+  bgp_range2 = "169.254.102.0/30"
+  bgp_range3 = "169.254.103.0/30"
+  bgp_range4 = "169.254.104.0/30"
+  bgp_range5 = "169.254.105.0/30"
+  bgp_range6 = "169.254.106.0/30"
+  bgp_range7 = "169.254.107.0/30"
+  bgp_range8 = "169.254.108.0/30"
+
+  gre_range1 = "172.16.1.0/24"
+  gre_range2 = "172.16.2.0/24"
+  gre_range3 = "172.16.3.0/24"
+  gre_range4 = "172.16.4.0/24"
+  gre_range5 = "172.16.5.0/24"
+  gre_range6 = "172.16.6.0/24"
+  gre_range7 = "172.16.7.0/24"
+  gre_range8 = "172.16.8.0/24"
+
+  image_vyos  = "https://www.googleapis.com/compute/v1/projects/sentrium-public/global/images/vyos-1-3-0"
+  image_panos = "https://www.googleapis.com/compute/v1/projects/paloaltonetworksgcp-public/global/images/vmseries-bundle1-810"
+
+  uhc_config     = { host = "probe.${local.cloud_domain}", request_path = "healthz", response = "OK" }
   uhc_pan_config = { host = "google-hc-host" }
   svc_web        = { name = "http8080", port = 80 }
   svc_juice      = { name = "http3000", port = 3000 }

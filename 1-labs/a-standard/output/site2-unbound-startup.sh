@@ -61,7 +61,7 @@ server:
         local-data: "us-west2-run.googleapis.com 3600 IN A 10.22.21.40"
 
 forward-zone:
-        name: "gcp."
+        name: "g.corp."
         forward-addr: 10.1.11.40
         forward-addr: 10.1.21.40
 

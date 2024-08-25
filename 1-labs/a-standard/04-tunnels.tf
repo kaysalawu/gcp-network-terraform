@@ -125,7 +125,7 @@ module "vpn_hub_eu_to_site1" {
   tunnels = {
     t0 = {
       bgp_peer = {
-        address = cidrhost(var.bgp_range.cidr1, 1)
+        address = cidrhost(local.bgp_range1, 1)
         asn     = local.site1_asn
         custom_advertise = {
           route_priority = 100
@@ -133,7 +133,7 @@ module "vpn_hub_eu_to_site1" {
           ip_ranges      = local.advertised_prefixes.hub_to_site1
         }
       }
-      bgp_session_range     = "${cidrhost(var.bgp_range.cidr1, 2)}/30"
+      bgp_session_range     = "${cidrhost(local.bgp_range1, 2)}/30"
       ike_version           = 2
       vpn_gateway_interface = 0
       router                = google_compute_router.hub_eu_vpn_cr.name
@@ -141,7 +141,7 @@ module "vpn_hub_eu_to_site1" {
     }
     t1 = {
       bgp_peer = {
-        address = cidrhost(var.bgp_range.cidr2, 1)
+        address = cidrhost(local.bgp_range2, 1)
         asn     = local.site1_asn
         custom_advertise = {
           route_priority = 100
@@ -149,7 +149,7 @@ module "vpn_hub_eu_to_site1" {
           ip_ranges      = local.advertised_prefixes.hub_to_site1
         }
       }
-      bgp_session_range     = "${cidrhost(var.bgp_range.cidr2, 2)}/30"
+      bgp_session_range     = "${cidrhost(local.bgp_range2, 2)}/30"
       ike_version           = 2
       vpn_gateway_interface = 1
       router                = google_compute_router.hub_eu_vpn_cr.name
@@ -180,7 +180,7 @@ module "vpn_site1_to_hub_eu" {
   tunnels = {
     t0 = {
       bgp_peer = {
-        address = cidrhost(var.bgp_range.cidr1, 2)
+        address = cidrhost(local.bgp_range1, 2)
         asn     = local.hub_eu_vpn_cr_asn
         custom_advertise = {
           route_priority = 100
@@ -188,7 +188,7 @@ module "vpn_site1_to_hub_eu" {
           ip_ranges      = local.advertised_prefixes.site1_to_hub
         }
       }
-      bgp_session_range     = "${cidrhost(var.bgp_range.cidr1, 1)}/30"
+      bgp_session_range     = "${cidrhost(local.bgp_range1, 1)}/30"
       ike_version           = 2
       vpn_gateway_interface = 0
       router                = google_compute_router.site1_vpn_cr.name
@@ -196,7 +196,7 @@ module "vpn_site1_to_hub_eu" {
     }
     t1 = {
       bgp_peer = {
-        address = cidrhost(var.bgp_range.cidr2, 2)
+        address = cidrhost(local.bgp_range2, 2)
         asn     = local.hub_eu_vpn_cr_asn
         custom_advertise = {
           route_priority = 100
@@ -204,7 +204,7 @@ module "vpn_site1_to_hub_eu" {
           ip_ranges      = local.advertised_prefixes.site1_to_hub
         }
       }
-      bgp_session_range     = "${cidrhost(var.bgp_range.cidr2, 1)}/30"
+      bgp_session_range     = "${cidrhost(local.bgp_range2, 1)}/30"
       ike_version           = 2
       vpn_gateway_interface = 1
       router                = google_compute_router.site1_vpn_cr.name
@@ -237,7 +237,7 @@ module "vpn_hub_us_to_site2" {
   tunnels = {
     t0 = {
       bgp_peer = {
-        address = cidrhost(var.bgp_range.cidr3, 1)
+        address = cidrhost(local.bgp_range3, 1)
         asn     = local.site2_asn
         custom_advertise = {
           route_priority = 100
@@ -245,14 +245,14 @@ module "vpn_hub_us_to_site2" {
           ip_ranges      = local.advertised_prefixes.hub_to_site2
         }
       }
-      bgp_session_range     = "${cidrhost(var.bgp_range.cidr3, 2)}/30"
+      bgp_session_range     = "${cidrhost(local.bgp_range3, 2)}/30"
       vpn_gateway_interface = 0
       router                = google_compute_router.hub_us_vpn_cr.name
       shared_secret         = local.psk
     }
     t1 = {
       bgp_peer = {
-        address = cidrhost(var.bgp_range.cidr4, 1)
+        address = cidrhost(local.bgp_range4, 1)
         asn     = local.site2_asn
         custom_advertise = {
           route_priority = 100
@@ -260,7 +260,7 @@ module "vpn_hub_us_to_site2" {
           ip_ranges      = local.advertised_prefixes.hub_to_site2
         }
       }
-      bgp_session_range     = "${cidrhost(var.bgp_range.cidr4, 2)}/30"
+      bgp_session_range     = "${cidrhost(local.bgp_range4, 2)}/30"
       vpn_gateway_interface = 1
       router                = google_compute_router.hub_us_vpn_cr.name
       shared_secret         = local.psk
@@ -290,7 +290,7 @@ module "vpn_site2_to_hub_us" {
   tunnels = {
     t0 = {
       bgp_peer = {
-        address = cidrhost(var.bgp_range.cidr3, 2)
+        address = cidrhost(local.bgp_range3, 2)
         asn     = local.hub_us_vpn_cr_asn
         custom_advertise = {
           route_priority = 100
@@ -298,14 +298,14 @@ module "vpn_site2_to_hub_us" {
           ip_ranges      = local.advertised_prefixes.site2_to_hub
         }
       }
-      bgp_session_range     = "${cidrhost(var.bgp_range.cidr3, 1)}/30"
+      bgp_session_range     = "${cidrhost(local.bgp_range3, 1)}/30"
       vpn_gateway_interface = 0
       router                = google_compute_router.site2_vpn_cr.name
       shared_secret         = local.psk
     }
     t1 = {
       bgp_peer = {
-        address = cidrhost(var.bgp_range.cidr4, 2)
+        address = cidrhost(local.bgp_range4, 2)
         asn     = local.hub_us_vpn_cr_asn
         custom_advertise = {
           route_priority = 100
@@ -313,7 +313,7 @@ module "vpn_site2_to_hub_us" {
           ip_ranges      = local.advertised_prefixes.site2_to_hub
         }
       }
-      bgp_session_range     = "${cidrhost(var.bgp_range.cidr4, 1)}/30"
+      bgp_session_range     = "${cidrhost(local.bgp_range4, 1)}/30"
       vpn_gateway_interface = 1
       router                = google_compute_router.site2_vpn_cr.name
       shared_secret         = local.psk
