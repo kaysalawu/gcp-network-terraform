@@ -12,7 +12,7 @@ data "google_netblock_ip_ranges" "iap_forwarders" { range_type = "iap-forwarders
 
 locals {
   supernet                = "10.0.0.0/8"
-  cloud_domain            = "gcp.corp"
+  cloud_domain            = "g.corp"
   onprem_domain           = "corp"
   psk                     = "Password123"
   tag_router              = "router"
@@ -30,7 +30,7 @@ locals {
     dns      = data.google_netblock_ip_ranges.dns_forwarders.cidr_blocks_ipv4
     gfe      = data.google_netblock_ip_ranges.health_checkers.cidr_blocks_ipv4
     iap      = data.google_netblock_ip_ranges.iap_forwarders.cidr_blocks_ipv4
-    internal = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+    internal = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10", ]
   }
 
   uhc_config     = { host = "probe.${local.cloud_domain}", request_path = "healthz", response = "pass" }
@@ -58,7 +58,7 @@ locals {
   site1_region   = local.region1
   site1_supernet = "10.10.0.0/16"
   site1_domain   = "site1"
-  site1_dns_zone = local.site1_domain
+  site1_dns_zone = "${local.site1_domain}.${local.onprem_domain}"
 
   site1_subnets_list = [for k, v in local.site1_subnets : merge({ name = k }, v)]
   site1_subnets = {
@@ -90,7 +90,7 @@ locals {
   site2_supernet = "10.20.0.0/16"
   site2_domain   = "site2"
   site2_vm_dns   = "vm"
-  site2_dns_zone = local.site2_domain
+  site2_dns_zone = "${local.site2_domain}.${local.onprem_domain}"
 
   site2_subnets_list = [for k, v in local.site2_subnets : merge({ name = k }, v)]
   site2_subnets = {

@@ -88,8 +88,9 @@ variable "boot_disk" {
     source            = optional(string)
     initialize_params = optional(object({
       image = optional(string, "ubuntu-os-cloud/ubuntu-2404-lts-amd64")
-      size  = optional(number, 20)
-      type  = optional(string, "pd-balanced")
+      # image = optional(string, "ubuntu-os-cloud/ubuntu-2004-lts")
+      size = optional(number, 20)
+      type = optional(string, "pd-balanced")
     }))
     use_independent_disk = optional(bool, false)
   })
@@ -211,7 +212,7 @@ variable "instance_schedule" {
 variable "instance_type" {
   description = "Instance type."
   type        = string
-  default     = "f1-micro"
+  default     = "e2-micro"
 }
 
 variable "labels" {

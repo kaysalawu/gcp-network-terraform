@@ -46,34 +46,39 @@ resource "google_artifact_registry_repository" "us_repo" {
 
 locals {
   init_dir = "/var/lib/gcp"
+  WEB_SERVER = {
+    server_port           = local.svc_web.port
+    health_check_path     = local.uhc_config.request_path
+    health_check_response = local.uhc_config.response
+  }
   vm_script_targets_region1 = [
-    { name = "site1-vm      ", host = local.site1_vm_fqdn, ipv4 = local.site1_vm_addr, ipv6 = local.site1_vm_addr_v6, probe = false },
-    { name = "hub-eu-vm     ", host = local.hub_eu_vm_fqdn, ipv4 = local.hub_eu_vm_addr, ipv6 = local.hub_eu_vm_addr_v6, probe = false },
-    { name = "spoke1-eu-vm  ", host = local.spoke1_eu_vm_fqdn, ipv4 = local.spoke1_eu_vm_addr, ipv6 = local.spoke1_eu_vm_addr_v6, probe = false },
+    { name = "site1-vm      ", host = local.site1_vm_fqdn, ipv4 = local.site1_vm_addr, ipv6 = local.site1_vm_addr_v6, probe = true },
+    { name = "hub-eu-vm     ", host = local.hub_eu_vm_fqdn, ipv4 = local.hub_eu_vm_addr, ipv6 = local.hub_eu_vm_addr_v6, probe = true },
+    { name = "spoke1-eu-vm  ", host = local.spoke1_eu_vm_fqdn, ipv4 = local.spoke1_eu_vm_addr, ipv6 = local.spoke1_eu_vm_addr_v6, probe = true },
     { name = "spoke2-eu-vm  ", host = local.spoke2_eu_vm_fqdn, ipv4 = local.spoke2_eu_vm_addr, ipv6 = local.spoke2_eu_vm_addr_v6, probe = false },
-    { name = "hub-eu-ilb4   ", host = local.hub_eu_ilb4_fqdn, ipv4 = local.hub_eu_ilb4_addr, ipv6 = local.hub_eu_ilb4_addr_v6, probe = false },
-    { name = "hub-eu-ilb7   ", host = local.hub_eu_ilb7_fqdn, ipv4 = local.hub_eu_ilb7_addr, ipv6 = local.hub_eu_ilb7_addr_v6, probe = false },
-    { name = "spoke1-eu-ilb4", host = local.spoke1_eu_ilb4_fqdn, ipv4 = local.spoke1_eu_ilb4_addr, ipv6 = local.spoke1_eu_ilb4_addr_v6, probe = false },
-    { name = "spoke1-eu-ilb7", host = local.spoke1_eu_ilb7_fqdn, ipv4 = local.spoke1_eu_ilb7_addr, ipv6 = local.spoke1_eu_ilb7_addr_v6, probe = false },
+    { name = "hub-eu-ilb4   ", host = local.hub_eu_ilb4_fqdn, ipv4 = local.hub_eu_ilb4_addr, ipv6 = local.hub_eu_ilb4_addr_v6, probe = true },
+    { name = "hub-eu-ilb7   ", host = local.hub_eu_ilb7_fqdn, ipv4 = local.hub_eu_ilb7_addr, ipv6 = local.hub_eu_ilb7_addr_v6, probe = true },
+    { name = "spoke1-eu-ilb4", host = local.spoke1_eu_ilb4_fqdn, ipv4 = local.spoke1_eu_ilb4_addr, ipv6 = local.spoke1_eu_ilb4_addr_v6, probe = true },
+    { name = "spoke1-eu-ilb7", host = local.spoke1_eu_ilb7_fqdn, ipv4 = local.spoke1_eu_ilb7_addr, ipv6 = local.spoke1_eu_ilb7_addr_v6, probe = true },
   ]
   vm_script_targets_region2 = [
-    { name = "site2-vm      ", host = local.site2_vm_fqdn, ipv4 = local.site2_vm_addr, ipv6 = local.site2_vm_addr_v6, probe = false },
-    { name = "hub-us-vm     ", host = local.hub_us_vm_fqdn, ipv4 = local.hub_us_vm_addr, ipv6 = local.hub_us_vm_addr_v6, probe = false },
-    { name = "spoke2-us-vm  ", host = local.spoke2_us_vm_fqdn, ipv4 = local.spoke2_us_vm_addr, ipv6 = local.spoke2_us_vm_addr_v6, probe = false },
-    { name = "hub-us-ilb4   ", host = local.hub_us_ilb4_fqdn, ipv4 = local.hub_us_ilb4_addr, ipv6 = local.hub_us_ilb4_addr_v6, probe = false },
-    { name = "hub-us-ilb7   ", host = local.hub_us_ilb7_fqdn, ipv4 = local.hub_us_ilb7_addr, ipv6 = local.hub_us_ilb7_addr_v6, probe = false },
-    { name = "spoke2-us-ilb4", host = local.spoke2_us_ilb4_fqdn, ipv4 = local.spoke2_us_ilb4_addr, ipv6 = local.spoke2_us_ilb4_addr_v6, probe = false },
-    { name = "spoke2-us-ilb7", host = local.spoke2_us_ilb7_fqdn, ipv4 = local.spoke2_us_ilb7_addr, ipv6 = local.spoke2_us_ilb7_addr_v6, probe = false },
+    { name = "site2-vm      ", host = local.site2_vm_fqdn, ipv4 = local.site2_vm_addr, ipv6 = local.site2_vm_addr_v6, probe = true },
+    { name = "hub-us-vm     ", host = local.hub_us_vm_fqdn, ipv4 = local.hub_us_vm_addr, ipv6 = local.hub_us_vm_addr_v6, probe = true },
+    { name = "spoke2-us-vm  ", host = local.spoke2_us_vm_fqdn, ipv4 = local.spoke2_us_vm_addr, ipv6 = local.spoke2_us_vm_addr_v6, probe = true },
+    { name = "hub-us-ilb4   ", host = local.hub_us_ilb4_fqdn, ipv4 = local.hub_us_ilb4_addr, ipv6 = local.hub_us_ilb4_addr_v6, probe = true },
+    { name = "hub-us-ilb7   ", host = local.hub_us_ilb7_fqdn, ipv4 = local.hub_us_ilb7_addr, ipv6 = local.hub_us_ilb7_addr_v6, probe = true },
+    { name = "spoke2-us-ilb4", host = local.spoke2_us_ilb4_fqdn, ipv4 = local.spoke2_us_ilb4_addr, ipv6 = local.spoke2_us_ilb4_addr_v6, probe = true },
+    { name = "spoke2-us-ilb7", host = local.spoke2_us_ilb7_fqdn, ipv4 = local.spoke2_us_ilb7_addr, ipv6 = local.spoke2_us_ilb7_addr_v6, probe = true },
   ]
   vm_script_targets_misc = [
-    { name = "internet", host = "icanhazip.com", ipv4 = "icanhazip.com", ipv6 = "icanhazip.com" },
-    { name = "www", host = "www.googleapis.com", ipv4 = "www.googleapis.com", ipv6 = "www.googleapis.com", path = "/generate_204" },
-    { name = "storage", host = "storage.googleapis.com", ipv4 = "storage.googleapis.com", ipv6 = "storage.googleapis.com", path = "/generate_204" },
-    { name = "hub-eu-psc-https", host = "${local.hub_eu_psc_https_ctrl_run_dns}", probe = false },
-    { name = "hub-us-psc-https", host = "${local.hub_us_psc_https_ctrl_run_dns}", probe = false },
-    { name = "hub-eu-run", host = "${local.hub_eu_run_httpbin_host}", probe = false, path = "/generate_204" },
-    { name = "spoke1-eu-run", host = "${local.spoke1_eu_run_httpbin_host}", probe = false, path = "/generate_204" },
-    { name = "spoke2-us-run", host = "${local.spoke2_us_run_httpbin_host}", probe = false, path = "/generate_204" },
+    { name = "internet", host = "icanhazip.com", ipv4 = "icanhazip.com", ipv6 = "icanhazip.com", probe = true },
+    { name = "www", host = "www.googleapis.com", ipv4 = "www.googleapis.com", ipv6 = "www.googleapis.com", path = "/generate_204", probe = true, ping = false },
+    { name = "storage", host = "storage.googleapis.com", ipv4 = "storage.googleapis.com", ipv6 = "storage.googleapis.com", path = "/generate_204", probe = true, ping = false },
+    { name = "hub-eu-psc-https", host = "${local.hub_eu_psc_https_ctrl_run_dns}", probe = false, ping = false },
+    { name = "hub-us-psc-https", host = "${local.hub_us_psc_https_ctrl_run_dns}", probe = false, ping = false },
+    { name = "hub-eu-run", host = "${local.hub_eu_run_httpbin_host}", probe = true, path = "/generate_204", ping = false },
+    { name = "spoke1-eu-run", host = "${local.spoke1_eu_run_httpbin_host}", probe = true, path = "/generate_204", ping = false },
+    { name = "spoke2-us-run", host = "${local.spoke2_us_run_httpbin_host}", probe = true, path = "/generate_204", ping = false },
   ]
   vm_script_targets = concat(
     local.vm_script_targets_region1,
@@ -86,11 +91,113 @@ locals {
     TARGETS_HEAVY_TRAFFIC_GEN = []
     ENABLE_TRAFFIC_GEN        = false
   })
-  WEB_SERVER = {
-    server_port           = local.svc_web.port
-    health_check_path     = local.uhc_config.request_path
-    health_check_response = local.uhc_config.response
+  probe_init_vars = {
+    TARGETS                   = local.vm_script_targets
+    TARGETS_LIGHT_TRAFFIC_GEN = local.vm_script_targets
+    TARGETS_HEAVY_TRAFFIC_GEN = [for target in local.vm_script_targets : target.host if try(target.probe, false)]
   }
+  vm_init_vars = {
+    TARGETS                   = local.vm_script_targets
+    TARGETS_LIGHT_TRAFFIC_GEN = []
+    TARGETS_HEAVY_TRAFFIC_GEN = []
+  }
+  proxy_init_vars = {
+    ONPREM_LOCAL_RECORDS = []
+    REDIRECTED_HOSTS     = []
+    FORWARD_ZONES        = []
+    TARGETS              = local.vm_script_targets
+    ACCESS_CONTROL_PREFIXES = concat(
+      local.netblocks.internal,
+      ["127.0.0.0/8", "35.199.192.0/19", "fd00::/8", ]
+    )
+  }
+  vm_init_files = {
+    "${local.init_dir}/fastapi/docker-compose-app1-80.yml"   = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/fastapi/docker-compose-app1-80.yml", {}) }
+    "${local.init_dir}/fastapi/docker-compose-app2-8080.yml" = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/fastapi/docker-compose-app2-8080.yml", {}) }
+    "${local.init_dir}/fastapi/app/app/Dockerfile"           = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/fastapi/app/app/Dockerfile", {}) }
+    "${local.init_dir}/fastapi/app/app/_app.py"              = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/fastapi/app/app/_app.py", {}) }
+    "${local.init_dir}/fastapi/app/app/main.py"              = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/fastapi/app/app/main.py", {}) }
+    "${local.init_dir}/fastapi/app/app/requirements.txt"     = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/fastapi/app/app/requirements.txt", {}) }
+  }
+  vm_startup_init_files = {
+    "${local.init_dir}/init/startup.sh" = { owner = "root", permissions = "0744", content = templatefile("../../scripts/startup.sh", local.vm_init_vars) }
+  }
+  probe_startup_init_files = {
+    "${local.init_dir}/init/startup.sh" = { owner = "root", permissions = "0744", content = templatefile("../../scripts/startup.sh", local.probe_init_vars) }
+  }
+  proxy_startup_files = {
+    "${local.init_dir}/unbound/Dockerfile"         = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/unbound/Dockerfile", {}) }
+    "${local.init_dir}/unbound/docker-compose.yml" = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/unbound/docker-compose.yml", {}) }
+    "${local.init_dir}/unbound/setup-unbound.sh"   = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/unbound/setup-unbound.sh", local.proxy_init_vars) }
+    "/etc/unbound/unbound.conf"                    = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/unbound/unbound.conf", local.proxy_init_vars) }
+
+    "${local.init_dir}/squid/docker-compose.yml" = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/squid/docker-compose.yml", local.proxy_init_vars) }
+    "${local.init_dir}/squid/setup-squid.sh"     = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/squid/setup-squid.sh", local.proxy_init_vars) }
+    "/etc/squid/blocked_sites"                   = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/squid/blocked_sites", local.proxy_init_vars) }
+    "/etc/squid/squid.conf"                      = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/squid/squid.conf", local.proxy_init_vars) }
+  }
+}
+
+module "vm_cloud_init" {
+  source = "../../modules/cloud-config-gen"
+  files = merge(
+    local.vm_init_files,
+    local.vm_startup_init_files
+  )
+  packages = [
+    "docker.io", "docker-compose",
+  ]
+  run_commands = [
+    ". ${local.init_dir}/init/startup.sh",
+    "docker-compose -f ${local.init_dir}/fastapi/docker-compose-app1-80.yml up -d",
+    "docker-compose -f ${local.init_dir}/fastapi/docker-compose-app2-8080.yml up -d",
+  ]
+}
+
+module "probe_vm_cloud_init" {
+  source = "../../modules/cloud-config-gen"
+  files = merge(
+    local.vm_init_files,
+    local.probe_startup_init_files,
+  )
+  packages = [
+    "docker.io", "docker-compose",
+  ]
+  run_commands = [
+    ". ${local.init_dir}/init/startup.sh",
+    "docker-compose -f ${local.init_dir}/fastapi/docker-compose-app1-80.yml up -d",
+    "docker-compose -f ${local.init_dir}/fastapi/docker-compose-app2-8080.yml up -d",
+  ]
+}
+
+module "proxy_vm_cloud_init" {
+  source   = "../../modules/cloud-config-gen"
+  files    = local.proxy_startup_files
+  packages = ["docker.io", "docker-compose", ]
+  run_commands = [
+    "sysctl -w net.ipv4.ip_forward=1",
+    "sysctl -w net.ipv4.conf.eth0.disable_xfrm=1",
+    "sysctl -w net.ipv4.conf.eth0.disable_policy=1",
+    "echo 'net.ipv4.ip_forward=1' >> /etc/sysctl.conf",
+    "sysctl -w net.ipv6.conf.all.forwarding=1",
+    "echo 'net.ipv6.conf.all.forwarding=1' >> /etc/sysctl.conf",
+    "sysctl -p",
+    "echo iptables-persistent iptables-persistent/autosave_v4 boolean false | debconf-set-selections",
+    "echo iptables-persistent iptables-persistent/autosave_v6 boolean false | debconf-set-selections",
+    "apt-get -y install iptables-persistent",
+    "iptables -P FORWARD ACCEPT",
+    "iptables -P INPUT ACCEPT",
+    "iptables -P OUTPUT ACCEPT",
+    "iptables -t nat -A POSTROUTING -d 10.0.0.0/8 -j ACCEPT",
+    "iptables -t nat -A POSTROUTING -d 172.16.0.0/12 -j ACCEPT",
+    "iptables -t nat -A POSTROUTING -d 192.168.0.0/16 -j ACCEPT",
+    "iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE",
+    ". ${local.init_dir}/init/startup.sh",
+    ". ${local.init_dir}/unbound/setup-unbound.sh",
+    ". ${local.init_dir}/squid/setup-squid.sh",
+    "docker-compose -f ${local.init_dir}/unbound/docker-compose.yml up -d",
+    "docker-compose -f ${local.init_dir}/squid/docker-compose.yml up -d",
+  ]
 }
 
 ############################################
@@ -102,12 +209,13 @@ locals {
 
 locals {
   onprem_local_records = [
-    { name = local.site1_vm_fqdn, record = local.site1_vm_addr },
-    { name = local.site2_vm_fqdn, record = local.site2_vm_addr },
+    { name = local.site1_vm_fqdn, rdata = local.site1_vm_addr, ttl = "300", type = "A" },
+    { name = local.site2_vm_fqdn, rdata = local.site2_vm_addr, ttl = "300", type = "A" },
   ]
   # hosts redirected to psc endpoint
   onprem_redirected_hosts = [
     {
+      class = "IN", ttl = "3600", type = "A", rdata = local.hub_psc_api_all_fr_addr
       hosts = [
         "storage.googleapis.com",
         "bigquery.googleapis.com",
@@ -115,13 +223,12 @@ locals {
         "${local.hub_us_region}-aiplatform.googleapis.com",
         "run.app",
       ]
-      class = "IN", ttl = "3600", type = "A", record = local.hub_psc_api_all_fr_addr
     },
     # authoritative hosts
-    { hosts = [local.hub_eu_psc_https_ctrl_run_dns], class = "IN", ttl = "3600", type = "A", record = local.hub_eu_ilb7_addr },
-    { hosts = [local.hub_us_psc_https_ctrl_run_dns], class = "IN", ttl = "3600", type = "A", record = local.hub_us_ilb7_addr },
-    { hosts = [local.spoke1_eu_psc_https_ctrl_run_dns], class = "IN", ttl = "3600", type = "A", record = local.spoke1_eu_ilb7_addr },
-    { hosts = [local.spoke2_us_psc_https_ctrl_run_dns], class = "IN", ttl = "3600", type = "A", record = local.spoke2_us_ilb7_addr },
+    { hosts = [local.hub_eu_psc_https_ctrl_run_dns], class = "IN", ttl = "3600", type = "A", rdata = local.hub_eu_ilb7_addr },
+    { hosts = [local.hub_us_psc_https_ctrl_run_dns], class = "IN", ttl = "3600", type = "A", rdata = local.hub_us_ilb7_addr },
+    { hosts = [local.spoke1_eu_psc_https_ctrl_run_dns], class = "IN", ttl = "3600", type = "A", rdata = local.spoke1_eu_ilb7_addr },
+    { hosts = [local.spoke2_us_psc_https_ctrl_run_dns], class = "IN", ttl = "3600", type = "A", rdata = local.spoke2_us_ilb7_addr },
   ]
   onprem_forward_zones = [
     { zone = "gcp.", targets = [local.hub_eu_ns_addr, local.hub_us_ns_addr] },
@@ -129,6 +236,10 @@ locals {
     { zone = ".", targets = ["8.8.8.8", "8.8.4.4"] },
   ]
 }
+
+############################################
+# addresses
+############################################
 
 # site1
 #---------------------------------
@@ -191,8 +302,14 @@ data "google_project" "hub_project_number" {
 }
 
 locals {
-  hub_unbound_config = templatefile("../../scripts/startup/unbound/cloud.sh", {
-    FORWARD_ZONES = local.cloud_forward_zones
+  hub_unbound_config = templatefile("../../scripts/unbound/unbound.sh", {
+    FORWARD_ZONES        = local.cloud_forward_zones
+    ONPREM_LOCAL_RECORDS = []
+    REDIRECTED_HOSTS     = []
+    ACCESS_CONTROL_PREFIXES = concat(
+      local.netblocks.internal,
+      ["127.0.0.0/8", "35.199.192.0/19", "fd00::/8", ]
+    )
   })
   cloud_forward_zones = [
     { zone = "onprem.", targets = [local.site1_ns_addr, local.site2_ns_addr] },
@@ -505,9 +622,11 @@ resource "google_storage_bucket_object" "spoke2_us_storage_bucket_file" {
 
 locals {
   main_files = {
-    "output/vm-startup.sh" = local.vm_startup
-    # "output/site1-unbound.sh" = local.site1_unbound_config
-    # "output/site2-unbound.sh" = local.site2_unbound_config
+    "output/server.sh"              = local.vm_startup
+    "output/startup.sh"             = templatefile("../../scripts/startup.sh", local.vm_init_vars)
+    "output/startup-probe.sh"       = templatefile("../../scripts/startup.sh", local.probe_init_vars)
+    "output/probe-cloud-config.yml" = module.probe_vm_cloud_init.cloud_config
+    "output/vm-cloud-config.yml"    = module.vm_cloud_init.cloud_config
   }
 }
 

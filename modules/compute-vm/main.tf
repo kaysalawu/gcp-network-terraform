@@ -329,7 +329,7 @@ resource "google_compute_instance" "default" {
   }
 
   lifecycle {
-    ignore_changes = all
+    # ignore_changes = all
   }
 
   # guest_accelerator
