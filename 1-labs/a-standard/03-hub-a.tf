@@ -299,7 +299,7 @@ module "dns-policy" {
 # psc zone
 
 module "hub_dns_psc" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v15.0.0"
+  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
   project_id  = var.project_id_hub
   type        = "private"
   name        = "${local.hub_prefix}psc"
@@ -311,13 +311,15 @@ module "hub_dns_psc" {
   recordsets = {
     "A " = { ttl = 300, records = [local.hub_psc_api_fr_addr] }
   }
-  depends_on = [time_sleep.hub_dns_forward_to_dns_wait]
+  depends_on = [
+    time_sleep.hub_dns_forward_to_dns_wait
+  ]
 }
 
 # onprem zone
 
 module "hub_dns_forward_to_onprem" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v15.0.0"
+  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
   project_id  = var.project_id_hub
   type        = "forwarding"
   name        = "${local.hub_prefix}to-onprem"
@@ -333,7 +335,7 @@ module "hub_dns_forward_to_onprem" {
 # local zone
 
 module "hub_dns_private_zone" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v15.0.0"
+  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
   project_id  = var.project_id_hub
   type        = "private"
   name        = "${local.hub_prefix}private"
@@ -353,7 +355,7 @@ module "hub_dns_private_zone" {
 # sd zone
 
 module "hub_sd_td" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v15.0.0"
+  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
   project_id  = var.project_id_hub
   type        = "service-directory"
   name        = "${local.hub_prefix}sd-td"
@@ -366,7 +368,7 @@ module "hub_sd_td" {
 }
 
 module "hub_sd_psc" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v15.0.0"
+  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
   project_id  = var.project_id_hub
   type        = "service-directory"
   name        = "${local.hub_prefix}sd-psc"
@@ -424,7 +426,7 @@ resource "google_compute_instance" "hub_eu_ilb4_vm" {
 # # ilb4
 
 # module "hub_eu_ilb4" {
-#   source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-ilb?ref=v15.0.0"
+#   source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-ilb?ref=v33.0.0"
 #   project_id    = var.project_id_hub
 #   region        = local.hub_eu_region
 #   name          = "${local.hub_prefix}eu-ilb4"
@@ -498,7 +500,7 @@ resource "google_compute_instance" "hub_us_ilb4_vm" {
 # # ilb4
 
 # module "hub_us_ilb4" {
-#   source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-ilb?ref=v15.0.0"
+#   source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-ilb?ref=v33.0.0"
 #   project_id    = var.project_id_hub
 #   region        = local.hub_us_region
 #   name          = "${local.hub_prefix}us-ilb4"
