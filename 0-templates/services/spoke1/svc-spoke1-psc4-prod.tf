@@ -8,7 +8,7 @@ resource "google_compute_instance" "spoke1_eu_vm_psc4_prod" {
   project      = var.project_id_spoke1
   name         = "${local.spoke1_prefix}eu-vm-psc4-prod"
   zone         = "${local.spoke1_eu_region}-b"
-  machine_type = "e2-micro"
+  machine_type = "e2-small"
   tags         = [local.tag_ssh, local.tag_gfe]
   boot_disk {
     initialize_params {

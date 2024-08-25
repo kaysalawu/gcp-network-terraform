@@ -1,6 +1,7 @@
 #! /bin/bash
 
-exec > >(tee -a /var/log/gcp-startup.log) 2>&1
+exec > /var/log/gcp-startup.log
+export DEBIAN_FRONTEND=noninteractive
 
 apt update
 apt install -y python3-pip python3-dev python3-venv unzip jq tcpdump dnsutils net-tools nmap apache2-utils iperf3

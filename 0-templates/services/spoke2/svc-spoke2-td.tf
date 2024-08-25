@@ -101,7 +101,7 @@ resource "google_compute_instance" "spoke2_eu_td_envoy_cloud_vm" {
   project      = var.project_id_spoke2
   name         = "${local.spoke2_prefix}eu-td-envoy-cloud"
   zone         = "${local.spoke2_eu_region}-b"
-  machine_type = "e2-micro"
+  machine_type = "e2-small"
   tags         = [local.tag_ssh, local.tag_gfe]
   boot_disk {
     initialize_params {
@@ -125,7 +125,7 @@ resource "google_compute_instance" "spoke2_us_td_envoy_cloud_vm" {
   project      = var.project_id_spoke2
   name         = "${local.spoke2_prefix}us-td-envoy-cloud"
   zone         = "${local.spoke2_us_region}-b"
-  machine_type = "e2-micro"
+  machine_type = "e2-small"
   tags         = [local.tag_ssh, local.tag_gfe]
   boot_disk {
     initialize_params {

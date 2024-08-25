@@ -27,7 +27,7 @@ variable "project_id_onprem" {
 variable "machine_type" {
   description = "vm instance size"
   type        = string
-  default     = "e2-micro"
+  default     = "e2-small"
 }
 
 variable "image_debian" {

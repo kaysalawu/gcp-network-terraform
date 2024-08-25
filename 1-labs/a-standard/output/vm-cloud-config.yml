@@ -165,10 +165,12 @@ write_files:
     content: |
       #! /bin/bash
       
+      start_time=$(date +%s)
       exec > /var/log/gcp-startup.log
+      export DEBIAN_FRONTEND=noninteractive
       
-      # apt update
-      # apt install -y unzip jq tcpdump dnsutils net-tools nmap apache2-utils iperf3
+      apt update
+      apt install -y unzip jq tcpdump dnsutils net-tools nmap apache2-utils iperf3
       
       ########################################################
       # test scripts (ipv4)
@@ -530,6 +532,10 @@ write_files:
       EOF
       
       crontab /etc/cron.d/traffic-gen
+      
+      end=$(date +%s)
+      elapsed=$(( end - start ))
+      echo "Completed in $((elapsed/60))m $((elapsed%60))s!" | tee -a /var/log/gcp-startup.log
       
 
 runcmd:
