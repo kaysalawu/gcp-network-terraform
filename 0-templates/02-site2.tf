@@ -103,7 +103,7 @@ module "site2_vpc_firewall" {
 # unbound config
 
 locals {
-  site2_unbound_config = templatefile("../scripts/startup/unbound/site.sh", {
+  site2_unbound_config = templatefile("../../scripts/startup/unbound/site.sh", {
     ONPREM_LOCAL_RECORDS = local.onprem_local_records
     REDIRECTED_HOSTS     = local.onprem_redirected_hosts
     FORWARD_ZONES        = local.onprem_forward_zones
@@ -192,7 +192,7 @@ resource "google_compute_instance" "site2_vm" {
   network_interface {
     network    = google_compute_network.site2_vpc.self_link
     subnetwork = local.site2_subnet1.self_link
-    network_ip = local.site2_app1_addr
+    network_ip = local.site2_vm_addr
   }
   service_account {
     email  = module.site2_sa.email
@@ -205,7 +205,7 @@ resource "google_compute_instance" "site2_vm" {
 # td client
 /*
 locals {
-  site2_td_client_tpl_create = templatefile("../scripts/envoy/tpl-create.sh", {
+  site2_td_client_tpl_create = templatefile("../../scripts/envoy/tpl-create.sh", {
     PROJECT_ID    = var.project_id_onprem
     TEMPLATE_NAME = "${local.site2_prefix}td-client-tpl"
     NETWORK_NAME  = google_compute_network.site2_vpc.name
@@ -213,7 +213,7 @@ locals {
     SUBNET_NAME   = local.site2_subnet1.name
     METADATA      = local.td_client_startup
   })
-  site2_td_client_tpl_delete = templatefile("../scripts/envoy/tpl-delete.sh", {
+  site2_td_client_tpl_delete = templatefile("../../scripts/envoy/tpl-delete.sh", {
     PROJECT_ID    = var.project_id_onprem
     TEMPLATE_NAME = "${local.site2_prefix}td-client-tpl"
   })

@@ -1,6 +1,6 @@
 
 module "spoke2_psc_api_ilb7_api" {
-  source         = "../modules/psc-api-ilb7"
+  source         = "../../modules/psc-api-ilb7"
   project_id     = var.project_id_spoke2
   name           = "${local.spoke2_prefix}us-psc-api-ilb7"
   network        = google_compute_network.spoke2_vpc.self_link
@@ -42,14 +42,14 @@ resource "google_compute_instance_group" "spoke2_us_ilb7_ig" {
 locals {
   spoke2_us_ilb7_psc_neg_name      = "${local.spoke2_prefix}us-ilb7-psc-neg"
   spoke2_us_ilb7_psc_neg_self_link = "projects/${var.project_id_spoke2}/regions/${local.spoke2_us_region}/networkEndpointGroups/${local.spoke2_us_ilb7_psc_neg_name}"
-  spoke2_us_ilb7_psc_neg_create = templatefile("../scripts/neg/psc7/create.sh", {
+  spoke2_us_ilb7_psc_neg_create = templatefile("../../scripts/neg/psc7/create.sh", {
     PROJECT_ID     = var.project_id_spoke2
     NETWORK        = google_compute_network.spoke2_vpc.self_link
     REGION         = local.spoke2_us_region
     NEG_NAME       = local.spoke2_us_ilb7_psc_neg_name
     TARGET_SERVICE = local.spoke2_us_psc_api_ilb7_svc
   })
-  spoke2_us_ilb7_psc_neg_delete = templatefile("../scripts/neg/psc7/delete.sh", {
+  spoke2_us_ilb7_psc_neg_delete = templatefile("../../scripts/neg/psc7/delete.sh", {
     PROJECT_ID = var.project_id_spoke2
     REGION     = local.spoke2_us_region
     NEG_NAME   = local.spoke2_us_ilb7_psc_neg_name
@@ -122,7 +122,7 @@ locals {
 }
 
 module "spoke2_us_ilb7_bes" {
-  source                   = "../modules/backend-region"
+  source                   = "../../modules/backend-region"
   project_id               = var.project_id_spoke2
   prefix                   = "${local.spoke2_prefix}us-ilb7"
   network                  = google_compute_network.spoke2_vpc.self_link
@@ -145,7 +145,7 @@ resource "google_compute_region_url_map" "spoke2_us_ilb7_url_map" {
 # frontend
 
 module "spoke2_us_ilb7_frontend" {
-  source           = "../modules/int-lb-app-frontend"
+  source           = "../../modules/int-lb-app-frontend"
   project_id       = var.project_id_spoke2
   prefix           = "${local.spoke2_prefix}us-ilb7"
   network          = google_compute_network.spoke2_vpc.self_link

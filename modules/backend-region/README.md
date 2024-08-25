@@ -57,7 +57,7 @@ locals {
 
 module "spoke2_us_ilb7_bes" {
   depends_on               = [null_resource.spoke2_us_ilb7_psc_neg]
-  source                   = "../modules/backend-region"
+  source                   = "../../modules/backend-region"
   project_id               = var.project_id_spoke2
   prefix                   = "${local.spoke2_prefix}us-ilb7"
   network                  = google_compute_network.spoke2_vpc.self_link
@@ -99,7 +99,7 @@ resource "google_compute_region_url_map" "spoke2_us_ilb7_url_map" {
 # Frontend (HTTP and HTTPS)
 ```
 module "spoke2_us_ilb7_frontend" {
-  source           = "../modules/int-lb-app-frontend"
+  source           = "../../modules/int-lb-app-frontend"
   project_id       = var.project_id_spoke2
   prefix           = "${local.spoke2_prefix}us-ilb7"
   network          = google_compute_network.spoke2_vpc.self_link

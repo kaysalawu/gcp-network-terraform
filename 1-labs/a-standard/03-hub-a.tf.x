@@ -175,7 +175,7 @@ module "hub1_vpc_fw_policy" {
 # eu
 
 module "hub_eu_dns" {
-  source     = "../modules/compute-vm"
+  source     = "../../modules/compute-vm"
   project_id = var.project_id_hub
   name       = "${local.hub_prefix}eu-dns"
   zone       = "${local.hub_eu_region}-b"
@@ -198,7 +198,7 @@ module "hub_eu_dns" {
 # us
 
 module "hub_us_dns" {
-  source     = "../modules/compute-vm"
+  source     = "../../modules/compute-vm"
   project_id = var.project_id_hub
   name       = "${local.hub_prefix}us-dns"
   zone       = "${local.hub_us_region}-b"
@@ -581,14 +581,14 @@ resource "google_compute_instance" "hub_eu_ilb7_vm" {
 # locals {
 #   hub_eu_ilb7_psc_api_neg_name      = "${local.hub_prefix}eu-ilb7-psc-api-neg"
 #   hub_eu_ilb7_psc_api_neg_self_link = "projects/${var.project_id_hub}/regions/${local.hub_eu_region}/networkEndpointGroups/${local.hub_eu_ilb7_psc_api_neg_name}"
-#   hub_eu_ilb7_psc_api_neg_create = templatefile("../scripts/neg/psc/create.sh", {
+#   hub_eu_ilb7_psc_api_neg_create = templatefile("../../scripts/neg/psc/create.sh", {
 #     PROJECT_ID     = var.project_id_hub
 #     NETWORK        = module.hub_vpc.self_link
 #     REGION         = local.hub_eu_region
 #     NEG_NAME       = local.hub_eu_ilb7_psc_api_neg_name
 #     TARGET_SERVICE = local.hub_eu_psc_https_ctrl_run_dns
 #   })
-#   hub_eu_ilb7_psc_api_neg_delete = templatefile("../scripts/neg/psc/delete.sh", {
+#   hub_eu_ilb7_psc_api_neg_delete = templatefile("../../scripts/neg/psc/delete.sh", {
 #     PROJECT_ID = var.project_id_hub
 #     REGION     = local.hub_eu_region
 #     NEG_NAME   = local.hub_eu_ilb7_psc_api_neg_name
@@ -657,7 +657,7 @@ resource "google_compute_instance" "hub_eu_ilb7_vm" {
 
 # module "hub_eu_ilb7_bes" {
 #   depends_on               = [null_resource.hub_eu_ilb7_psc_api_neg]
-#   source                   = "../modules/backend-region"
+#   source                   = "../../modules/backend-region"
 #   project_id               = var.project_id_hub
 #   prefix                   = "${local.hub_prefix}eu-ilb7"
 #   network                  = module.hub_vpc.self_link
@@ -696,7 +696,7 @@ resource "google_compute_instance" "hub_eu_ilb7_vm" {
 # # frontend
 
 # module "hub_eu_ilb7_frontend" {
-#   source     = "../modules/int-lb-app-frontend"
+#   source     = "../../modules/int-lb-app-frontend"
 #   project_id = var.project_id_hub
 #   prefix     = "${local.hub_prefix}eu-ilb7"
 #   network    = module.hub_vpc.self_link
@@ -764,14 +764,14 @@ resource "google_compute_instance" "hub_us_ilb7_vm" {
 # locals {
 #   hub_us_ilb7_psc_neg_name      = "${local.hub_prefix}us-ilb7-psc-neg"
 #   hub_us_ilb7_psc_neg_self_link = "projects/${var.project_id_hub}/regions/${local.hub_us_region}/networkEndpointGroups/${local.hub_us_ilb7_psc_neg_name}"
-#   hub_us_ilb7_psc_neg_create = templatefile("../scripts/neg/psc/create.sh", {
+#   hub_us_ilb7_psc_neg_create = templatefile("../../scripts/neg/psc/create.sh", {
 #     PROJECT_ID     = var.project_id_hub
 #     NETWORK        = module.hub_vpc.self_link
 #     REGION         = local.hub_us_region
 #     NEG_NAME       = local.hub_us_ilb7_psc_neg_name
 #     TARGET_SERVICE = local.hub_us_psc_https_ctrl_run_dns
 #   })
-#   hub_us_ilb7_psc_neg_delete = templatefile("../scripts/neg/psc/delete.sh", {
+#   hub_us_ilb7_psc_neg_delete = templatefile("../../scripts/neg/psc/delete.sh", {
 #     PROJECT_ID = var.project_id_hub
 #     REGION     = local.hub_us_region
 #     NEG_NAME   = local.hub_us_ilb7_psc_neg_name
@@ -840,7 +840,7 @@ resource "google_compute_instance" "hub_us_ilb7_vm" {
 
 # module "hub_us_ilb7_bes" {
 #   depends_on               = [null_resource.hub_us_ilb7_psc_neg]
-#   source                   = "../modules/backend-region"
+#   source                   = "../../modules/backend-region"
 #   project_id               = var.project_id_hub
 #   prefix                   = "${local.hub_prefix}us-ilb7"
 #   network                  = module.hub_vpc.self_link
@@ -879,7 +879,7 @@ resource "google_compute_instance" "hub_us_ilb7_vm" {
 # # frontend
 
 # module "hub_us_ilb7_frontend" {
-#   source     = "../modules/int-lb-app-frontend"
+#   source     = "../../modules/int-lb-app-frontend"
 #   project_id = var.project_id_hub
 #   prefix     = "${local.hub_prefix}us-ilb7"
 #   network    = module.hub_vpc.self_link

@@ -92,7 +92,7 @@ echo -e "\n ping dns ...\n"
 %{ for target in TARGETS ~}
 %{~ if try(target.ping, true) ~}
 %{~ if try(target.ip, "") != "" ~}
-echo "${target.dns} - \$(timeout 3 dig +short ${target.dns} | tail -n1) -\$(timeout 3 ping -qc2 -W1 ${target.dns} 2>&1 | awk -F'/' 'END{ print (/^rtt/? "OK "\$5" ms":"NA") }')"
+echo "${target.host} - \$(timeout 3 dig +short ${target.host} | tail -n1) -\$(timeout 3 ping -qc2 -W1 ${target.host} 2>&1 | awk -F'/' 'END{ print (/^rtt/? "OK "\$5" ms":"NA") }')"
 %{ endif ~}
 %{ endif ~}
 %{ endfor ~}
@@ -119,7 +119,7 @@ cat <<EOF > /usr/local/bin/curl-dns
 echo -e "\n curl dns ...\n"
 %{ for target in TARGETS ~}
 %{~ if try(target.curl, true) ~}
-echo  "\$(timeout 3 curl -kL --max-time 3.0 -H 'Cache-Control: no-cache' -w "%%{http_code} (%%{time_total}s) - %%{remote_ip}" -s -o /dev/null ${target.dns}) - ${target.dns}"
+echo  "\$(timeout 3 curl -kL --max-time 3.0 -H 'Cache-Control: no-cache' -w "%%{http_code} (%%{time_total}s) - %%{remote_ip}" -s -o /dev/null ${target.host}) - ${target.host}"
 %{ endif ~}
 %{ endfor ~}
 EOF
@@ -162,7 +162,7 @@ chmod a+x /usr/local/bin/crawlz
 cat <<EOF > /usr/local/bin/light-traffic
 %{ for target in TARGETS_LIGHT_TRAFFIC_GEN ~}
 %{~ if try(target.probe, false) ~}
-nping -c ${try(target.count, "10")} --${try(target.protocol, "tcp")} -p ${try(target.port, "80")} ${try(target.dns, target.ip)} > /dev/null 2>&1
+nping -c ${try(target.count, "10")} --${try(target.protocol, "tcp")} -p ${try(target.port, "80")} ${try(target.host, target.ip)} > /dev/null 2>&1
 %{ endif ~}
 %{ endfor ~}
 EOF

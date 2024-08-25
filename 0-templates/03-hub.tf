@@ -412,12 +412,12 @@ locals {
     ("${local.hub_prefix}dns-rp-rule-bypass-ouath2") = { dns_name = "oauth2.googleapis.com." }
     ("${local.hub_prefix}dns-rp-rule-bypass-psc")    = { dns_name = "*.p.googleapis.com." }
   }
-  hub_dns_rp_rules_bypass_create = templatefile("../scripts/dns/rule-bypass-create.sh", {
+  hub_dns_rp_rules_bypass_create = templatefile("../../scripts/dns/rule-bypass-create.sh", {
     PROJECT = var.project_id_hub
     RP_NAME = google_dns_response_policy.hub_dns_rp.response_policy_name
     RULES   = local.hub_dns_rp_rules_bypass
   })
-  hub_dns_rp_rules_bypass_delete = templatefile("../scripts/dns/rule-delete.sh", {
+  hub_dns_rp_rules_bypass_delete = templatefile("../../scripts/dns/rule-delete.sh", {
     PROJECT = var.project_id_hub
     RP_NAME = google_dns_response_policy.hub_dns_rp.response_policy_name
     RULES   = local.hub_dns_rp_rules_bypass
@@ -747,14 +747,14 @@ resource "google_compute_instance_group" "hub_eu_ilb7_ig" {
 locals {
   hub_eu_ilb7_psc_api_neg_name      = "${local.hub_prefix}eu-ilb7-psc-api-neg"
   hub_eu_ilb7_psc_api_neg_self_link = "projects/${var.project_id_hub}/regions/${local.hub_eu_region}/networkEndpointGroups/${local.hub_eu_ilb7_psc_api_neg_name}"
-  hub_eu_ilb7_psc_api_neg_create = templatefile("../scripts/neg/psc/create.sh", {
+  hub_eu_ilb7_psc_api_neg_create = templatefile("../../scripts/neg/psc/create.sh", {
     PROJECT_ID     = var.project_id_hub
     NETWORK        = google_compute_network.hub_vpc.self_link
     REGION         = local.hub_eu_region
     NEG_NAME       = local.hub_eu_ilb7_psc_api_neg_name
     TARGET_SERVICE = local.hub_eu_psc_https_ctrl_run_dns
   })
-  hub_eu_ilb7_psc_api_neg_delete = templatefile("../scripts/neg/psc/delete.sh", {
+  hub_eu_ilb7_psc_api_neg_delete = templatefile("../../scripts/neg/psc/delete.sh", {
     PROJECT_ID = var.project_id_hub
     REGION     = local.hub_eu_region
     NEG_NAME   = local.hub_eu_ilb7_psc_api_neg_name
@@ -823,7 +823,7 @@ locals {
 
 module "hub_eu_ilb7_bes" {
   depends_on               = [null_resource.hub_eu_ilb7_psc_api_neg]
-  source                   = "../modules/backend-region"
+  source                   = "../../modules/backend-region"
   project_id               = var.project_id_hub
   prefix                   = "${local.hub_prefix}eu-ilb7"
   network                  = google_compute_network.hub_vpc.self_link
@@ -862,7 +862,7 @@ resource "google_compute_region_url_map" "hub_eu_ilb7_url_map" {
 # frontend
 
 module "hub_eu_ilb7_frontend" {
-  source           = "../modules/int-lb-app-frontend"
+  source           = "../../modules/int-lb-app-frontend"
   project_id       = var.project_id_hub
   prefix           = "${local.hub_prefix}eu-ilb7"
   network          = google_compute_network.hub_vpc.self_link
@@ -936,14 +936,14 @@ resource "google_compute_instance_group" "hub_us_ilb7_ig" {
 locals {
   hub_us_ilb7_psc_neg_name      = "${local.hub_prefix}us-ilb7-psc-neg"
   hub_us_ilb7_psc_neg_self_link = "projects/${var.project_id_hub}/regions/${local.hub_us_region}/networkEndpointGroups/${local.hub_us_ilb7_psc_neg_name}"
-  hub_us_ilb7_psc_neg_create = templatefile("../scripts/neg/psc/create.sh", {
+  hub_us_ilb7_psc_neg_create = templatefile("../../scripts/neg/psc/create.sh", {
     PROJECT_ID     = var.project_id_hub
     NETWORK        = google_compute_network.hub_vpc.self_link
     REGION         = local.hub_us_region
     NEG_NAME       = local.hub_us_ilb7_psc_neg_name
     TARGET_SERVICE = local.hub_us_psc_https_ctrl_run_dns
   })
-  hub_us_ilb7_psc_neg_delete = templatefile("../scripts/neg/psc/delete.sh", {
+  hub_us_ilb7_psc_neg_delete = templatefile("../../scripts/neg/psc/delete.sh", {
     PROJECT_ID = var.project_id_hub
     REGION     = local.hub_us_region
     NEG_NAME   = local.hub_us_ilb7_psc_neg_name
@@ -1012,7 +1012,7 @@ locals {
 
 module "hub_us_ilb7_bes" {
   depends_on               = [null_resource.hub_us_ilb7_psc_neg]
-  source                   = "../modules/backend-region"
+  source                   = "../../modules/backend-region"
   project_id               = var.project_id_hub
   prefix                   = "${local.hub_prefix}us-ilb7"
   network                  = google_compute_network.hub_vpc.self_link
@@ -1051,7 +1051,7 @@ resource "google_compute_region_url_map" "hub_us_ilb7_url_map" {
 # frontend
 
 module "hub_us_ilb7_frontend" {
-  source           = "../modules/int-lb-app-frontend"
+  source           = "../../modules/int-lb-app-frontend"
   project_id       = var.project_id_hub
   prefix           = "${local.hub_prefix}us-ilb7"
   network          = google_compute_network.hub_vpc.self_link

@@ -41,7 +41,7 @@ resource "google_sql_user" "spoke1_eu_sql_users" {
 }
 
 locals {
-  spoke1_eu_cloud_sql_proxy = templatefile("../scripts/startup/proxy_sql.sh", {
+  spoke1_eu_cloud_sql_proxy = templatefile("../../scripts/startup/proxy_sql.sh", {
     WEB_PORT = local.web_svc.port
     # cloud_sql_proxy with dnat to 127.0.0.1
     PROJECT_SQL = var.project_id_spoke1

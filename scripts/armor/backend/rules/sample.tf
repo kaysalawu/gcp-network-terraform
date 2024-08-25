@@ -37,13 +37,13 @@ locals {
     ("default") = { preview = false, priority = 2147483647, action = "deny(403)", ip = true, src_ip_ranges = ["'*'"]
     }
   }
-  hub_xlb7_edge_sec_rules_create = templatefile("../scripts/armor/policy/edge/create.sh", {
+  hub_xlb7_edge_sec_rules_create = templatefile("../../scripts/armor/policy/edge/create.sh", {
     PROJECT_ID  = var.project_id_hub
     POLICY_NAME = local.hub_xlb7_edge_sec_policy
     POLICY_TYPE = "CLOUD_ARMOR_EDGE"
     RULES       = local.hub_xlb7_edge_sec_rules
   })
-  hub_xlb7_edge_sec_rules_delete = templatefile("../scripts/armor/policy/edge/delete.sh", {
+  hub_xlb7_edge_sec_rules_delete = templatefile("../../scripts/armor/policy/edge/delete.sh", {
     PROJECT_ID  = var.project_id_hub
     POLICY_NAME = local.hub_xlb7_edge_sec_policy
   })

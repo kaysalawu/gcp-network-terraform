@@ -87,7 +87,7 @@ locals {
   site1_gw_addr         = cidrhost(local.site1_subnets["${local.site1_prefix}subnet1"].ip_cidr_range, 1)
   site1_router_addr     = cidrhost(local.site1_subnets["${local.site1_prefix}subnet1"].ip_cidr_range, 2)
   site1_ns_addr         = cidrhost(local.site1_subnets["${local.site1_prefix}subnet1"].ip_cidr_range, 5)
-  site1_app1_addr       = cidrhost(local.site1_subnets["${local.site1_prefix}subnet1"].ip_cidr_range, 9)
+  site1_vm_addr         = cidrhost(local.site1_subnets["${local.site1_prefix}subnet1"].ip_cidr_range, 9)
   site1_vertex_addr     = cidrhost(local.site1_subnets["${local.site1_prefix}subnet1"].ip_cidr_range, 20)
   site1_ids_attack_addr = cidrhost(local.site1_subnets["${local.site1_prefix}subnet1"].ip_cidr_range, 30)
   site1_router_lo_addr  = "1.1.1.1"
@@ -118,7 +118,7 @@ locals {
   site2_gw_addr        = cidrhost(local.site2_subnets["${local.site2_prefix}subnet1"].ip_cidr_range, 1)
   site2_router_addr    = cidrhost(local.site2_subnets["${local.site2_prefix}subnet1"].ip_cidr_range, 2)
   site2_ns_addr        = cidrhost(local.site2_subnets["${local.site2_prefix}subnet1"].ip_cidr_range, 5)
-  site2_app1_addr      = cidrhost(local.site2_subnets["${local.site2_prefix}subnet1"].ip_cidr_range, 9)
+  site2_vm_addr        = cidrhost(local.site2_subnets["${local.site2_prefix}subnet1"].ip_cidr_range, 9)
   site2_vertex_addr    = cidrhost(local.site2_subnets["${local.site2_prefix}subnet1"].ip_cidr_range, 20)
   site2_is_attck_addr  = cidrhost(local.site2_subnets["${local.site2_prefix}subnet1"].ip_cidr_range, 30)
   site2_router_lo_addr = "2.2.2.2"
@@ -480,11 +480,11 @@ locals {
   hub_mgt_eu_gw_addr       = cidrhost(local.hub_mgt_subnets["${local.hub_prefix}mgt-eu-subnet1"].ip_cidr_range, 1)
   hub_mgt_eu_nva_vm_addr   = cidrhost(local.hub_mgt_subnets["${local.hub_prefix}mgt-eu-subnet1"].ip_cidr_range, 10)
   hub_mgt_eu_nva_ilb4_addr = cidrhost(local.hub_mgt_subnets["${local.hub_prefix}mgt-eu-subnet1"].ip_cidr_range, 20)
-  hub_mgt_eu_app1_addr     = cidrhost(local.hub_mgt_subnets["${local.hub_prefix}mgt-eu-subnet1"].ip_cidr_range, 30)
+  hub_mgt_eu_vm_addr       = cidrhost(local.hub_mgt_subnets["${local.hub_prefix}mgt-eu-subnet1"].ip_cidr_range, 30)
   hub_mgt_us_gw_addr       = cidrhost(local.hub_mgt_subnets["${local.hub_prefix}mgt-us-subnet1"].ip_cidr_range, 1)
   hub_mgt_us_nva_vm_addr   = cidrhost(local.hub_mgt_subnets["${local.hub_prefix}mgt-us-subnet1"].ip_cidr_range, 10)
   hub_mgt_us_nva_ilb4_addr = cidrhost(local.hub_mgt_subnets["${local.hub_prefix}mgt-us-subnet1"].ip_cidr_range, 20)
-  hub_mgt_us_app1_addr     = cidrhost(local.hub_mgt_subnets["${local.hub_prefix}mgt-us-subnet1"].ip_cidr_range, 30)
+  hub_mgt_us_vm_addr       = cidrhost(local.hub_mgt_subnets["${local.hub_prefix}mgt-us-subnet1"].ip_cidr_range, 30)
 
   # psc/api
   hub_mgt_psc_api_fr_range    = "10.3.0.0/24"                               # vip range

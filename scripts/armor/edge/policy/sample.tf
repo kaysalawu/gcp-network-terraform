@@ -3,12 +3,12 @@
 
 locals {
   hub_xlb7_edge_sec_policy = "${local.hub_prefix}xlb7-edge-sec-policy"
-  hub_xlb7_edge_sec_policy_create = templatefile("../scripts/armor/edge/policy/create.sh", {
+  hub_xlb7_edge_sec_policy_create = templatefile("../../scripts/armor/edge/policy/create.sh", {
     PROJECT_ID  = var.project_id_hub
     POLICY_NAME = local.hub_xlb7_edge_sec_policy
     POLICY_TYPE = "CLOUD_ARMOR_EDGE"
   })
-  hub_xlb7_edge_sec_policy_delete = templatefile("../scripts/armor/edge/policy/delete.sh", {
+  hub_xlb7_edge_sec_policy_delete = templatefile("../../scripts/armor/edge/policy/delete.sh", {
     PROJECT_ID  = var.project_id_hub
     POLICY_NAME = local.hub_xlb7_edge_sec_policy
   })

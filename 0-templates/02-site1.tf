@@ -103,7 +103,7 @@ module "site1_vpc_firewall" {
 # unbound config
 
 locals {
-  site1_unbound_config = templatefile("../scripts/startup/unbound/site.sh", {
+  site1_unbound_config = templatefile("../../scripts/startup/unbound/site.sh", {
     ONPREM_LOCAL_RECORDS = local.onprem_local_records
     REDIRECTED_HOSTS     = local.onprem_redirected_hosts
     FORWARD_ZONES        = local.onprem_forward_zones
@@ -192,7 +192,7 @@ resource "google_compute_instance" "site1_vm" {
   network_interface {
     network    = google_compute_network.site1_vpc.self_link
     subnetwork = local.site1_subnet1.self_link
-    network_ip = local.site1_app1_addr
+    network_ip = local.site1_vm_addr
   }
   service_account {
     email  = module.site1_sa.email
@@ -205,7 +205,7 @@ resource "google_compute_instance" "site1_vm" {
 # td client
 /*
 locals {
-  site1_td_client_tpl_create = templatefile("../scripts/envoy/tpl-create.sh", {
+  site1_td_client_tpl_create = templatefile("../../scripts/envoy/tpl-create.sh", {
     PROJECT_ID    = var.project_id_onprem
     TEMPLATE_NAME = "${local.site1_prefix}td-client-tpl"
     NETWORK_NAME  = google_compute_network.site1_vpc.name
@@ -213,7 +213,7 @@ locals {
     SUBNET_NAME   = local.site1_subnet1.name
     METADATA      = local.td_client_startup
   })
-  site1_td_client_tpl_delete = templatefile("../scripts/envoy/tpl-delete.sh", {
+  site1_td_client_tpl_delete = templatefile("../../scripts/envoy/tpl-delete.sh", {
     PROJECT_ID    = var.project_id_onprem
     TEMPLATE_NAME = "${local.site1_prefix}td-client-tpl"
   })
@@ -258,7 +258,7 @@ resource "google_compute_instance_from_template" "site1_td_client" {
 #---------------------------------
 
 # locals {
-#   vertex_vm_startup = templatefile("../scripts/startup/gce.sh", {
+#   vertex_vm_startup = templatefile("../../scripts/startup/gce.sh", {
 #     ENABLE_PROBES = false
 #     SCRIPTS = {
 #       targets_curl_dns        = local.targets_curl_dns
@@ -279,7 +279,7 @@ resource "google_compute_instance_from_template" "site1_td_client" {
 # }
 
 # module "site1_vertex_vm" {
-#   source        = "../modules/compute-vm"
+#   source        = "../../modules/compute-vm"
 #   project_id    = var.project_id_onprem
 #   name          = "${local.site1_prefix}vertex-vm"
 #   zone          = "${local.site1_region}-b"

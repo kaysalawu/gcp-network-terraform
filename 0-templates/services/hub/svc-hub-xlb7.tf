@@ -43,11 +43,11 @@ locals {
 # local nat
 
 data "external" "hub_xlb7_local_nat_ipv4" {
-  program = ["sh", "../scripts/general/external-ipv4.sh"]
+  program = ["sh", "../../scripts/general/external-ipv4.sh"]
 }
 
 data "external" "hub_xlb7_local_nat_ipv6" {
-  program = ["sh", "../scripts/general/external-ipv6.sh"]
+  program = ["sh", "../../scripts/general/external-ipv6.sh"]
 }
 
 # frontend
@@ -89,17 +89,17 @@ resource "google_compute_address" "hub_eu_xlb7_denied_vm" {
 #----------------------------------------------------
 
 locals {
-  hub_eu_xlb7_flood4_vm_startup = templatefile("../scripts/startup/armor/flood4.sh", {
+  hub_eu_xlb7_flood4_vm_startup = templatefile("../../scripts/startup/armor/flood4.sh", {
     TARGET_VIP  = google_compute_global_address.hub_xlb7_frontend.address
     TARGET_PORT = 443
   })
-  hub_eu_xlb7_flood7_vm_startup = templatefile("../scripts/startup/armor/flood7.sh", {
+  hub_eu_xlb7_flood7_vm_startup = templatefile("../../scripts/startup/armor/flood7.sh", {
     TARGET_URL = local.hub_xlb7_target_url
   })
-  hub_baseline_vm_startup = templatefile("../scripts/startup/armor/baseline.sh", {
+  hub_baseline_vm_startup = templatefile("../../scripts/startup/armor/baseline.sh", {
     TARGET_URL = local.hub_xlb7_target_url
   })
-  hub_denied_vm_startup = templatefile("../scripts/startup/armor/denied.sh", {
+  hub_denied_vm_startup = templatefile("../../scripts/startup/armor/denied.sh", {
     TARGET_URL = local.hub_xlb7_target_url
   })
   hub_xlb7_target_url = "https://${local.hub_xlb7_host_secure_trimmed}/"
@@ -109,7 +109,7 @@ locals {
 
 module "hub_eu_xlb7_flood4_vm" {
   count         = local.hub_xlb7_flood4_count
-  source        = "../modules/compute-vm"
+  source        = "../../modules/compute-vm"
   project_id    = var.project_id_hub
   name          = "${local.hub_prefix}eu-xlb7-flood4-vm${count.index}"
   zone          = "${local.hub_eu_region}-b"
@@ -134,7 +134,7 @@ module "hub_eu_xlb7_flood4_vm" {
 
 module "hub_eu_xlb7_flood7_vm" {
   count         = local.hub_xlb7_flood7_count
-  source        = "../modules/compute-vm"
+  source        = "../../modules/compute-vm"
   project_id    = var.project_id_hub
   name          = "${local.hub_prefix}eu-xlb7-flood7-vm${count.index}"
   zone          = "${local.hub_eu_region}-b"
@@ -158,7 +158,7 @@ module "hub_eu_xlb7_flood7_vm" {
 # baseline traffic gen
 
 module "hub_eu_baseline_vm" {
-  source        = "../modules/compute-vm"
+  source        = "../../modules/compute-vm"
   project_id    = var.project_id_hub
   name          = "${local.hub_prefix}eu-baseline-vm"
   zone          = "${local.hub_eu_region}-b"
@@ -182,7 +182,7 @@ module "hub_eu_baseline_vm" {
 # denied traffic gen
 
 module "hub_eu_denied_vm" {
-  source        = "../modules/compute-vm"
+  source        = "../../modules/compute-vm"
   project_id    = var.project_id_hub
   name          = "${local.hub_prefix}eu-denied-vm"
   zone          = "${local.hub_eu_region}-b"
@@ -207,11 +207,11 @@ module "hub_eu_denied_vm" {
 #----------------------------------------------------
 
 locals {
-  hub_xlb7_juice_cos_config = templatefile("../scripts/startup/juice.yaml", {
+  hub_xlb7_juice_cos_config = templatefile("../../scripts/startup/juice.yaml", {
     APP_NAME  = "${local.hub_prefix}juice-shop"
     APP_IMAGE = "bkimminich/juice-shop"
   })
-  hub_xlb7_vm_cos = templatefile("../scripts/startup/armor/juice-xlb7.sh", {
+  hub_xlb7_vm_cos = templatefile("../../scripts/startup/armor/juice-xlb7.sh", {
     VCPU = 2
   })
 }
@@ -219,7 +219,7 @@ locals {
 # eu
 
 module "hub_eu_xlb7_juice_vm" {
-  source        = "../modules/compute-vm"
+  source        = "../../modules/compute-vm"
   project_id    = var.project_id_hub
   name          = "${local.hub_prefix}eu-xlb7-juice-vm"
   zone          = "${local.hub_eu_region}-b"
@@ -252,7 +252,7 @@ resource "local_file" "hub_eu_xlb7_juice_vm" {
 }
 
 module "hub_eu_xlb7_vm" {
-  source     = "../modules/compute-vm"
+  source     = "../../modules/compute-vm"
   project_id = var.project_id_hub
   name       = "${local.hub_prefix}eu-xlb7-vm"
   zone       = "${local.hub_eu_region}-b"
@@ -272,7 +272,7 @@ module "hub_eu_xlb7_vm" {
 # us
 
 module "hub_us_xlb7_vm" {
-  source        = "../modules/compute-vm"
+  source        = "../../modules/compute-vm"
   project_id    = var.project_id_hub
   name          = "${local.hub_prefix}us-xlb7-vm"
   zone          = "${local.hub_us_region}-b"
@@ -315,14 +315,14 @@ resource "google_compute_firewall" "hub_xlb7_allow_ddos_flood4" {
 # eu
 
 locals {
-  hub_eu_xlb7_hc_proxy_startup = templatefile("../scripts/startup/proxy_hc.sh", {
+  hub_eu_xlb7_hc_proxy_startup = templatefile("../../scripts/startup/proxy_hc.sh", {
     GFE_RANGES = local.netblocks.gfe
-    DNAT_IP    = local.site1_app1_addr
+    DNAT_IP    = local.site1_vm_addr
   })
 }
 
 module "hub_eu_xlb7_hc_proxy" {
-  source     = "../modules/compute-vm"
+  source     = "../../modules/compute-vm"
   project_id = var.project_id_hub
   name       = "${local.hub_prefix}eu-xlb7-hc-proxy"
   zone       = "${local.hub_eu_region}-b"
@@ -345,14 +345,14 @@ module "hub_eu_xlb7_hc_proxy" {
 # us
 
 locals {
-  hub_us_xlb7_hc_proxy_startup = templatefile("../scripts/startup/proxy_hc.sh", {
+  hub_us_xlb7_hc_proxy_startup = templatefile("../../scripts/startup/proxy_hc.sh", {
     GFE_RANGES = local.netblocks.gfe
-    DNAT_IP    = local.site2_app1_addr
+    DNAT_IP    = local.site2_vm_addr
   })
 }
 
 module "hub_us_xlb7_hc_proxy" {
-  source     = "../modules/compute-vm"
+  source     = "../../modules/compute-vm"
   project_id = var.project_id_hub
   name       = "${local.hub_prefix}us-xlb7-hc-proxy"
   zone       = "${local.hub_us_region}-b"
@@ -635,7 +635,7 @@ locals {
 }
 
 module "hub_xlb7_backend_service" {
-  source                   = "../modules/backend-global"
+  source                   = "../../modules/backend-global"
   project_id               = var.project_id_hub
   prefix                   = "${local.hub_prefix}xlb7"
   network                  = google_compute_network.hub_vpc.self_link
@@ -645,7 +645,7 @@ module "hub_xlb7_backend_service" {
 }
 
 module "hub_xlb7_backend_service_juice" {
-  source                   = "../modules/backend-global"
+  source                   = "../../modules/backend-global"
   project_id               = var.project_id_hub
   prefix                   = "${local.hub_prefix}xlb7-juice"
   network                  = google_compute_network.hub_vpc.self_link
@@ -738,7 +738,7 @@ resource "google_compute_url_map" "hub_xlb7_url_map" {
 #----------------------------------------------------
 
 module "hub_xlb7_frontend" {
-  source     = "../modules/ext-lb-app-frontend"
+  source     = "../../modules/ext-lb-app-frontend"
   project_id = var.project_id_hub
   prefix     = "${local.hub_prefix}xlb7"
   network    = google_compute_network.hub_vpc.self_link
@@ -771,12 +771,12 @@ resource "google_dns_record_set" "hub_xlb7_frontend_dns" {
 
 locals {
   hub_xlb7_edge_sec_policy = "${local.hub_prefix}xlb7-edge-sec-policy"
-  hub_xlb7_edge_sec_policy_create = templatefile("../scripts/armor/edge/policy/create.sh", {
+  hub_xlb7_edge_sec_policy_create = templatefile("../../scripts/armor/edge/policy/create.sh", {
     PROJECT_ID  = var.project_id_hub
     POLICY_NAME = local.hub_xlb7_edge_sec_policy
     POLICY_TYPE = "CLOUD_ARMOR_EDGE"
   })
-  hub_xlb7_edge_sec_policy_delete = templatefile("../scripts/armor/edge/policy/delete.sh", {
+  hub_xlb7_edge_sec_policy_delete = templatefile("../../scripts/armor/edge/policy/delete.sh", {
     PROJECT_ID  = var.project_id_hub
     POLICY_NAME = local.hub_xlb7_edge_sec_policy
   })
@@ -819,14 +819,14 @@ locals {
     module.hub_xlb7_backend_service.backend_service_neg["secure"].name,
     module.hub_xlb7_backend_service_juice.backend_service_mig["secure-juice"].name,
   ]
-  hub_xlb7_edge_sec_rules_create = templatefile("../scripts/armor/edge/rules/create.sh", {
+  hub_xlb7_edge_sec_rules_create = templatefile("../../scripts/armor/edge/rules/create.sh", {
     PROJECT_ID  = var.project_id_hub
     POLICY_NAME = local.hub_xlb7_edge_sec_policy
     RULES       = local.hub_xlb7_edge_sec_rules
     BACKENDS    = local.hub_xlb7_edge_sec_backends
     ENABLE      = true
   })
-  hub_xlb7_edge_sec_rules_delete = templatefile("../scripts/armor/edge/rules/delete.sh", {
+  hub_xlb7_edge_sec_rules_delete = templatefile("../../scripts/armor/edge/rules/delete.sh", {
     PROJECT_ID  = var.project_id_hub
     POLICY_NAME = local.hub_xlb7_edge_sec_policy
     RULES       = local.hub_xlb7_edge_sec_rules

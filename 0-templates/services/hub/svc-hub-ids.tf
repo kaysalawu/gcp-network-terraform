@@ -5,13 +5,13 @@
 # attack (onprem)
 
 locals {
-  site1_ids_attack_startup = templatefile("../scripts/startup/ids/attack.sh", {
+  site1_ids_attack_startup = templatefile("../../scripts/startup/ids/attack.sh", {
     TARGET = local.hub_eu_ids_server_addr
   })
 }
 
 module "site1_ids_attack" {
-  source     = "../modules/compute-vm"
+  source     = "../../modules/compute-vm"
   project_id = var.project_id_onprem
   name       = "${local.site1_prefix}ids-attack"
   zone       = "${local.site1_region}-b"
@@ -34,11 +34,11 @@ module "site1_ids_attack" {
 # server (hub)
 
 locals {
-  hub_eu_ids_server_startup = templatefile("../scripts/startup/ids/server.sh", {})
+  hub_eu_ids_server_startup = templatefile("../../scripts/startup/ids/server.sh", {})
 }
 
 module "hub_eu_ids_server" {
-  source     = "../modules/compute-vm"
+  source     = "../../modules/compute-vm"
   project_id = var.project_id_hub
   name       = "${local.hub_prefix}eu-ids-server"
   zone       = "${local.hub_eu_region}-b"
@@ -62,7 +62,7 @@ module "hub_eu_ids_server" {
 #---------------------------------
 
 locals {
-  hub_eu_ids_endpoint_create = templatefile("../scripts/ids/endpoint/create.sh", {
+  hub_eu_ids_endpoint_create = templatefile("../../scripts/ids/endpoint/create.sh", {
     PROJECT_ID    = var.project_id_hub
     NETWORK       = google_compute_network.hub_vpc.name
     REGION        = local.hub_eu_region
@@ -71,7 +71,7 @@ locals {
     ENDPOINT_NAME = "${local.hub_prefix}endpoint"
     SEVERITY      = "INFORMATIONAL"
   })
-  hub_eu_ids_endpoint_delete = templatefile("../scripts/ids/endpoint/delete.sh", {
+  hub_eu_ids_endpoint_delete = templatefile("../../scripts/ids/endpoint/delete.sh", {
     PROJECT_ID    = var.project_id_hub
     REGION        = local.hub_eu_region
     ZONE          = "${local.hub_eu_region}-c"
@@ -98,7 +98,7 @@ resource "null_resource" "hub_eu_ids_endpoint" {
 #---------------------------------
 
 locals {
-  hub_eu_ids_mirror_create = templatefile("../scripts/ids/mirror/create.sh", {
+  hub_eu_ids_mirror_create = templatefile("../../scripts/ids/mirror/create.sh", {
     PROJECT_ID    = var.project_id_hub
     NETWORK       = google_compute_network.hub_vpc.name
     REGION        = local.hub_eu_region
@@ -107,7 +107,7 @@ locals {
     ENDPOINT_NAME = "${local.hub_prefix}endpoint"
     MIRROR        = local.hub_eu_ids_mirror
   })
-  hub_eu_ids_mirror_delete = templatefile("../scripts/ids/mirror/delete.sh", {
+  hub_eu_ids_mirror_delete = templatefile("../../scripts/ids/mirror/delete.sh", {
     PROJECT_ID    = var.project_id_hub
     REGION        = local.hub_eu_region
     ZONE          = "${local.hub_eu_region}-c"

@@ -93,7 +93,7 @@ module "site1_vpc_fw_policy" {
 # unbound config
 
 locals {
-  site1_unbound_config = templatefile("../scripts/startup/unbound/site.sh", {
+  site1_unbound_config = templatefile("../../scripts/startup/unbound/site.sh", {
     ONPREM_LOCAL_RECORDS = local.onprem_local_records
     REDIRECTED_HOSTS     = local.onprem_redirected_hosts
     FORWARD_ZONES        = local.onprem_forward_zones
@@ -159,7 +159,7 @@ module "site1_dns_forward_to_dns" {
 # app
 
 module "site1_vm" {
-  source     = "../modules/compute-vm"
+  source     = "../../modules/compute-vm"
   project_id = var.project_id_onprem
   name       = "${local.site1_prefix}vm"
   zone       = "${local.site1_region}-b"

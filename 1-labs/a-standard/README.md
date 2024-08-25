@@ -77,7 +77,7 @@ The table below shows the auto-generated output files from the lab. They are loc
 
 ## Testing
 
-Each virtual machine (VM) is pre-configured with a shell [script](../scripts/server.sh) to run various types of network reachability tests. Serial console access has been configured for all virtual machines. In each VM instance, The pre-configured test script `/usr/local/bin/playz` can be run from the SSH terminal to test network reachability.
+Each virtual machine (VM) is pre-configured with a shell [script](../../scripts/server.sh) to run various types of network reachability tests. Serial console access has been configured for all virtual machines. In each VM instance, The pre-configured test script `/usr/local/bin/playz` can be run from the SSH terminal to test network reachability.
 
 The full list of the scripts in each VM instance is shown below:
 
@@ -91,7 +91,7 @@ $ ls -l /usr/local/bin/
 -rwxr-xr-x 1 root root 1957 Aug 17 14:58 probez
 ```
 * **[bucketz](./_output/vm-startup.sh#L119)** - Test access to selected Google Cloud Storage buckets
-* **[discoverz.py](../scripts/startup/discoverz.py)** - HTTP test to all google API endpoints
+* **[discoverz.py](../../scripts/startup/discoverz.py)** - HTTP test to all google API endpoints
 * **[pingz](./_output/vm-startup.sh#L97)** - ICMP reachability test to all VM instances
 * **[playz](./_output/vm-startup.sh#L57)** - HTTP (curl) test to all VM instances
 * **[probez](./_output/vm-startup.sh#L183)** - Run benchmark tests to selected VM instances
