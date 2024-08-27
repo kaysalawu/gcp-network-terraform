@@ -49,9 +49,9 @@ resource "google_compute_instance" "spoke2_eu_xlb7_hc_proxy" {
   service_account {
     scopes = ["cloud-platform"]
   }
-  metadata_startup_script = templatefile("../scripts/startup/proxy_hc.sh", {
+  metadata_startup_script = templatefile("../../scripts/startup/proxy_hc.sh", {
     GFE_RANGES = local.netblocks.gfe
-    DNAT_IP    = local.site1_app1_addr
+    DNAT_IP    = local.site1_vm_addr
   })
 }
 
@@ -116,7 +116,7 @@ resource "google_compute_instance_group" "spoke2_us_xlb7_ig" {
 # eu
 
 locals {
-  spoke2_eu_xlb7_hybrid_neg_create = templatefile("../scripts/neg/hybrid/create.sh", {
+  spoke2_eu_xlb7_hybrid_neg_create = templatefile("../../scripts/neg/hybrid/create.sh", {
     PROJECT_ID  = var.project_id_spoke2
     NETWORK     = google_compute_network.spoke2_vpc.name
     SUBNET      = local.spoke2_eu_subnet1.name
@@ -126,7 +126,7 @@ locals {
     REMOTE_IP   = local.spoke2_eu_hybrid_hc_proxy_addr
     REMOTE_PORT = local.svc_web.port
   })
-  spoke2_eu_xlb7_hybrid_neg_delete = templatefile("../scripts/neg/hybrid/delete.sh", {
+  spoke2_eu_xlb7_hybrid_neg_delete = templatefile("../../scripts/neg/hybrid/delete.sh", {
     PROJECT_ID = var.project_id_spoke2
     NEG_NAME   = "${local.spoke2_prefix}eu-xlb7-hybrid-neg"
     ZONE       = "${local.spoke2_eu_region}-c"
@@ -163,7 +163,7 @@ locals {
 #----------------------------------------------------
 
 module "spoke2_xlb7" {
-  source     = "../modules/xlb7"
+  source     = "../../modules/xlb7"
   project_id = var.project_id_spoke2
   name       = "${local.spoke2_prefix}xlb7"
   network    = google_compute_network.spoke2_vpc.self_link

@@ -77,7 +77,7 @@ The table below shows the auto-generated output files from the lab. They are loc
 
 ## Testing
 
-Each virtual machine (VM) is pre-configured with a shell [script](../scripts/server.sh) to run various types of network reachability tests. Serial console access has been configured for all virtual machines. In each VM instance, The pre-configured test script `/usr/local/bin/playz` can be run from the SSH terminal to test network reachability.
+Each virtual machine (VM) is pre-configured with a shell [script](../../scripts/server.sh) to run various types of network reachability tests. Serial console access has been configured for all virtual machines. In each VM instance, The pre-configured test script `/usr/local/bin/playz` can be run from the SSH terminal to test network reachability.
 
 The full list of the scripts in each VM instance is shown below:
 
@@ -91,7 +91,7 @@ $ ls -l /usr/local/bin/
 -rwxr-xr-x 1 root root 1957 Aug 17 14:58 probez
 ```
 * **[bucketz](./_output/vm-startup.sh#L119)** - Test access to selected Google Cloud Storage buckets
-* **[discoverz.py](../scripts/startup/discoverz.py)** - HTTP test to all google API endpoints
+* **[discoverz.py](../../scripts/startup/discoverz.py)** - HTTP test to all google API endpoints
 * **[pingz](./_output/vm-startup.sh#L97)** - ICMP reachability test to all VM instances
 * **[playz](./_output/vm-startup.sh#L57)** - HTTP (curl) test to all VM instances
 * **[probez](./_output/vm-startup.sh#L183)** - Run benchmark tests to selected VM instances
@@ -229,7 +229,7 @@ No requirements.
 | <a name="input_image_panos"></a> [image\_panos](#input\_image\_panos) | palo alto image from gcp marketplace | `string` | `"https://www.googleapis.com/compute/v1/projects/paloaltonetworksgcp-public/global/images/vmseries-bundle1-810"` | no |
 | <a name="input_image_ubuntu"></a> [image\_ubuntu](#input\_image\_ubuntu) | vm instance image | `string` | `"ubuntu-os-cloud/ubuntu-2404-lts-amd64"` | no |
 | <a name="input_image_vyos"></a> [image\_vyos](#input\_image\_vyos) | vyos image from gcp marketplace | `string` | `"https://www.googleapis.com/compute/v1/projects/sentrium-public/global/images/vyos-1-3-0"` | no |
-| <a name="input_machine_type"></a> [machine\_type](#input\_machine\_type) | vm instance size | `string` | `"e2-micro"` | no |
+| <a name="input_machine_type"></a> [machine\_type](#input\_machine\_type) | vm instance size | `string` | `"e2-small"` | no |
 | <a name="input_organization_id"></a> [organization\_id](#input\_organization\_id) | organization id | `any` | `null` | no |
 | <a name="input_project_id_host"></a> [project\_id\_host](#input\_project\_id\_host) | host project id | `any` | n/a | yes |
 | <a name="input_project_id_hub"></a> [project\_id\_hub](#input\_project\_id\_hub) | hub project id | `any` | n/a | yes |

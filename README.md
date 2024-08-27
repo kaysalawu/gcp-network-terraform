@@ -1,8 +1,8 @@
-# GCP Networking Blueprints (Classic)
+# GCP Networking Blueprints
 
 Contents
 <!-- TOC -->
-- [GCP Networking Blueprints (Classic)](#gcp-networking-blueprints-classic)
+- [GCP Networking Blueprints](#gcp-networking-blueprints)
   - [A. Hub and Spoke with HA VPN to On-premises](#a-hub-and-spoke-with-ha-vpn-to-on-premises)
   - [B. Hub and Spoke with Appliance IPsec Tunnel to On-premises](#b-hub-and-spoke-with-appliance-ipsec-tunnel-to-on-premises)
   - [C. Hub and Spoke with Appliance GRE Tunnel to On-premises](#c-hub-and-spoke-with-appliance-gre-tunnel-to-on-premises)
@@ -11,10 +11,11 @@ Contents
   - [F. Simple Hybrid Connectivity](#f-simple-hybrid-connectivity)
 <!-- /TOC -->
 
-This collection of Terraform blueprints demonstrates different hub and spoke network patterns using classic networking products and services. It features:
-* VPC firewall rules
-* Multi-NIC appliances for layer 7 inspection
-* Simple hybrid Network Connectivity Centre configurations
+This collection of Terraform blueprints demonstrates different hub and spoke network patterns using the latest networking products and services. It features:
+* Cloud NGFW firewall policies with layer 7 inspection
+* Secure tags
+* Secure web proxy
+* Advanced hybrid Network Connectivity Centre configurations
 
 ## A. Hub and Spoke with HA VPN to On-premises
 

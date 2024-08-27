@@ -21,7 +21,7 @@
 #---------------------------------
 
 data "external" "case1_external_ip" {
-  program = ["sh", "../scripts/general/external-ip.sh"]
+  program = ["sh", "../../scripts/general/external-ip.sh"]
 }
 
 # policy

@@ -21,11 +21,11 @@
 #---------------------------------
 
 data "external" "case1_external_ipv4" {
-  program = ["sh", "../scripts/general/external-ipv4.sh"]
+  program = ["sh", "../../scripts/general/external-ipv4.sh"]
 }
 
 data "external" "case1_external_ipv6" {
-  program = ["sh", "../scripts/general/external-ipv6.sh"]
+  program = ["sh", "../../scripts/general/external-ipv6.sh"]
 }
 
 # policy
@@ -323,11 +323,11 @@ resource "local_file" "case1_delete" {
 #---------------------------------
 
 locals {
-  hub_eu_vertex_natgw_startup = templatefile("../scripts/startup/natgw.sh", {})
+  hub_eu_vertex_natgw_startup = templatefile("../../scripts/startup/natgw.sh", {})
 }
 
 module "hub_eu_vertex_natgw" {
-  source         = "../modules/compute-vm"
+  source         = "../../modules/compute-vm"
   project_id     = var.project_id_hub
   name           = "${local.hub_prefix}eu-vertex-natgw"
   zone           = "${local.hub_eu_region}-b"

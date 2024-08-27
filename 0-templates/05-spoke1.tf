@@ -34,13 +34,13 @@ resource "google_dns_policy" "spoke1_dns_policy" {
 # policy
 
 locals {
-  spoke1_dns_rp_create = templatefile("../scripts/dns/policy-create.sh", {
+  spoke1_dns_rp_create = templatefile("../../scripts/dns/policy-create.sh", {
     PROJECT     = var.project_id_spoke1
     RP_NAME     = "${local.spoke1_prefix}dns-rp"
     NETWORKS    = join(",", [google_compute_network.spoke1_vpc.self_link, ])
     DESCRIPTION = "dns repsonse policy"
   })
-  spoke1_dns_rp_delete = templatefile("../scripts/dns/policy-delete.sh", {
+  spoke1_dns_rp_delete = templatefile("../../scripts/dns/policy-delete.sh", {
     PROJECT = var.project_id_spoke1
     RP_NAME = "${local.spoke1_prefix}dns-rp"
   })
@@ -85,12 +85,12 @@ locals {
       local_data = "name=*.googleapis.com.,type=A,ttl=300,rrdatas=${local.spoke1_psc_api_fr_addr}"
     }
   }
-  spoke1_dns_rp_rules_local_create = templatefile("../scripts/dns/rule-create.sh", {
+  spoke1_dns_rp_rules_local_create = templatefile("../../scripts/dns/rule-create.sh", {
     PROJECT = var.project_id_spoke1
     RP_NAME = "${local.spoke1_prefix}dns-rp"
     RULES   = local.spoke1_dns_rp_rules_local
   })
-  spoke1_dns_rp_rules_local_delete = templatefile("../scripts/dns/rule-delete.sh", {
+  spoke1_dns_rp_rules_local_delete = templatefile("../../scripts/dns/rule-delete.sh", {
     PROJECT = var.project_id_spoke1
     RP_NAME = "${local.spoke1_prefix}dns-rp"
     RULES   = local.spoke1_dns_rp_rules_local
@@ -120,12 +120,12 @@ locals {
     ("${local.spoke1_prefix}dns-rp-rule-bypass-ouath2") = { dns_name = "oauth2.googleapis.com." }
     ("${local.spoke1_prefix}dns-rp-rule-bypass-psc")    = { dns_name = "*.p.googleapis.com." }
   }
-  spoke1_dns_rp_rules_bypass_create = templatefile("../scripts/dns/rule-bypass-create.sh", {
+  spoke1_dns_rp_rules_bypass_create = templatefile("../../scripts/dns/rule-bypass-create.sh", {
     PROJECT = var.project_id_spoke1
     RP_NAME = "${local.spoke1_prefix}dns-rp"
     RULES   = local.spoke1_dns_rp_rules_bypass
   })
-  spoke1_dns_rp_rules_bypass_delete = templatefile("../scripts/dns/rule-delete.sh", {
+  spoke1_dns_rp_rules_bypass_delete = templatefile("../../scripts/dns/rule-delete.sh", {
     PROJECT = var.project_id_spoke1
     RP_NAME = "${local.spoke1_prefix}dns-rp"
     RULES   = local.spoke1_dns_rp_rules_bypass
@@ -410,7 +410,7 @@ locals {
 
 resource "google_compute_instance" "spoke1_eu_ilb7_vm" {
   project      = var.project_id_spoke1
-  name         = "${local.spoke1_prefix}eu-ilb7-vm"
+  name         = "${local.spoke1_prefix}eu-vm7"
   zone         = "${local.spoke1_eu_region}-b"
   machine_type = var.machine_type
   tags         = [local.tag_ssh, local.tag_gfe]
@@ -456,14 +456,14 @@ resource "google_compute_instance_group" "spoke1_eu_ilb7_ig" {
 locals {
   spoke1_eu_ilb7_psc_api_neg_name      = "${local.spoke1_prefix}eu-ilb7-psc-api-neg"
   spoke1_eu_ilb7_psc_api_neg_self_link = "projects/${var.project_id_spoke1}/regions/${local.spoke1_eu_region}/networkEndpointGroups/${local.spoke1_eu_ilb7_psc_api_neg_name}"
-  spoke1_eu_ilb7_psc_api_neg_create = templatefile("../scripts/neg/psc/create.sh", {
+  spoke1_eu_ilb7_psc_api_neg_create = templatefile("../../scripts/neg/psc/create.sh", {
     PROJECT_ID     = var.project_id_spoke1
     NETWORK        = google_compute_network.spoke1_vpc.self_link
     REGION         = local.spoke1_eu_region
     NEG_NAME       = local.spoke1_eu_ilb7_psc_api_neg_name
     TARGET_SERVICE = local.spoke1_eu_psc_https_ctrl_run_dns
   })
-  spoke1_eu_ilb7_psc_api_neg_delete = templatefile("../scripts/neg/psc/delete.sh", {
+  spoke1_eu_ilb7_psc_api_neg_delete = templatefile("../../scripts/neg/psc/delete.sh", {
     PROJECT_ID = var.project_id_spoke1
     REGION     = local.spoke1_eu_region
     NEG_NAME   = local.spoke1_eu_ilb7_psc_api_neg_name
@@ -489,7 +489,7 @@ resource "null_resource" "spoke1_eu_ilb7_psc_api_neg" {
 locals {
   spoke1_us_ilb7_psc_vpc_neg_name      = "${local.spoke1_prefix}us-ilb7-psc-vpc-neg"
   spoke1_us_ilb7_psc_vpc_neg_self_link = "projects/${var.project_id_spoke1}/regions/${local.spoke1_us_region}/networkEndpointGroups/${local.spoke1_us_ilb7_psc_vpc_neg_name}"
-  spoke1_us_ilb7_psc_vpc_neg_create = templatefile("../scripts/neg/psc/create.sh", {
+  spoke1_us_ilb7_psc_vpc_neg_create = templatefile("../../scripts/neg/psc/create.sh", {
     PROJECT_ID     = var.project_id_spoke1
     NETWORK        = google_compute_network.spoke1_vpc.self_link
     REGION         = local.spoke1_us_region
@@ -497,7 +497,7 @@ locals {
     TARGET_SERVICE = local.spoke1_us_psc_https_ctrl_run_dns
     #TARGET_SERVICE = google_compute_service_attachment.spoke2_us_producer_svc_attach.self_link
   })
-  spoke1_us_ilb7_psc_vpc_neg_delete = templatefile("../scripts/neg/psc/delete.sh", {
+  spoke1_us_ilb7_psc_vpc_neg_delete = templatefile("../../scripts/neg/psc/delete.sh", {
     PROJECT_ID = var.project_id_spoke1
     REGION     = local.spoke1_us_region
     NEG_NAME   = local.spoke1_us_ilb7_psc_vpc_neg_name
@@ -568,7 +568,7 @@ locals {
 
 module "spoke1_eu_ilb7_bes" {
   depends_on               = [null_resource.spoke1_eu_ilb7_psc_api_neg]
-  source                   = "../modules/backend-region"
+  source                   = "../../modules/backend-region"
   project_id               = var.project_id_spoke1
   prefix                   = "${local.spoke1_prefix}eu-ilb7"
   network                  = google_compute_network.spoke1_vpc.self_link
@@ -607,7 +607,7 @@ resource "google_compute_region_url_map" "spoke1_eu_ilb7_url_map" {
 # frontend
 
 module "spoke1_eu_ilb7_frontend" {
-  source           = "../modules/int-lb-app-frontend"
+  source           = "../../modules/int-lb-app-frontend"
   project_id       = var.project_id_spoke1
   prefix           = "${local.spoke1_prefix}eu-ilb7"
   network          = google_compute_network.spoke1_vpc.self_link

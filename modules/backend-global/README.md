@@ -88,7 +88,7 @@ locals {
 }
 
 module "hub_xlb7_bes" {
-  source                   = "../modules/backend-global"
+  source                   = "../../modules/backend-global"
   project_id               = var.project_id_hub
   prefix                   = "${local.hub_prefix}xlb7"
   network                  = google_compute_network.hub_vpc.self_link
@@ -98,7 +98,7 @@ module "hub_xlb7_bes" {
 }
 
 module "hub_xlb7_bes_juice" {
-  source                   = "../modules/backend-global"
+  source                   = "../../modules/backend-global"
   project_id               = var.project_id_hub
   prefix                   = "${local.hub_prefix}xlb7-juice"
   network                  = google_compute_network.hub_vpc.self_link
@@ -112,7 +112,7 @@ module "hub_xlb7_bes_juice" {
 ```
 module "hub_xlb7_frontend" {
   depends_on = [null_resource.hub_xlb7_url_map]
-  source     = "../modules/ext-lb-app-frontend"
+  source     = "../../modules/ext-lb-app-frontend"
   project_id = var.project_id_hub
   prefix     = "${local.hub_prefix}xlb7"
   network    = google_compute_network.hub_vpc.self_link

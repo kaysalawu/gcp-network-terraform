@@ -29,11 +29,11 @@ locals {
 # local nat
 
 data "external" "hub_nlb_local_nat_ipv4" {
-  program = ["sh", "../scripts/general/external-ipv4.sh"]
+  program = ["sh", "../../scripts/general/external-ipv4.sh"]
 }
 
 data "external" "hub_nlb_local_nat_ipv6" {
-  program = ["sh", "../scripts/general/external-ipv6.sh"]
+  program = ["sh", "../../scripts/general/external-ipv6.sh"]
 }
 
 # frontend
@@ -57,7 +57,7 @@ resource "google_compute_address" "hub_eu_nlb_flood4_vm" {
 #-------------------------------
 
 locals {
-  hub_eu_nlb_flood4_vm_startup = templatefile("../scripts/startup/armor/flood4.sh", {
+  hub_eu_nlb_flood4_vm_startup = templatefile("../../scripts/startup/armor/flood4.sh", {
     TARGET_VIP  = google_compute_address.hub_eu_nlb_frontend.address
     TARGET_PORT = local.svc_juice.port
   })
@@ -67,7 +67,7 @@ locals {
 
 module "hub_eu_nlb_flood4_vm" {
   count         = local.hub_nlb_flood4_count
-  source        = "../modules/compute-vm"
+  source        = "../../modules/compute-vm"
   project_id    = var.project_id_hub
   name          = "${local.hub_prefix}eu-nlb-flood4-vm${count.index}"
   zone          = "${local.hub_eu_region}-b"
@@ -92,11 +92,11 @@ module "hub_eu_nlb_flood4_vm" {
 #-------------------------------
 
 locals {
-  hub_eu_nlb_juice_vm_config = templatefile("../scripts/startup/juice.yaml", {
+  hub_eu_nlb_juice_vm_config = templatefile("../../scripts/startup/juice.yaml", {
     APP_NAME  = "${local.hub_prefix}juice-shop"
     APP_IMAGE = "bkimminich/juice-shop"
   })
-  hub_eu_nlb_juice_vm_cos = templatefile("../scripts/startup/armor/juice-nlb.sh", {
+  hub_eu_nlb_juice_vm_cos = templatefile("../../scripts/startup/armor/juice-nlb.sh", {
     NLB_VIP = google_compute_address.hub_eu_nlb_frontend.address
     VM_IP   = module.hub_eu_nlb_juice_vm.internal_ip
     PORT    = local.svc_juice.port
@@ -105,7 +105,7 @@ locals {
 }
 
 module "hub_eu_nlb_juice_vm" {
-  source        = "../modules/compute-vm"
+  source        = "../../modules/compute-vm"
   project_id    = var.project_id_hub
   name          = "${local.hub_prefix}eu-nlb-juice-vm"
   zone          = "${local.hub_eu_region}-b"
@@ -177,7 +177,7 @@ resource "google_compute_instance_group" "hub_eu_nlb_juice_ig" {
 # tcp
 
 module "hub_eu_nlb_tcp" {
-  source     = "../modules/network-lb"
+  source     = "../../modules/network-lb"
   project_id = var.project_id_hub
   region     = local.hub_eu_region
   name       = "${local.hub_prefix}eu-nlb-tcp"
@@ -200,7 +200,7 @@ module "hub_eu_nlb_tcp" {
 # udp
 
 module "hub_eu_nlb_udp" {
-  source     = "../modules/network-lb"
+  source     = "../../modules/network-lb"
   project_id = var.project_id_hub
   region     = local.hub_eu_region
   name       = "${local.hub_prefix}eu-nlb-udp"
@@ -236,12 +236,12 @@ resource "google_dns_record_set" "hub_eu_nlb_dns" {
 #----------------------------------------------------
 
 locals {
-  hub_nlb_ca_policy_create = templatefile("../scripts/armor/network/policy/create.sh", {
+  hub_nlb_ca_policy_create = templatefile("../../scripts/armor/network/policy/create.sh", {
     PROJECT_ID  = var.project_id_hub
     POLICY_NAME = "${local.hub_prefix}nlb-ca-policy"
     REGION      = local.hub_us_region
   })
-  hub_nlb_ca_policy_delete = templatefile("../scripts/armor/network/policy/delete.sh", {
+  hub_nlb_ca_policy_delete = templatefile("../../scripts/armor/network/policy/delete.sh", {
     PROJECT_ID  = var.project_id_hub
     POLICY_NAME = "${local.hub_prefix}nlb-ca-policy"
     REGION      = local.hub_us_region
@@ -266,13 +266,13 @@ resource "null_resource" "hub_us_nlb_policy" {
 #----------------------------------------------------
 
 locals {
-  hub_nlb_ca_service_create = templatefile("../scripts/armor/network/service/create.sh", {
+  hub_nlb_ca_service_create = templatefile("../../scripts/armor/network/service/create.sh", {
     PROJECT_ID   = var.project_id_hub
     POLICY_NAME  = "${local.hub_prefix}nlb-ca-policy"
     SERVICE_NAME = "${local.hub_prefix}nlb-ca-service"
     REGION       = local.hub_us_region
   })
-  hub_nlb_ca_service_delete = templatefile("../scripts/armor/network/service/delete.sh", {
+  hub_nlb_ca_service_delete = templatefile("../../scripts/armor/network/service/delete.sh", {
     PROJECT_ID   = var.project_id_hub
     POLICY_NAME  = "${local.hub_prefix}nlb-ca-policy"
     SERVICE_NAME = "${local.hub_prefix}nlb-ca-service"

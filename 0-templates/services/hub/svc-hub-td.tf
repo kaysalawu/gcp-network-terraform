@@ -42,7 +42,7 @@ resource "google_compute_health_check" "hub_td_envoy_hybrid_hc" {
 # grpc-cloud
 
 locals {
-  hub_td_grpc_cloud_vm_startup = templatefile("../scripts/startup/server-grpc.sh", {})
+  hub_td_grpc_cloud_vm_startup = templatefile("../../scripts/startup/server-grpc.sh", {})
 }
 
 resource "google_compute_instance" "hub_eu_td_grpc_cloud_vm" {
@@ -94,14 +94,14 @@ resource "google_compute_instance" "hub_us_td_grpc_cloud_vm" {
 # envoy-cloud
 
 locals {
-  hub_td_envoy_cloud_vm_startup = templatefile("../scripts/startup/server-web.sh", { PORT = local.svc_web.port })
+  hub_td_envoy_cloud_vm_startup = templatefile("../../scripts/startup/server-web.sh", { PORT = local.svc_web.port })
 }
 
 resource "google_compute_instance" "hub_eu_td_envoy_cloud_vm" {
   project      = var.project_id_hub
   name         = "${local.hub_prefix}eu-td-envoy-cloud"
   zone         = "${local.hub_eu_region}-b"
-  machine_type = "e2-micro"
+  machine_type = "e2-small"
   tags         = [local.tag_ssh, local.tag_gfe]
   boot_disk {
     initialize_params {
@@ -125,7 +125,7 @@ resource "google_compute_instance" "hub_us_td_envoy_cloud_vm" {
   project      = var.project_id_hub
   name         = "${local.hub_prefix}us-td-envoy-cloud"
   zone         = "${local.hub_us_region}-b"
-  machine_type = "e2-micro"
+  machine_type = "e2-small"
   tags         = [local.tag_ssh, local.tag_gfe]
   boot_disk {
     initialize_params {
@@ -199,17 +199,17 @@ resource "google_compute_instance_group" "hub_eu_td_envoy_cloud_ig" {
 # envoy-hybrid neg
 
 locals {
-  hub_eu_td_envoy_hybrid_neg_create = templatefile("../scripts/neg/hybrid/create.sh", {
+  hub_eu_td_envoy_hybrid_neg_create = templatefile("../../scripts/neg/hybrid/create.sh", {
     PROJECT_ID  = var.project_id_hub
     NETWORK     = google_compute_network.hub_vpc.name
     SUBNET      = local.hub_eu_subnet1.name
     NEG_NAME    = "${local.hub_prefix}eu-td-cloud-hybrid-neg"
     ZONE        = "${local.hub_eu_region}-c"
     NE_TYPE     = "non-gcp-private-ip-port"
-    REMOTE_IP   = local.site1_app1_addr
+    REMOTE_IP   = local.site1_vm_addr
     REMOTE_PORT = local.svc_web.port
   })
-  hub_eu_td_envoy_hybrid_neg_delete = templatefile("../scripts/neg/hybrid/delete.sh", {
+  hub_eu_td_envoy_hybrid_neg_delete = templatefile("../../scripts/neg/hybrid/delete.sh", {
     PROJECT_ID = var.project_id_hub
     NEG_NAME   = "${local.hub_prefix}eu-td-cloud-hybrid-neg"
     ZONE       = "${local.hub_eu_region}-c"
@@ -217,17 +217,17 @@ locals {
 }
 
 locals {
-  hub_us_td_envoy_hybrid_neg_create = templatefile("../scripts/neg/hybrid/create.sh", {
+  hub_us_td_envoy_hybrid_neg_create = templatefile("../../scripts/neg/hybrid/create.sh", {
     PROJECT_ID  = var.project_id_hub
     NETWORK     = google_compute_network.hub_vpc.name
     SUBNET      = local.hub_us_subnet1.name
     NEG_NAME    = "${local.hub_prefix}us-td-cloud-hybrid-neg"
     ZONE        = "${local.hub_us_region}-c"
     NE_TYPE     = "non-gcp-private-ip-port"
-    REMOTE_IP   = local.site2_app1_addr
+    REMOTE_IP   = local.site2_vm_addr
     REMOTE_PORT = local.svc_web.port
   })
-  hub_us_td_envoy_hybrid_neg_delete = templatefile("../scripts/neg/hybrid/delete.sh", {
+  hub_us_td_envoy_hybrid_neg_delete = templatefile("../../scripts/neg/hybrid/delete.sh", {
     PROJECT_ID = var.project_id_hub
     NEG_NAME   = "${local.hub_prefix}us-td-cloud-hybrid-neg"
     ZONE       = "${local.hub_us_region}-c"
@@ -517,7 +517,7 @@ resource "google_service_directory_endpoint" "hub_td_envoy_hybrid_fr" {
 #---------------------------------
 
 locals {
-  hub_eu_td_envoy_bridge_tpl_create = templatefile("../scripts/envoy/tpl-create.sh", {
+  hub_eu_td_envoy_bridge_tpl_create = templatefile("../../scripts/envoy/tpl-create.sh", {
     PROJECT_ID    = var.project_id_hub
     TEMPLATE_NAME = "${local.hub_prefix}eu-td-envoy-bridge-tpl"
     NETWORK_NAME  = google_compute_network.hub_vpc.name
@@ -525,14 +525,14 @@ locals {
     SUBNET_NAME   = local.hub_eu_subnet1.name
     METADATA      = ""
   })
-  hub_eu_td_envoy_bridge_tpl_delete = templatefile("../scripts/envoy/tpl-delete.sh", {
+  hub_eu_td_envoy_bridge_tpl_delete = templatefile("../../scripts/envoy/tpl-delete.sh", {
     PROJECT_ID    = var.project_id_hub
     TEMPLATE_NAME = "${local.hub_prefix}eu-td-envoy-bridge-tpl"
   })
 }
 
 locals {
-  hub_us_td_envoy_bridge_tpl_create = templatefile("../scripts/envoy/tpl-create.sh", {
+  hub_us_td_envoy_bridge_tpl_create = templatefile("../../scripts/envoy/tpl-create.sh", {
     PROJECT_ID    = var.project_id_hub
     TEMPLATE_NAME = "${local.hub_prefix}us-td-envoy-bridge-tpl"
     NETWORK_NAME  = google_compute_network.hub_vpc.name
@@ -540,7 +540,7 @@ locals {
     SUBNET_NAME   = local.hub_us_subnet1.name
     METADATA      = ""
   })
-  hub_us_td_envoy_bridge_tpl_delete = templatefile("../scripts/envoy/tpl-delete.sh", {
+  hub_us_td_envoy_bridge_tpl_delete = templatefile("../../scripts/envoy/tpl-delete.sh", {
     PROJECT_ID    = var.project_id_hub
     TEMPLATE_NAME = "${local.hub_prefix}us-td-envoy-bridge-tpl"
   })
@@ -710,7 +710,7 @@ module "hub_eu_td_envoy_bridge_ilb" {
 #---------------------------------
 
 locals {
-  hub_eu_td_client_tpl_create = templatefile("../scripts/envoy/tpl-create.sh", {
+  hub_eu_td_client_tpl_create = templatefile("../../scripts/envoy/tpl-create.sh", {
     PROJECT_ID    = var.project_id_hub
     TEMPLATE_NAME = "${local.hub_prefix}eu-td-client-tpl"
     NETWORK_NAME  = google_compute_network.hub_vpc.name
@@ -718,14 +718,14 @@ locals {
     SUBNET_NAME   = local.hub_eu_subnet1.name
     METADATA      = local.td_client_startup
   })
-  hub_eu_td_client_tpl_delete = templatefile("../scripts/envoy/tpl-delete.sh", {
+  hub_eu_td_client_tpl_delete = templatefile("../../scripts/envoy/tpl-delete.sh", {
     PROJECT_ID    = var.project_id_hub
     TEMPLATE_NAME = "${local.hub_prefix}eu-td-client-tpl"
   })
 }
 
 locals {
-  hub_us_td_client_tpl_create = templatefile("../scripts/envoy/tpl-create.sh", {
+  hub_us_td_client_tpl_create = templatefile("../../scripts/envoy/tpl-create.sh", {
     PROJECT_ID    = var.project_id_hub
     TEMPLATE_NAME = "${local.hub_prefix}us-td-client-tpl"
     NETWORK_NAME  = google_compute_network.hub_vpc.name
@@ -733,7 +733,7 @@ locals {
     SUBNET_NAME   = local.hub_us_subnet1.name
     METADATA      = local.td_client_startup
   })
-  hub_us_td_client_tpl_delete = templatefile("../scripts/envoy/tpl-delete.sh", {
+  hub_us_td_client_tpl_delete = templatefile("../../scripts/envoy/tpl-delete.sh", {
     PROJECT_ID    = var.project_id_hub
     TEMPLATE_NAME = "${local.hub_prefix}us-td-client-tpl"
   })

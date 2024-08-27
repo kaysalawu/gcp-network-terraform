@@ -1,0 +1,51 @@
+services:
+  nginx-443:
+    container_name: nginx-443
+    hostname: -DCK-nginx-443
+    build:
+      context: ./nginx/nginx-443
+      dockerfile: Dockerfile
+    environment:
+      HOST_HOSTNAME: $${HOSTNAME}
+    network_mode: host
+    volumes:
+      - /etc/ssl/app/cert.pem:/etc/ssl/app/cert.pem
+      - /etc/ssl/app/key.pem:/etc/ssl/app/key.pem
+      - /etc/nginx/nginx.conf:/etc/nginx/nginx.conf
+    restart: always
+  nginx-ipv6-443:
+    container_name: nginx-ipv6-443
+    hostname: -DCK-nginx-ipv6-443
+    build:
+      context: ./nginx/nginx-443
+      dockerfile: Dockerfile
+    environment:
+      HOST_HOSTNAME: $${HOSTNAME}
+    network_mode: host
+    volumes:
+      - /etc/ssl/app/cert.pem:/etc/ssl/app/cert.pem
+      - /etc/ssl/app/key.pem:/etc/ssl/app/key.pem
+      - /etc/nginx/nginx.conf:/etc/nginx/nginx.conf
+    restart: always
+  http-80:
+    container_name: http-80
+    hostname: -DCK-http-80
+    build:
+      context: ./app/app
+      dockerfile: Dockerfile
+    environment:
+      HOST_HOSTNAME: $${HOSTNAME}
+    network_mode: host
+    command: uvicorn main:app --host '0.0.0.0' --port 80
+    restart: always
+  http-80-ipv6:
+    container_name: http-80-ipv6
+    hostname: -DCK-http-80-ipv6
+    build:
+      context: ./app/app
+      dockerfile: Dockerfile
+    environment:
+      HOST_HOSTNAME: $${HOSTNAME}
+    network_mode: host
+    command: uvicorn main:app --host '::' --port 80
+    restart: always
