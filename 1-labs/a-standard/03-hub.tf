@@ -1,21 +1,4 @@
 
-# namespace
-#---------------------------------
-
-resource "google_service_directory_namespace" "hub_td" {
-  provider     = google-beta
-  project      = var.project_id_hub
-  namespace_id = "${local.hub_prefix}td"
-  location     = local.hub_eu_region
-}
-
-resource "google_service_directory_namespace" "hub_psc" {
-  provider     = google-beta
-  project      = var.project_id_hub
-  namespace_id = "${local.hub_prefix}psc"
-  location     = local.hub_eu_region
-}
-
 # network
 #---------------------------------
 
@@ -25,19 +8,19 @@ module "hub_vpc" {
   name       = "${local.hub_prefix}vpc"
 
   subnets             = local.hub_subnets_list
-  subnets_private_nat = local.spoke1_subnets_private_nat_list
-  subnets_proxy_only  = local.spoke1_subnets_proxy_only_list
-  subnets_psc         = local.spoke1_subnets_psc_list
+  subnets_private_nat = local.hub_subnets_private_nat_list
+  subnets_proxy_only  = local.hub_subnets_proxy_only_list
+  subnets_psc         = local.hub_subnets_psc_list
 
-  psa_configs = [{
-    ranges = {
-      "${local.spoke1_prefix}hub-eu-psa-range1" = local.hub_eu_psa_range1
-      "${local.spoke1_prefix}hub-eu-psa-range2" = local.hub_eu_psa_range2
-    }
-    export_routes  = true
-    import_routes  = true
-    peered_domains = ["gcp.example.com."]
-  }]
+  # psa_configs = [{
+  #   ranges = {
+  #     "hub-eu-psa-range1" = local.hub_eu_psa_range1
+  #     "hub-eu-psa-range2" = local.hub_eu_psa_range2
+  #   }
+  #   export_routes  = true
+  #   import_routes  = true
+  #   peered_domains = ["gcp.example.com."]
+  # }]
 }
 
 # addresses
@@ -109,7 +92,7 @@ module "hub_nat_us" {
 # firewall
 #---------------------------------
 
-module "hub1_vpc_fw_policy" {
+module "hub_vpc_fw_policy" {
   source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v33.0.0"
   name      = "${local.hub_prefix}vpc-fw-policy"
   parent_id = var.project_id_hub
@@ -283,7 +266,7 @@ locals {
 
 # policy
 
-module "dns-policy" {
+module "hub_dns_response_policy" {
   source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns-response-policy?ref=v33.0.0"
   project_id = var.project_id_hub
   name       = "${local.hub_prefix}drp"
@@ -424,6 +407,7 @@ module "hub_eu_ilb4" {
     group    = google_compute_instance_group.hub_eu_ilb4_ig.self_link
   }]
   health_check_config = {
+    enable_logging = true
     http = {
       host               = local.uhc_config.host
       port               = local.svc_web.port
@@ -431,7 +415,6 @@ module "hub_eu_ilb4" {
       request_path       = "/${local.uhc_config.request_path}"
       response           = local.uhc_config.response
     }
-    enable_logging = true
   }
 }
 
@@ -500,6 +483,7 @@ module "hub_us_ilb4" {
     group    = google_compute_instance_group.hub_us_ilb4_ig.self_link
   }]
   health_check_config = {
+    enable_logging = true
     http = {
       host               = local.uhc_config.host
       port               = local.svc_web.port
@@ -507,375 +491,215 @@ module "hub_us_ilb4" {
       request_path       = "/${local.uhc_config.request_path}"
       response           = local.uhc_config.response
     }
-    enable_logging = true
   }
 }
 
 # ilb7: hub-eu
 #---------------------------------
 
-# locals {
-#   hub_eu_ilb7_domains = [
-#     "${local.hub_eu_ilb7_dns_prefix}.${local.hub_domain}.${local.cloud_domain}",
-#     local.hub_eu_psc_https_ctrl_run_dns
-#   ]
-# }
+locals {
+  hub_eu_ilb7_domains = [
+    "${local.hub_eu_ilb7_dns_prefix}.${local.hub_domain}.${local.cloud_domain}",
+    local.hub_eu_psc_https_ctrl_run_dns
+  ]
+}
 
-# # instance
+# instance
 
-# resource "google_compute_instance" "hub_eu_ilb7_vm" {
-#   project      = var.project_id_hub
-#   name         = "${local.hub_prefix}eu-ilb7-vm"
-#   zone         = "${local.hub_eu_region}-b"
-#   machine_type = var.machine_type
-#   tags         = [local.tag_ssh, local.tag_gfe]
-#   boot_disk {
-#     initialize_params {
-#       image = var.image_ubuntu
-#       size  = var.disk_size
-#       type  = var.disk_type
-#     }
-#   }
-#   network_interface {
-#     network    = module.hub_vpc.self_link
-#     subnetwork = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
-#   }
-#   service_account {
-#     email  = module.hub_sa.email
-#     scopes = ["cloud-platform"]
-#   }
-#   metadata_startup_script   = local.vm_startup
-#   allow_stopping_for_update = true
-# }
+module "hub_eu_vm7" {
+  source     = "../../modules/compute-vm"
+  project_id = var.project_id_hub
+  name       = "${local.hub_prefix}eu-vm7"
+  zone       = "${local.hub_eu_region}-b"
+  tags       = [local.tag_ssh, local.tag_gfe]
+  network_interfaces = [{
+    network    = module.hub_vpc.self_link
+    subnetwork = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
+  }]
+  service_account = {
+    email  = module.hub_sa.email
+    scopes = ["cloud-platform"]
+  }
+  metadata = {
+    user-data = module.vm_cloud_init.cloud_config
+  }
+}
 
-# # ig
+# ilb7
 
-# resource "google_compute_instance_group" "hub_eu_ilb7_ig" {
-#   project   = var.project_id_hub
-#   zone      = "${local.hub_eu_region}-b"
-#   name      = "${local.hub_prefix}eu-ilb7-ig"
-#   instances = [google_compute_instance.hub_eu_ilb7_vm.self_link]
-#   named_port {
-#     name = local.svc_web.name
-#     port = local.svc_web.port
-#   }
-# }
+module "hub_eu_ilb7" {
+  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-app-int?ref=v33.0.0"
+  project_id = var.project_id_hub
+  name       = "${local.hub_prefix}eu-ilb7"
+  region     = local.hub_eu_region
+  address    = local.hub_eu_ilb7_addr
 
-# # psc neg
+  vpc_config = {
+    network    = module.hub_vpc.self_link
+    subnetwork = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
+  }
 
-# locals {
-#   hub_eu_ilb7_psc_api_neg_name      = "${local.hub_prefix}eu-ilb7-psc-api-neg"
-#   hub_eu_ilb7_psc_api_neg_self_link = "projects/${var.project_id_hub}/regions/${local.hub_eu_region}/networkEndpointGroups/${local.hub_eu_ilb7_psc_api_neg_name}"
-#   hub_eu_ilb7_psc_api_neg_create = templatefile("../../scripts/neg/psc/create.sh", {
-#     PROJECT_ID     = var.project_id_hub
-#     NETWORK        = module.hub_vpc.self_link
-#     REGION         = local.hub_eu_region
-#     NEG_NAME       = local.hub_eu_ilb7_psc_api_neg_name
-#     TARGET_SERVICE = local.hub_eu_psc_https_ctrl_run_dns
-#   })
-#   hub_eu_ilb7_psc_api_neg_delete = templatefile("../../scripts/neg/psc/delete.sh", {
-#     PROJECT_ID = var.project_id_hub
-#     REGION     = local.hub_eu_region
-#     NEG_NAME   = local.hub_eu_ilb7_psc_api_neg_name
-#   })
-# }
-
-# resource "null_resource" "hub_eu_ilb7_psc_api_neg" {
-#   triggers = {
-#     create = local.hub_eu_ilb7_psc_api_neg_create
-#     delete = local.hub_eu_ilb7_psc_api_neg_delete
-#   }
-#   provisioner "local-exec" {
-#     command = self.triggers.create
-#   }
-#   provisioner "local-exec" {
-#     when    = destroy
-#     command = self.triggers.delete
-#   }
-# }
-
-# # backend
-
-# locals {
-#   hub_eu_ilb7_backend_services_mig = {
-#     ("main") = {
-#       port_name = local.svc_web.name
-#       backends = [
-#         {
-#           group                 = google_compute_instance_group.hub_eu_ilb7_ig.self_link
-#           balancing_mode        = "RATE"
-#           max_rate_per_instance = 100
-#           capacity_scaler       = 1.0
-#         },
-#       ]
-#       health_check_config = {
-#         config  = {}
-#         logging = true
-#         check = {
-#           port_specification = "USE_SERVING_PORT"
-#           host               = local.uhc_config.host
-#           request_path       = "/${local.uhc_config.request_path}"
-#           response           = local.uhc_config.response
-#         }
-#       }
-#     }
-#   }
-#   hub_eu_ilb7_backend_services_psc_neg = {
-#     ("api") = {
-#       port = local.svc_web.port
-#       backends = [
-#         {
-#           group           = local.hub_eu_ilb7_psc_api_neg_self_link
-#           balancing_mode  = "UTILIZATION"
-#           capacity_scaler = 1.0
-#         },
-#       ]
-#       health_check_config = {
-#         config  = {}
-#         logging = true
-#         check   = {}
-#       }
-#     }
-#   }
-#   hub_eu_ilb7_backend_services_neg = {}
-# }
-
-# module "hub_eu_ilb7_bes" {
-#   depends_on               = [null_resource.hub_eu_ilb7_psc_api_neg]
-#   source                   = "../../modules/backend-region"
-#   project_id               = var.project_id_hub
-#   prefix                   = "${local.hub_prefix}eu-ilb7"
-#   network                  = module.hub_vpc.self_link
-#   region                   = local.hub_eu_region
-#   backend_services_mig     = local.hub_eu_ilb7_backend_services_mig
-#   backend_services_neg     = local.hub_eu_ilb7_backend_services_neg
-#   backend_services_psc_neg = local.hub_eu_ilb7_backend_services_psc_neg
-# }
-
-# # url map
-
-# resource "google_compute_region_url_map" "hub_eu_ilb7_url_map" {
-#   provider        = google-beta
-#   project         = var.project_id_hub
-#   name            = "${local.hub_prefix}eu-ilb7-url-map"
-#   region          = local.hub_eu_region
-#   default_service = module.hub_eu_ilb7_bes.backend_service_mig["main"].id
-#   host_rule {
-#     path_matcher = "main"
-#     hosts        = ["${local.hub_eu_ilb7_dns_prefix}.${local.hub_domain}.${local.cloud_domain}"]
-#   }
-#   host_rule {
-#     path_matcher = "api"
-#     hosts        = [local.hub_eu_psc_https_ctrl_run_dns]
-#   }
-#   path_matcher {
-#     name            = "main"
-#     default_service = module.hub_eu_ilb7_bes.backend_service_mig["main"].self_link
-#   }
-#   path_matcher {
-#     name            = "api"
-#     default_service = module.hub_eu_ilb7_bes.backend_service_psc_neg["api"].self_link
-#   }
-# }
-
-# # frontend
-
-# module "hub_eu_ilb7_frontend" {
-#   source     = "../../modules/int-lb-app-frontend"
-#   project_id = var.project_id_hub
-#   prefix     = "${local.hub_prefix}eu-ilb7"
-#   network    = module.hub_vpc.self_link
-#   subnetwork = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
-#   region     = local.hub_eu_region
-#   url_map    = google_compute_region_url_map.hub_eu_ilb7_url_map.id
-#   frontend = {
-#     address = local.hub_eu_ilb7_addr
-#     ssl     = { self_cert = true, domains = local.hub_eu_ilb7_domains }
-#   }
-# }
+  urlmap_config = {
+    default_service = "default"
+    host_rules = [
+      { path_matcher = "main", hosts = [local.hub_eu_ilb7_fqdn, ] },
+      { path_matcher = "psc-neg", hosts = [local.hub_eu_psc_https_ctrl_run_dns, ] }
+    ]
+    path_matchers = {
+      main    = { default_service = "default" }
+      psc-neg = { default_service = "psc-neg" }
+    }
+  }
+  backend_service_configs = {
+    default = {
+      port_name     = local.svc_web.name
+      health_checks = ["custom-http"]
+      backends = [
+        {
+          group          = "main"
+          balancing_mode = "RATE"
+          max_rate       = { per_instance = 100, capacity_scaler = 1.0 }
+        },
+      ]
+    }
+    psc-neg = {
+      health_checks = []
+      backends = [
+        {
+          group          = "psc-neg"
+          balancing_mode = "UTILIZATION"
+          max_rate       = { capacity_scaler = 1.0 }
+        }
+      ]
+    }
+  }
+  group_configs = {
+    main = {
+      zone        = "${local.hub_eu_region}-b"
+      instances   = [module.hub_eu_vm7.self_link, ]
+      named_ports = { (local.svc_web.name) = local.svc_web.port }
+    }
+  }
+  neg_configs = {
+    psc-neg = {
+      psc = {
+        region         = local.hub_eu_region
+        target_service = local.hub_eu_psc_https_ctrl_run_dns
+      }
+    }
+  }
+  health_check_configs = {
+    custom-http = {
+      enable_logging = true
+      http = {
+        host               = local.uhc_config.host
+        port_specification = "USE_SERVING_PORT"
+        request_path       = "/${local.uhc_config.request_path}"
+        response           = local.uhc_config.response
+      }
+    }
+  }
+}
 
 # ilb7: hub-us
 #---------------------------------
 
-# locals {
-#   hub_us_ilb7_domains = [
-#     "${local.hub_us_ilb7_dns_prefix}.${local.hub_domain}.${local.cloud_domain}",
-#     local.hub_us_psc_https_ctrl_run_dns
-#   ]
-# }
+# instance
 
-# # instance
+module "hub_us_vm7" {
+  source     = "../../modules/compute-vm"
+  project_id = var.project_id_hub
+  name       = "${local.hub_prefix}us-vm7"
+  zone       = "${local.hub_us_region}-b"
+  tags       = [local.tag_ssh, local.tag_gfe]
+  network_interfaces = [{
+    network    = module.hub_vpc.self_link
+    subnetwork = module.hub_vpc.subnet_self_links["${local.hub_us_region}/us-main"]
+  }]
+  service_account = {
+    email  = module.hub_sa.email
+    scopes = ["cloud-platform"]
+  }
+  metadata = {
+    user-data = module.vm_cloud_init.cloud_config
+  }
+}
 
-# resource "google_compute_instance" "hub_us_ilb7_vm" {
-#   project      = var.project_id_hub
-#   name         = "${local.hub_prefix}us-ilb7-vm"
-#   zone         = "${local.hub_us_region}-b"
-#   machine_type = var.machine_type
-#   tags         = [local.tag_ssh, local.tag_gfe]
-#   boot_disk {
-#     initialize_params {
-#       image = var.image_ubuntu
-#       size  = var.disk_size
-#       type  = var.disk_type
-#     }
-#   }
-#   network_interface {
-#     network    = module.hub_vpc.self_link
-#     subnetwork = module.hub_vpc.subnet_self_links["${local.hub_us_region}/us-main"]
-#   }
-#   service_account {
-#     email  = module.hub_sa.email
-#     scopes = ["cloud-platform"]
-#   }
-#   metadata_startup_script   = local.vm_startup
-#   allow_stopping_for_update = true
-# }
+# ilb7
 
-# # ig
+module "hub_us_ilb7" {
+  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-app-int?ref=v33.0.0"
+  project_id = var.project_id_hub
+  name       = "${local.hub_prefix}us-ilb7"
+  region     = local.hub_us_region
+  address    = local.hub_us_ilb7_addr
 
-# resource "google_compute_instance_group" "hub_us_ilb7_ig" {
-#   project   = var.project_id_hub
-#   zone      = "${local.hub_us_region}-b"
-#   name      = "${local.hub_prefix}us-ilb7-ig"
-#   instances = [google_compute_instance.hub_us_ilb7_vm.self_link]
-#   named_port {
-#     name = local.svc_web.name
-#     port = local.svc_web.port
-#   }
-# }
+  vpc_config = {
+    network    = module.hub_vpc.self_link
+    subnetwork = module.hub_vpc.subnet_self_links["${local.hub_us_region}/us-main"]
+  }
 
-# # psc neg
-
-# locals {
-#   hub_us_ilb7_psc_neg_name      = "${local.hub_prefix}us-ilb7-psc-neg"
-#   hub_us_ilb7_psc_neg_self_link = "projects/${var.project_id_hub}/regions/${local.hub_us_region}/networkEndpointGroups/${local.hub_us_ilb7_psc_neg_name}"
-#   hub_us_ilb7_psc_neg_create = templatefile("../../scripts/neg/psc/create.sh", {
-#     PROJECT_ID     = var.project_id_hub
-#     NETWORK        = module.hub_vpc.self_link
-#     REGION         = local.hub_us_region
-#     NEG_NAME       = local.hub_us_ilb7_psc_neg_name
-#     TARGET_SERVICE = local.hub_us_psc_https_ctrl_run_dns
-#   })
-#   hub_us_ilb7_psc_neg_delete = templatefile("../../scripts/neg/psc/delete.sh", {
-#     PROJECT_ID = var.project_id_hub
-#     REGION     = local.hub_us_region
-#     NEG_NAME   = local.hub_us_ilb7_psc_neg_name
-#   })
-# }
-
-# resource "null_resource" "hub_us_ilb7_psc_neg" {
-#   triggers = {
-#     create = local.hub_us_ilb7_psc_neg_create
-#     delete = local.hub_us_ilb7_psc_neg_delete
-#   }
-#   provisioner "local-exec" {
-#     command = self.triggers.create
-#   }
-#   provisioner "local-exec" {
-#     when    = destroy
-#     command = self.triggers.delete
-#   }
-# }
-
-# # backend
-
-# locals {
-#   hub_us_ilb7_backend_services_mig = {
-#     ("main") = {
-#       port_name = local.svc_web.name
-#       backends = [
-#         {
-#           group                 = google_compute_instance_group.hub_us_ilb7_ig.self_link
-#           balancing_mode        = "RATE"
-#           max_rate_per_instance = 100
-#           capacity_scaler       = 1.0
-#         },
-#       ]
-#       health_check_config = {
-#         config  = {}
-#         logging = true
-#         check = {
-#           port_specification = "USE_SERVING_PORT"
-#           host               = local.uhc_config.host
-#           request_path       = "/${local.uhc_config.request_path}"
-#           response           = local.uhc_config.response
-#         }
-#       }
-#     }
-#   }
-#   hub_us_ilb7_backend_services_psc_neg = {
-#     ("api") = {
-#       port = local.svc_web.port
-#       backends = [
-#         {
-#           group           = local.hub_us_ilb7_psc_neg_self_link
-#           balancing_mode  = "UTILIZATION"
-#           capacity_scaler = 1.0
-#         },
-#       ]
-#       health_check_config = {
-#         config  = {}
-#         logging = true
-#         check   = {}
-#       }
-#     }
-#   }
-#   hub_us_ilb7_backend_services_neg = {}
-# }
-
-# module "hub_us_ilb7_bes" {
-#   depends_on               = [null_resource.hub_us_ilb7_psc_neg]
-#   source                   = "../../modules/backend-region"
-#   project_id               = var.project_id_hub
-#   prefix                   = "${local.hub_prefix}us-ilb7"
-#   network                  = module.hub_vpc.self_link
-#   region                   = local.hub_us_region
-#   backend_services_mig     = local.hub_us_ilb7_backend_services_mig
-#   backend_services_neg     = local.hub_us_ilb7_backend_services_neg
-#   backend_services_psc_neg = local.hub_us_ilb7_backend_services_psc_neg
-# }
-
-# # url map
-
-# resource "google_compute_region_url_map" "hub_us_ilb7_url_map" {
-#   provider        = google-beta
-#   project         = var.project_id_hub
-#   name            = "${local.hub_prefix}us-ilb7-url-map"
-#   region          = local.hub_us_region
-#   default_service = module.hub_us_ilb7_bes.backend_service_mig["main"].id
-#   host_rule {
-#     path_matcher = "main"
-#     hosts        = ["${local.hub_us_ilb7_dns_prefix}.${local.hub_domain}.${local.cloud_domain}"]
-#   }
-#   host_rule {
-#     path_matcher = "api"
-#     hosts        = [local.hub_us_psc_https_ctrl_run_dns]
-#   }
-#   path_matcher {
-#     name            = "main"
-#     default_service = module.hub_us_ilb7_bes.backend_service_mig["main"].self_link
-#   }
-#   path_matcher {
-#     name            = "api"
-#     default_service = module.hub_us_ilb7_bes.backend_service_psc_neg["api"].self_link
-#   }
-# }
-
-# # frontend
-
-# module "hub_us_ilb7_frontend" {
-#   source     = "../../modules/int-lb-app-frontend"
-#   project_id = var.project_id_hub
-#   prefix     = "${local.hub_prefix}us-ilb7"
-#   network    = module.hub_vpc.self_link
-#   subnetwork = module.hub_vpc.subnet_self_links["${local.hub_us_region}/us-main"]
-#   region     = local.hub_us_region
-#   url_map    = google_compute_region_url_map.hub_us_ilb7_url_map.id
-#   frontend = {
-#     address = local.hub_us_ilb7_addr
-#     ssl     = { self_cert = true, domains = local.hub_us_ilb7_domains }
-#   }
-# }
+  urlmap_config = {
+    default_service = "default"
+    host_rules = [
+      { path_matcher = "main", hosts = [local.hub_us_ilb7_fqdn, ] },
+      { path_matcher = "psc-neg", hosts = [local.hub_us_psc_https_ctrl_run_dns, ] }
+    ]
+    path_matchers = {
+      main    = { default_service = "default" }
+      psc-neg = { default_service = "psc-neg" }
+    }
+  }
+  backend_service_configs = {
+    default = {
+      port_name     = local.svc_web.name
+      health_checks = ["custom-http"]
+      backends = [
+        {
+          group          = "main"
+          balancing_mode = "RATE"
+          max_rate       = { per_instance = 100, capacity_scaler = 1.0 }
+        },
+      ]
+    }
+    psc-neg = {
+      health_checks = []
+      backends = [
+        {
+          group          = "psc-neg"
+          balancing_mode = "UTILIZATION"
+          max_rate       = { capacity_scaler = 1.0 }
+        }
+      ]
+    }
+  }
+  group_configs = {
+    main = {
+      zone        = "${local.hub_us_region}-b"
+      instances   = [module.hub_us_vm7.self_link, ]
+      named_ports = { (local.svc_web.name) = local.svc_web.port }
+    }
+  }
+  neg_configs = {
+    psc-neg = {
+      psc = {
+        region         = local.hub_us_region
+        target_service = local.hub_us_psc_https_ctrl_run_dns
+      }
+    }
+  }
+  health_check_configs = {
+    custom-http = {
+      enable_logging = true
+      http = {
+        host               = local.uhc_config.host
+        port_specification = "USE_SERVING_PORT"
+        request_path       = "/${local.uhc_config.request_path}"
+        response           = local.uhc_config.response
+      }
+    }
+  }
+}
 
 ####################################################
 # output files

@@ -631,7 +631,7 @@ locals {
 
 resource "google_compute_instance" "spoke2_us_ilb7_vm" {
   project      = var.project_id_spoke2
-  name         = "${local.spoke2_prefix}us-ilb7-vm"
+  name         = "${local.spoke2_prefix}us-vm7"
   zone         = "${local.spoke2_us_region}-b"
   machine_type = var.machine_type
   tags         = [local.tag_ssh, local.tag_gfe, ]

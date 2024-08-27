@@ -74,8 +74,8 @@ locals {
     { name = "internet", host = "icanhazip.com", ipv4 = "icanhazip.com", ipv6 = "icanhazip.com", probe = true },
     { name = "www", host = "www.googleapis.com", ipv4 = "www.googleapis.com", ipv6 = "www.googleapis.com", path = "/generate_204", probe = true, ping = false },
     { name = "storage", host = "storage.googleapis.com", ipv4 = "storage.googleapis.com", ipv6 = "storage.googleapis.com", path = "/generate_204", probe = true, ping = false },
-    { name = "hub-eu-psc-https", host = "${local.hub_eu_psc_https_ctrl_run_dns}", probe = false, ping = false },
-    { name = "hub-us-psc-https", host = "${local.hub_us_psc_https_ctrl_run_dns}", probe = false, ping = false },
+    { name = "hub-eu-psc-https", host = "${local.hub_eu_psc_https_ctrl_run_dns}", path = "/generate_204", probe = false, ping = false },
+    { name = "hub-us-psc-https", host = "${local.hub_us_psc_https_ctrl_run_dns}", path = "/generate_204", probe = false, ping = false },
     { name = "hub-eu-run", host = "${local.hub_eu_run_httpbin_host}", probe = true, path = "/generate_204", ping = false },
     { name = "spoke1-eu-run", host = "${local.spoke1_eu_run_httpbin_host}", probe = true, path = "/generate_204", ping = false },
     { name = "spoke2-us-run", host = "${local.spoke2_us_run_httpbin_host}", probe = true, path = "/generate_204", ping = false },
@@ -231,8 +231,6 @@ locals {
     # authoritative hosts
     { hosts = [local.hub_eu_psc_https_ctrl_run_dns], class = "IN", ttl = "3600", type = "A", rdata = local.hub_eu_ilb7_addr },
     { hosts = [local.hub_us_psc_https_ctrl_run_dns], class = "IN", ttl = "3600", type = "A", rdata = local.hub_us_ilb7_addr },
-    { hosts = [local.spoke1_eu_psc_https_ctrl_run_dns], class = "IN", ttl = "3600", type = "A", rdata = local.spoke1_eu_ilb7_addr },
-    { hosts = [local.spoke2_us_psc_https_ctrl_run_dns], class = "IN", ttl = "3600", type = "A", rdata = local.spoke2_us_ilb7_addr },
   ]
   onprem_forward_zones = [
     { zone = "${local.cloud_domain}.", targets = [local.hub_eu_ns_addr, local.hub_us_ns_addr] },

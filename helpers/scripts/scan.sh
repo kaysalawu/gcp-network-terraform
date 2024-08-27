@@ -13,9 +13,9 @@ color_red=$(tput setaf 1)
 reset=$(tput sgr0)
 
 working_dir=$(pwd)
-while [[ $PWD != '/' && ${PWD##*/} != 'gcp-network-classic-terraform' ]]; do cd ..; done
+while [[ $PWD != '/' && ${PWD##*/} != 'gcp-network-terraform' ]]; do cd ..; done
 if [[ $PWD == '/' ]]; then
-    echo "Could not find gcp-network-classic-terraform directory"
+    echo "Could not find gcp-network-terraform directory"
     exit 1
 fi
 

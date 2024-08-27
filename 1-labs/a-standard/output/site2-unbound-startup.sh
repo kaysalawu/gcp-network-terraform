@@ -47,8 +47,6 @@ server:
         local-zone: run.app redirect
         local-zone: europe-west2-run.googleapis.com redirect
         local-zone: us-west2-run.googleapis.com redirect
-        local-zone: europe-west2-run.googleapis.com redirect
-        local-zone: us-west2-run.googleapis.com redirect
 
         local-data: "storage.googleapis.com 3600 IN A 10.1.0.1"
         local-data: "bigquery.googleapis.com 3600 IN A 10.1.0.1"
@@ -57,8 +55,6 @@ server:
         local-data: "run.app 3600 IN A 10.1.0.1"
         local-data: "europe-west2-run.googleapis.com 3600 IN A 10.1.11.80"
         local-data: "us-west2-run.googleapis.com 3600 IN A 10.1.21.80"
-        local-data: "europe-west2-run.googleapis.com 3600 IN A 10.11.11.40"
-        local-data: "us-west2-run.googleapis.com 3600 IN A 10.22.21.40"
 
 forward-zone:
         name: "g.corp."

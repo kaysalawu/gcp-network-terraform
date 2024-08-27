@@ -10,9 +10,9 @@ services:
     network_mode: host
     command: uvicorn main:app --host '0.0.0.0' --port 8080
     restart: always
-  http-ipv6-8080:
-    container_name: http-ipv6-8080
-    hostname: -DCK-http-ipv6-8080
+  http-8080-ipv6:
+    container_name: http-8080-ipv6
+    hostname: -DCK-http-8080-ipv6
     build:
       context: ./app/app
       dockerfile: Dockerfile

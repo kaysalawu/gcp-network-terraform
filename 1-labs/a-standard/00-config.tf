@@ -33,30 +33,34 @@ locals {
     internal = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10", ]
   }
 
-  bgp_range1 = "169.254.101.0/30"
-  bgp_range2 = "169.254.102.0/30"
-  bgp_range3 = "169.254.103.0/30"
-  bgp_range4 = "169.254.104.0/30"
-  bgp_range5 = "169.254.105.0/30"
-  bgp_range6 = "169.254.106.0/30"
-  bgp_range7 = "169.254.107.0/30"
-  bgp_range8 = "169.254.108.0/30"
+  bgp_range1  = "169.254.101.0/30"
+  bgp_range2  = "169.254.102.0/30"
+  bgp_range3  = "169.254.103.0/30"
+  bgp_range4  = "169.254.104.0/30"
+  bgp_range5  = "169.254.105.0/30"
+  bgp_range6  = "169.254.106.0/30"
+  bgp_range7  = "169.254.107.0/30"
+  bgp_range8  = "169.254.108.0/30"
+  bgp_range9  = "169.254.109.0/30"
+  bgp_range10 = "169.254.110.0/30"
 
-  gre_range1 = "172.16.1.0/24"
-  gre_range2 = "172.16.2.0/24"
-  gre_range3 = "172.16.3.0/24"
-  gre_range4 = "172.16.4.0/24"
-  gre_range5 = "172.16.5.0/24"
-  gre_range6 = "172.16.6.0/24"
-  gre_range7 = "172.16.7.0/24"
-  gre_range8 = "172.16.8.0/24"
+  gre_range1  = "172.16.1.0/24"
+  gre_range2  = "172.16.2.0/24"
+  gre_range3  = "172.16.3.0/24"
+  gre_range4  = "172.16.4.0/24"
+  gre_range5  = "172.16.5.0/24"
+  gre_range6  = "172.16.6.0/24"
+  gre_range7  = "172.16.7.0/24"
+  gre_range8  = "172.16.8.0/24"
+  gre_range9  = "172.16.9.0/24"
+  gre_range10 = "172.16.10.0/24"
 
   image_vyos  = "https://www.googleapis.com/compute/v1/projects/sentrium-public/global/images/vyos-1-3-0"
   image_panos = "https://www.googleapis.com/compute/v1/projects/paloaltonetworksgcp-public/global/images/vmseries-bundle1-810"
 
   uhc_config     = { host = "probe.${local.cloud_domain}", request_path = "healthz", response = "OK" }
   uhc_pan_config = { host = "google-hc-host" }
-  svc_web        = { name = "http8080", port = 80 }
+  svc_web        = { name = "http", port = 80 }
   svc_juice      = { name = "http3000", port = 3000 }
   svc_grpc       = { name = "grpc", port = 50051 }
 
@@ -223,6 +227,7 @@ locals {
     "${local.hub_prefix}eu-nva-vm-addr"   = { ipv4 = local.hub_eu_nva_vm_addr, ipv6 = local.hub_eu_nva_vm_addr_v6 }
     "${local.hub_prefix}eu-nva-ilb4-addr" = { ipv4 = local.hub_eu_nva_ilb4_addr, ipv6 = local.hub_eu_nva_ilb4_addr_v6 }
     "${local.hub_prefix}eu-ilb4-addr"     = { ipv4 = local.hub_eu_ilb4_addr, ipv6 = local.hub_eu_ilb4_addr_v6 }
+    "${local.hub_prefix}eu-ilb7-addr"     = { ipv4 = local.hub_eu_ilb7_addr, ipv6 = local.hub_eu_ilb7_addr_v6 }
   }
   hub_us_main_addresses = {
     "${local.hub_prefix}us-ncc-cr-addr0"  = { ipv4 = local.hub_us_ncc_cr_addr0, ipv6 = local.hub_us_ncc_cr_addr0_v6 }
@@ -232,6 +237,7 @@ locals {
     "${local.hub_prefix}us-nva-vm-addr"   = { ipv4 = local.hub_us_nva_vm_addr, ipv6 = local.hub_us_nva_vm_addr_v6 }
     "${local.hub_prefix}us-nva-ilb4-addr" = { ipv4 = local.hub_us_nva_ilb4_addr, ipv6 = local.hub_us_nva_ilb4_addr_v6 }
     "${local.hub_prefix}us-ilb4-addr"     = { ipv4 = local.hub_us_ilb4_addr, ipv6 = local.hub_us_ilb4_addr_v6 }
+    "${local.hub_prefix}us-ilb7-addr"     = { ipv4 = local.hub_us_ilb7_addr, ipv6 = local.hub_us_ilb7_addr_v6 }
   }
 
   hub_us_gke_master_cidr1 = "172.16.11.32/28"
@@ -362,6 +368,20 @@ locals {
   spoke1_eu_ilb4_addr_v6       = cidrhost(local.spoke1_subnets["eu-main"].ipv6_cidr_range, 30)
   spoke1_eu_ilb7_addr_v6       = cidrhost(local.spoke1_subnets["eu-main"].ipv6_cidr_range, 40)
 
+  spoke1_us_main_default_gw_v6 = cidrhost(local.spoke1_subnets["us-main"].ipv6_cidr_range, 1)
+  spoke1_us_vm_addr_v6         = cidrhost(local.spoke1_subnets["us-main"].ipv6_cidr_range, 9)
+  spoke1_us_ilb4_addr_v6       = cidrhost(local.spoke1_subnets["us-main"].ipv6_cidr_range, 30)
+  spoke1_us_ilb7_addr_v6       = cidrhost(local.spoke1_subnets["us-main"].ipv6_cidr_range, 40)
+
+  spoke1_eu_main_addresses = {
+    "${local.spoke1_prefix}eu-ilb4-addr" = { ipv4 = local.spoke1_eu_ilb4_addr, ipv6 = local.spoke1_eu_ilb4_addr_v6 }
+    "${local.spoke1_prefix}eu-ilb7-addr" = { ipv4 = local.spoke1_eu_ilb7_addr, ipv6 = local.spoke1_eu_ilb7_addr_v6 }
+  }
+  spoke1_us_main_addresses = {
+    "${local.spoke1_prefix}us-ilb4-addr" = { ipv4 = local.spoke1_us_ilb4_addr, ipv6 = local.spoke1_us_ilb4_addr_v6 }
+    "${local.spoke1_prefix}us-ilb7-addr" = { ipv4 = local.spoke1_us_ilb7_addr, ipv6 = local.spoke1_us_ilb7_addr_v6 }
+  }
+
   # fqdn
   spoke1_eu_vm_dns_prefix   = "vm.eu"
   spoke1_eu_ilb4_dns_prefix = "ilb4.eu"
@@ -369,6 +389,13 @@ locals {
   spoke1_eu_vm_fqdn         = "${local.spoke1_eu_vm_dns_prefix}.${local.spoke1_dns_zone}"
   spoke1_eu_ilb4_fqdn       = "${local.spoke1_eu_ilb4_dns_prefix}.${local.spoke1_dns_zone}"
   spoke1_eu_ilb7_fqdn       = "${local.spoke1_eu_ilb7_dns_prefix}.${local.spoke1_dns_zone}"
+
+  spoke1_us_vm_dns_prefix   = "vm.us"
+  spoke1_us_ilb4_dns_prefix = "ilb4.us"
+  spoke1_us_ilb7_dns_prefix = "ilb7.us"
+  spoke1_us_vm_fqdn         = "${local.spoke1_us_vm_dns_prefix}.${local.spoke1_dns_zone}"
+  spoke1_us_ilb4_fqdn       = "${local.spoke1_us_ilb4_dns_prefix}.${local.spoke1_dns_zone}"
+  spoke1_us_ilb7_fqdn       = "${local.spoke1_us_ilb7_dns_prefix}.${local.spoke1_dns_zone}"
 
   # psc/api
   spoke1_psc_api_all_fr_name = "${local.prefix}spoke1all"                 # all-apis forwarding rule name
@@ -443,6 +470,15 @@ locals {
   spoke2_us_vm_addr_v6         = cidrhost(local.spoke2_subnets["us-main"].ipv6_cidr_range, 9)
   spoke2_us_ilb4_addr_v6       = cidrhost(local.spoke2_subnets["us-main"].ipv6_cidr_range, 30)
   spoke2_us_ilb7_addr_v6       = cidrhost(local.spoke2_subnets["us-main"].ipv6_cidr_range, 40)
+
+  spoke2_eu_main_addresses = {
+    "${local.spoke2_prefix}eu-ilb4-addr" = { ipv4 = local.spoke2_eu_ilb4_addr, ipv6 = local.spoke2_eu_ilb4_addr_v6 }
+    "${local.spoke2_prefix}eu-ilb7-addr" = { ipv4 = local.spoke2_eu_ilb7_addr, ipv6 = local.spoke2_eu_ilb7_addr_v6 }
+  }
+  spoke2_us_main_addresses = {
+    "${local.spoke2_prefix}us-ilb4-addr" = { ipv4 = local.spoke2_us_ilb4_addr, ipv6 = local.spoke2_us_ilb4_addr_v6 }
+    "${local.spoke2_prefix}us-ilb7-addr" = { ipv4 = local.spoke2_us_ilb7_addr, ipv6 = local.spoke2_us_ilb7_addr_v6 }
+  }
 
   # fqdn
   spoke2_eu_vm_dns_prefix   = "vm.eu"

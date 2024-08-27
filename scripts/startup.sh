@@ -17,7 +17,7 @@ echo -e "\n ping ipv4 ...\n"
 %{ for target in TARGETS ~}
 %{~ if try(target.ping, true) ~}
 %{~ if try(target.ipv4, "") != "" ~}
-echo "${target.name} - ${target.ipv4} -$(timeout 3 ping -4 -qc2 -W1 ${target.ipv4} 2>&1 | awk -F'/' 'END{ print (/^rtt/? "OK "$5" ms":"NA") }')"
+echo "${target.name} - ${target.ipv4} -$(timeout 5 ping -4 -qc2 -W1 ${target.ipv4} 2>&1 | awk -F'/' 'END{ print (/^rtt/? "OK "$5" ms":"NA") }')"
 %{ endif ~}
 %{ endif ~}
 %{ endfor ~}
@@ -31,7 +31,7 @@ echo -e "\n ping dns ipv4 ...\n"
 %{ for target in TARGETS ~}
 %{~ if try(target.ping, true) ~}
 %{~ if try(target.ipv4, "") != "" ~}
-echo "${target.host} - $(timeout 3 dig +short ${target.host} | tail -n1) -$(timeout 3 ping -4 -qc2 -W1 ${target.host} 2>&1 | awk -F'/' 'END{ print (/^rtt/? "OK "$5" ms":"NA") }')"
+echo "${target.host} - $(timeout 5 dig +short ${target.host} | tail -n1) -$(timeout 5 ping -4 -qc2 -W1 ${target.host} 2>&1 | awk -F'/' 'END{ print (/^rtt/? "OK "$5" ms":"NA") }')"
 %{ endif ~}
 %{ endif ~}
 %{ endfor ~}
@@ -45,7 +45,7 @@ echo -e "\n curl ipv4 ...\n"
 %{ for target in TARGETS ~}
 %{~ if try(target.curl, true) ~}
 %{~ if try(target.ipv4, "") != "" ~}
-echo  "$(timeout 3 curl -4 -kL --max-time 3.0 -H 'Cache-Control: no-cache' -w "%%{http_code} (%%{time_total}s) - %%{remote_ip}" -s -o /dev/null ${target.ipv4}) - ${target.name} [${target.ipv4}]"
+echo  "$(timeout 5 curl -4 -kL --max-time 5.0 -H 'Cache-Control: no-cache' -w "%%{http_code} (%%{time_total}s) - %%{remote_ip}" -s -o /dev/null ${target.ipv4}) - ${target.name} [${target.ipv4}]"
 %{ endif ~}
 %{ endif ~}
 %{ endfor ~}
@@ -58,7 +58,7 @@ cat <<'EOF' > /usr/local/bin/curl-dns4
 echo -e "\n curl dns ipv4 ...\n"
 %{ for target in TARGETS ~}
 %{~ if try(target.curl, true) ~}
-echo  "$(timeout 3 curl -4 -kL --max-time 3.0 -H 'Cache-Control: no-cache' -w "%%{http_code} (%%{time_total}s) - %%{remote_ip}" -s -o /dev/null ${target.host}) - ${target.host}"
+echo  "$(timeout 5 curl -4 -kL --max-time 5.0 -H 'Cache-Control: no-cache' -w "%%{http_code} (%%{time_total}s) - %%{remote_ip}" -s -o /dev/null ${target.host}) - ${target.host}"
 %{ endif ~}
 %{ endfor ~}
 EOF
@@ -91,7 +91,7 @@ echo -e "\n ping ipv6 ...\n"
 %{ for target in TARGETS ~}
 %{~ if try(target.ping, true) ~}
 %{~ if try(target.ipv6, "") != "" ~}
-echo "${target.name} - ${target.ipv6} -$(timeout 3 ping -6 -qc2 -W1 ${target.ipv6} 2>&1 | awk -F'/' 'END{ print (/^rtt/? "OK "$5" ms":"NA") }')"
+echo "${target.name} - ${target.ipv6} -$(timeout 5 ping -6 -qc2 -W1 ${target.ipv6} 2>&1 | awk -F'/' 'END{ print (/^rtt/? "OK "$5" ms":"NA") }')"
 %{ endif ~}
 %{ endif ~}
 %{ endfor ~}
@@ -105,7 +105,7 @@ echo -e "\n ping dns ipv6 ...\n"
 %{ for target in TARGETS ~}
 %{~ if try(target.ping, true) ~}
 %{~ if try(target.ipv6, "") != "" ~}
-echo "${target.host} - $(timeout 3 dig AAAA +short ${target.host} | tail -n1) -$(timeout 3 ping -6 -qc2 -W1 ${target.host} 2>&1 | awk -F'/' 'END{ print (/^rtt/? "OK "$5" ms":"NA") }')"
+echo "${target.host} - $(timeout 5 dig AAAA +short ${target.host} | tail -n1) -$(timeout 5 ping -6 -qc2 -W1 ${target.host} 2>&1 | awk -F'/' 'END{ print (/^rtt/? "OK "$5" ms":"NA") }')"
 %{ endif ~}
 %{ endif ~}
 %{ endfor ~}
@@ -119,7 +119,7 @@ echo -e "\n curl ipv6 ...\n"
 %{ for target in TARGETS ~}
 %{~ if try(target.curl, true) ~}
 %{~ if try(target.ipv6, "") != "" ~}
-echo  "$(timeout 3 curl -6 -kL --max-time 3.0 -H 'Cache-Control: no-cache' -w "%%{http_code} (%%{time_total}s) - %%{remote_ip}" -s -o /dev/null [${target.ipv6}]) - ${target.name} [${target.ipv6}]"
+echo  "$(timeout 5 curl -6 -kL --max-time 5.0 -H 'Cache-Control: no-cache' -w "%%{http_code} (%%{time_total}s) - %%{remote_ip}" -s -o /dev/null [${target.ipv6}]) - ${target.name} [${target.ipv6}]"
 %{ endif ~}
 %{ endif ~}
 %{ endfor ~}
@@ -132,7 +132,7 @@ cat <<'EOF' > /usr/local/bin/curl-dns6
 echo -e "\n curl dns ipv6 ...\n"
 %{ for target in TARGETS ~}
 %{~ if try(target.curl, true) ~}
-echo  "$(timeout 3 curl -6 -kL --max-time 3.0 -H 'Cache-Control: no-cache' -w "%%{http_code} (%%{time_total}s) - %%{remote_ip}" -s -o /dev/null ${target.host}) - ${target.host}"
+echo  "$(timeout 5 curl -6 -kL --max-time 5.0 -H 'Cache-Control: no-cache' -w "%%{http_code} (%%{time_total}s) - %%{remote_ip}" -s -o /dev/null ${target.host}) - ${target.host}"
 %{ endif ~}
 %{ endfor ~}
 EOF
