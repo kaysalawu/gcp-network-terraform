@@ -1,4 +1,15 @@
 
+locals {
+  spoke2_vpc_tags = {
+    "${local.spoke2_prefix}vpc-dns" = { value = "dns", description = "custom dns servers" }
+    "${local.spoke2_prefix}vpc-gfe" = { value = "gfe", description = "load balancer backends" }
+    "${local.spoke2_prefix}vpc-nva" = { value = "nva", description = "nva appliances" }
+  }
+  spoke2_vpc_tags_dns = google_tags_tag_value.spoke2_vpc_tags["${local.spoke2_prefix}vpc-dns"]
+  spoke2_vpc_tags_gfe = google_tags_tag_value.spoke2_vpc_tags["${local.spoke2_prefix}vpc-gfe"]
+  spoke2_vpc_tags_nva = google_tags_tag_value.spoke2_vpc_tags["${local.spoke2_prefix}vpc-nva"]
+}
+
 # network
 #---------------------------------
 
@@ -12,15 +23,40 @@ module "spoke2_vpc" {
   subnets_proxy_only  = local.spoke2_subnets_proxy_only_list
   subnets_psc         = local.spoke2_subnets_psc_list
 
-  # psa_configs = [{
-  #   ranges = {
-  #     "spoke2-eu-psa-range1" = local.spoke2_eu_psa_range1
-  #     "spoke2-eu-psa-range2" = local.spoke2_eu_psa_range2
-  #   }
-  #   export_routes  = true
-  #   import_routes  = true
-  #   peered_domains = ["gcp.example.com."]
-  # }]
+  psa_configs = [{
+    ranges = {
+      "spoke2-us-psa-range1" = local.spoke2_us_psa_range1
+      "spoke2-us-psa-range2" = local.spoke2_us_psa_range2
+    }
+    export_routes  = true
+    import_routes  = true
+    peered_domains = ["gcp.example.com."]
+  }]
+}
+
+# secure tags
+#---------------------------------
+
+# keys
+
+resource "google_tags_tag_key" "spoke2_vpc" {
+  for_each    = local.spoke2_vpc_tags
+  parent      = "projects/${var.project_id_spoke2}"
+  short_name  = each.key
+  description = each.value.description
+  purpose     = "GCE_FIREWALL"
+  purpose_data = {
+    network = "${var.project_id_spoke2}/${module.spoke2_vpc.name}"
+  }
+}
+
+# values
+
+resource "google_tags_tag_value" "spoke2_vpc_tags" {
+  for_each    = local.spoke2_vpc_tags
+  parent      = google_tags_tag_key.spoke2_vpc[each.key].id
+  short_name  = each.value.value
+  description = each.value.description
 }
 
 # addresses
@@ -45,7 +81,6 @@ resource "google_compute_address" "spoke2_us_main_addresses" {
   address      = each.value.ipv4
   region       = local.spoke2_us_region
 }
-
 
 # # service networking connection
 # #---------------------------------
@@ -93,6 +128,13 @@ module "spoke2_nat_us" {
 # firewall
 #---------------------------------
 
+# resource "google_network_security_firewall_endpoint" "spoke2_vpc_fw_endpoint_eu_west2_b" {
+#   name               = "${local.spoke2_prefix}vpc-fwe-eu-west2-b"
+#   parent             = "organizations/${var.organization_id}"
+#   location           = "${local.spoke2_eu_region}-b"
+#   billing_project_id = var.project_id_spoke2
+# }
+
 module "spoke2_vpc_fw_policy" {
   source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v33.0.0"
   name      = "${local.spoke2_prefix}vpc-fw-policy"
@@ -118,23 +160,45 @@ module "spoke2_vpc_fw_policy" {
         layer4_configs = [{ protocol = "all" }]
       }
     }
+    dns = {
+      priority    = 1100
+      target_tags = [local.spoke2_vpc_tags_dns.id, local.spoke2_vpc_tags_nva.id, ]
+      match = {
+        source_ranges  = local.netblocks.dns
+        layer4_configs = [{ protocol = "all", ports = [] }]
+      }
+    }
     ssh = {
-      priority       = 1001
+      priority       = 1200
+      target_tags    = [local.spoke2_vpc_tags_nva.id, ]
       enable_logging = true
       match = {
         source_ranges  = ["0.0.0.0/0", ]
         layer4_configs = [{ protocol = "tcp", ports = ["22"] }]
       }
     }
-    dns = {
-      priority = 1003
+    iap = {
+      priority       = 1300
+      enable_logging = true
       match = {
-        source_ranges  = local.netblocks.dns
+        source_ranges  = local.netblocks.iap
         layer4_configs = [{ protocol = "all", ports = [] }]
       }
     }
+    vpn = {
+      priority    = 1400
+      target_tags = [local.spoke2_vpc_tags_nva.id, ]
+      match = {
+        source_ranges = ["0.0.0.0/0", ]
+        layer4_configs = [
+          { protocol = "udp", ports = ["500", "4500", ] },
+          { protocol = "esp", ports = [] }
+        ]
+      }
+    }
     gfe = {
-      priority = 1004
+      priority    = 1500
+      target_tags = [local.spoke2_vpc_tags_gfe.id, ]
       match = {
         source_ranges  = local.netblocks.gfe
         layer4_configs = [{ protocol = "all", ports = [] }]
@@ -146,6 +210,8 @@ module "spoke2_vpc_fw_policy" {
 # psc/api
 #---------------------------------
 
+# address
+
 resource "google_compute_global_address" "spoke2_psc_api_fr_addr" {
   provider     = google-beta
   project      = var.project_id_spoke2
@@ -155,6 +221,8 @@ resource "google_compute_global_address" "spoke2_psc_api_fr_addr" {
   network      = module.spoke2_vpc.self_link
   address      = local.spoke2_psc_api_fr_addr
 }
+
+# forwarding rule
 
 resource "google_compute_global_forwarding_rule" "spoke2_psc_api_fr" {
   provider              = google-beta

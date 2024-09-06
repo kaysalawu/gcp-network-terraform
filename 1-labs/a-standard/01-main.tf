@@ -3,7 +3,6 @@
 ####################################################
 
 locals {
-  prefix       = "a"
   eu_ar_host   = "eu-docker.pkg.dev"
   us_ar_host   = "us-docker.pkg.dev"
   eu_repo_name = google_artifact_registry_repository.eu_repo.name
@@ -30,14 +29,14 @@ locals {
 resource "google_artifact_registry_repository" "eu_repo" {
   project       = var.project_id_hub
   location      = local.hub_eu_region
-  repository_id = "${local.prefix}-eu-repo"
+  repository_id = "${local.hub_prefix}eu-repo"
   format        = "DOCKER"
 }
 
 resource "google_artifact_registry_repository" "us_repo" {
   project       = var.project_id_hub
   location      = local.hub_us_region
-  repository_id = "${local.prefix}-us-repo"
+  repository_id = "${local.hub_prefix}us-repo"
   format        = "DOCKER"
 }
 
@@ -314,7 +313,7 @@ locals {
     )
   })
   cloud_forward_zones = [
-    { zone = "onprem.", targets = [local.site1_ns_addr, local.site2_ns_addr] },
+    { zone = "${local.onprem_domain}.", targets = [local.site1_ns_addr, local.site2_ns_addr] },
     { zone = ".", targets = ["169.254.169.254"] },
   ]
   hub_psc_api_fr_name = (
@@ -617,6 +616,15 @@ resource "google_storage_bucket_object" "spoke2_us_storage_bucket_file" {
   bucket  = module.spoke2_us_storage_bucket.name
   content = "<--- SPOKE 2 --->"
 }
+
+# values
+#----------------------------
+
+# resource "google_tags_tag_value" "value" {
+#   parent      = "tagKeys/${google_tags_tag_key.key.name}"
+#   short_name  = "valuename"
+#   description = "For valuename resources."
+# }
 
 ####################################################
 # output files
