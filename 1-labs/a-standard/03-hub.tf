@@ -128,12 +128,7 @@ module "hub_nat_us" {
 # firewall
 #---------------------------------
 
-# resource "google_network_security_firewall_endpoint" "hub_vpc_fw_endpoint_eu_west2_b" {
-#   name               = "${local.hub_prefix}vpc-fwe-eu-west2-b"
-#   parent             = "organizations/${var.organization_id}"
-#   location           = "${local.hub_eu_region}-b"
-#   billing_project_id = var.project_id_hub
-# }
+# policy
 
 module "hub_vpc_fw_policy" {
   source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v33.0.0"

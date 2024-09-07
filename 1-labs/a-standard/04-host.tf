@@ -134,12 +134,7 @@ module "spoke1_nat_us" {
 # firewall
 #---------------------------------
 
-# resource "google_network_security_firewall_endpoint" "spoke1_vpc_fw_endpoint_eu_west2_b" {
-#   name               = "${local.spoke1_prefix}vpc-fwe-eu-west2-b"
-#   parent             = "organizations/${var.organization_id}"
-#   location           = "${local.spoke1_eu_region}-b"
-#   billing_project_id = var.project_id_spoke1
-# }
+# policy
 
 module "spoke1_vpc_fw_policy" {
   source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v33.0.0"
