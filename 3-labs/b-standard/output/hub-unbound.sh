@@ -36,38 +36,22 @@ server:
         access-control: fd00::/8 allow
 
         # local data records
-        local-data: "vm.site1.corp 300 IN A 10.10.1.9"
-        local-data: "vm.site2.corp 300 IN A 10.20.1.9"
 
         # hosts redirected to PSC
-        local-zone: storage.googleapis.com redirect
-        local-zone: bigquery.googleapis.com redirect
-        local-zone: europe-west2-aiplatform.googleapis.com redirect
-        local-zone: us-west2-aiplatform.googleapis.com redirect
-        local-zone: run.app redirect
-        local-zone: europe-west2-run.googleapis.com redirect
-        local-zone: us-west2-run.googleapis.com redirect
 
-        local-data: "storage.googleapis.com 3600 IN A 10.1.0.1"
-        local-data: "bigquery.googleapis.com 3600 IN A 10.1.0.1"
-        local-data: "europe-west2-aiplatform.googleapis.com 3600 IN A 10.1.0.1"
-        local-data: "us-west2-aiplatform.googleapis.com 3600 IN A 10.1.0.1"
-        local-data: "run.app 3600 IN A 10.1.0.1"
-        local-data: "europe-west2-run.googleapis.com 3600 IN A 10.1.11.80"
-        local-data: "us-west2-run.googleapis.com 3600 IN A 10.1.21.80"
 
 forward-zone:
         name: "g.corp."
-        forward-addr: 10.1.21.40
+        forward-addr: 169.254.169.254
 
 forward-zone:
-        name: "bhuball.p.googleapis.com"
-        forward-addr: 10.1.21.40
+        name: "corp."
+        forward-addr: 10.10.1.5
+        forward-addr: 10.20.1.5
 
 forward-zone:
         name: "."
-        forward-addr: 8.8.8.8
-        forward-addr: 8.8.4.4
+        forward-addr: 169.254.169.254
 EOF
 
 systemctl enable unbound
