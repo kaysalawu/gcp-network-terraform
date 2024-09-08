@@ -80,6 +80,22 @@ timeout 9 tracepath -4 ${target.ipv4}
 EOF
 chmod a+x /usr/local/bin/trace-ipv4
 
+# ptr-ipv4
+
+cat <<'EOF' > /usr/local/bin/ptr-ipv4
+echo -e "\n PTR ipv4 ...\n"
+%{ for target in TARGETS ~}
+%{~ if try(target.ptr, false) ~}
+%{~ if try(target.ipv4, "") != "" ~}
+arpa_zone=$(dig -x ${target.ipv4} | grep "QUESTION SECTION" -A 1 | tail -n 1 | awk '{print $1}')
+ptr_record=$(timeout 5 dig -x ${target.ipv4} +short)
+echo "${target.name} - ${target.ipv4} --> $ptr_record [arpa: $arpa_zone]"
+%{ endif ~}
+%{ endif ~}
+%{ endfor ~}
+EOF
+chmod a+x /usr/local/bin/ptr-ipv4
+
 ########################################################
 # test scripts (ipv6)
 ########################################################
@@ -250,6 +266,35 @@ done
 EOF
 chmod a+x /usr/local/bin/heavy-traffic-ipv6
 %{ endif ~}
+
+########################################################
+# systemctl services
+########################################################
+
+cat <<EOF > /etc/systemd/system/flaskapp.service
+[Unit]
+Description=Manage Docker Compose services for FastAPI
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+Environment="HOSTNAME=$(hostname)"
+ExecStart=/usr/bin/docker-compose -f /var/lib/gcp/fastapi/docker-compose-http-80.yml up -d && \
+          /usr/bin/docker-compose -f /var/lib/gcp/fastapi/docker-compose-http-8080.yml up -d
+ExecStop=/usr/bin/docker-compose -f /var/lib/gcp/fastapi/docker-compose-http-80.yml down && \
+         /usr/bin/docker-compose -f /var/lib/gcp/fastapi/docker-compose-http-8080.yml down
+Restart=always
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable flaskapp.service
+systemctl restart flaskapp.service
 
 ########################################################
 # crontabs

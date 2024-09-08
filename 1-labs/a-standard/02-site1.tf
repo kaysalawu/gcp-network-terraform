@@ -114,64 +114,64 @@ module "site1_vpc_fw_policy" {
 
 # vpc
 
-# module "site1_vpc_firewall" {
-#   source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc-firewall?ref=v33.0.0"
-#   project_id = var.project_id_onprem
-#   network    = module.site1_vpc.name
+module "site1_vpc_firewall" {
+  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc-firewall?ref=v33.0.0"
+  project_id = var.project_id_onprem
+  network    = module.site1_vpc.name
 
-#   egress_rules = {
-#     "${local.site1_prefix}allow-egress-smtp" = {
-#       priority           = 900
-#       description        = "block smtp"
-#       destination_ranges = ["0.0.0.0/0", ]
-#       rules              = [{ protocol = "tcp", ports = [25, ] }]
-#     }
-#     "${local.site1_prefix}allow-egress-all" = {
-#       priority           = 1000
-#       deny               = false
-#       description        = "allow egress"
-#       destination_ranges = ["0.0.0.0/0", ]
-#       rules              = [{ protocol = "all", ports = [] }]
-#     }
-#   }
-#   ingress_rules = {
-#     "${local.site1_prefix}allow-ingress-internal" = {
-#       priority      = 1000
-#       description   = "allow internal"
-#       source_ranges = local.netblocks.internal
-#       rules         = [{ protocol = "all", ports = [] }]
-#     }
-#     "${local.site1_prefix}allow-ingress-dns" = {
-#       priority      = 1100
-#       description   = "allow dns"
-#       source_ranges = local.netblocks.dns
-#       rules         = [{ protocol = "all", ports = [] }]
-#     }
-#     "${local.site1_prefix}allow-ingress-ssh" = {
-#       priority       = 1200
-#       description    = "allow ingress ssh"
-#       source_ranges  = ["0.0.0.0/0"]
-#       targets        = [local.tag_router]
-#       rules          = [{ protocol = "tcp", ports = [22] }]
-#       enable_logging = {}
-#     }
-#     "${local.site1_prefix}allow-ingress-iap" = {
-#       priority       = 1300
-#       description    = "allow ingress iap"
-#       source_ranges  = local.netblocks.iap
-#       targets        = [local.tag_router]
-#       rules          = [{ protocol = "all", ports = [] }]
-#       enable_logging = {}
-#     }
-#     "${local.site1_prefix}allow-ingress-dns-proxy" = {
-#       priority      = 1400
-#       description   = "allow dns egress proxy"
-#       source_ranges = local.netblocks.dns
-#       targets       = [local.tag_dns]
-#       rules         = [{ protocol = "all", ports = [] }]
-#     }
-#   }
-# }
+  egress_rules = {
+    "${local.site1_prefix}allow-egress-smtp" = {
+      priority           = 900
+      description        = "block smtp"
+      destination_ranges = ["0.0.0.0/0", ]
+      rules              = [{ protocol = "tcp", ports = [25, ] }]
+    }
+    "${local.site1_prefix}allow-egress-all" = {
+      priority           = 1000
+      deny               = false
+      description        = "allow egress"
+      destination_ranges = ["0.0.0.0/0", ]
+      rules              = [{ protocol = "all", ports = [] }]
+    }
+  }
+  ingress_rules = {
+    "${local.site1_prefix}allow-ingress-internal" = {
+      priority      = 1000
+      description   = "allow internal"
+      source_ranges = local.netblocks.internal
+      rules         = [{ protocol = "all", ports = [] }]
+    }
+    "${local.site1_prefix}allow-ingress-dns" = {
+      priority      = 1100
+      description   = "allow dns"
+      source_ranges = local.netblocks.dns
+      rules         = [{ protocol = "all", ports = [] }]
+    }
+    "${local.site1_prefix}allow-ingress-ssh" = {
+      priority       = 1200
+      description    = "allow ingress ssh"
+      source_ranges  = ["0.0.0.0/0"]
+      targets        = [local.tag_router]
+      rules          = [{ protocol = "tcp", ports = [22] }]
+      enable_logging = {}
+    }
+    "${local.site1_prefix}allow-ingress-iap" = {
+      priority       = 1300
+      description    = "allow ingress iap"
+      source_ranges  = local.netblocks.iap
+      targets        = [local.tag_router]
+      rules          = [{ protocol = "all", ports = [] }]
+      enable_logging = {}
+    }
+    "${local.site1_prefix}allow-ingress-dns-proxy" = {
+      priority      = 1400
+      description   = "allow dns egress proxy"
+      source_ranges = local.netblocks.dns
+      targets       = [local.tag_dns]
+      rules         = [{ protocol = "all", ports = [] }]
+    }
+  }
+}
 
 # custom dns
 #---------------------------------
@@ -222,18 +222,16 @@ resource "time_sleep" "site1_dns_forward_to_dns_wait_120s" {
 }
 
 module "site1_dns_forward_to_dns" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v15.0.0"
+  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
   project_id  = var.project_id_onprem
-  type        = "forwarding"
   name        = "${local.site1_prefix}to-dns"
   description = "forward all dns queries to custom resolvers"
-  domain      = "."
-  client_networks = [
-    module.site1_vpc.self_link
-  ]
-  forwarders = {
-    (local.site1_ns_addr) = "private"
-    (local.site2_ns_addr) = "private"
+  zone_config = {
+    domain = "."
+    forwarding = {
+      client_networks = [module.site1_vpc.self_link, ]
+      forwarders      = { (local.site1_ns_addr) = "private" }
+    }
   }
   depends_on = [time_sleep.site1_dns_forward_to_dns_wait_120s]
 }
@@ -271,7 +269,7 @@ module "site1_vm" {
 
 locals {
   site1_files = {
-    "output/site1-unbound-startup.sh" = local.site1_unbound_startup
+    "output/site1-unbound.sh" = local.site1_unbound_startup
   }
 }
 

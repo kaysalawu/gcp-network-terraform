@@ -70,6 +70,7 @@ EOF
 systemctl daemon-reload
 systemctl enable flaskapp.service
 systemctl restart flaskapp.service
+
 ########################################################
 # test scripts (ipv4)
 ########################################################

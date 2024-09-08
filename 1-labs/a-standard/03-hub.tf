@@ -146,6 +146,14 @@ module "hub_vpc_fw_policy" {
         layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
       }
     }
+    # all = {
+    #   priority = 910
+    #   action   = "allow"
+    #   match = {
+    #     destination_ranges = ["0.0.0.0/0"]
+    #     layer4_configs     = [{ protocol = "all", ports = [] }]
+    #   }
+    # }
   }
   ingress_rules = {
     internal = {
@@ -395,6 +403,32 @@ module "hub_dns_private_zone" {
     "A ${local.hub_us_ilb4_dns_prefix}" = { ttl = 300, records = [local.hub_us_ilb4_addr] },
     "A ${local.hub_eu_ilb7_dns_prefix}" = { ttl = 300, records = [local.hub_eu_ilb7_addr] },
     "A ${local.hub_us_ilb7_dns_prefix}" = { ttl = 300, records = [local.hub_us_ilb7_addr] },
+    "A ${local.hub_ilb4_prefix}" = {
+      geo_routing = [
+        { location = local.hub_eu_region,
+          health_checked_targets = [{
+            load_balancer_type = "regionalL4ilb"
+            ip_address         = module.hub_eu_ilb4.forwarding_rule_addresses["fr"]
+            port               = local.svc_web.port
+            ip_protocol        = "tcp"
+            network_url        = module.hub_vpc.self_link
+            project            = var.project_id_hub
+            region             = local.hub_eu_region
+          }]
+        },
+        { location = local.hub_us_region,
+          health_checked_targets = [{
+            load_balancer_type = "regionalL4ilb"
+            ip_address         = module.hub_us_ilb4.forwarding_rule_addresses["fr"]
+            port               = local.svc_web.port
+            ip_protocol        = "tcp"
+            network_url        = module.hub_vpc.self_link
+            project            = var.project_id_hub
+            region             = local.hub_us_region
+          }]
+        }
+      ]
+    }
   }
 }
 
@@ -458,7 +492,8 @@ module "hub_eu_ilb4" {
     fr = {
       address  = local.hub_eu_ilb4_addr
       target   = google_compute_instance_group.hub_eu_ilb4_ig.self_link
-      protocol = "L3_DEFAULT"
+      protocol = "TCP"                  # protocol required for this load balancer to be used for dns geo routing
+      ports    = [local.svc_web.port, ] # port required for this load balancer to be used for dns geo routing
     }
   }
   backends = [{
@@ -537,7 +572,8 @@ module "hub_us_ilb4" {
     fr = {
       address  = local.hub_us_ilb4_addr
       target   = google_compute_instance_group.hub_us_ilb4_ig.self_link
-      protocol = "L3_DEFAULT"
+      protocol = "TCP"                  # protocol required for this load balancer to be used for dns geo routing
+      ports    = [local.svc_web.port, ] # port required for this load balancer to be used for dns geo routing
     }
   }
   backends = [{

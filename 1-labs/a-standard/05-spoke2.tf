@@ -339,138 +339,66 @@ module "spoke2_dns_peering_to_hub_to_onprem" {
   }
 }
 
-# dns routing
-/*
-module "spoke2_dns_routing" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
-  project_id  = var.project_id_spoke2
-  name        = "${local.spoke2_prefix}dns-routing"
-  description = "dns routing"
-  zone_config = {
-    domain = "${local.onprem_domain}."
-    peering = {
-      client_networks = [module.spoke2_vpc.self_link]
-      peer_network    = module.hub_vpc.self_link
-    }
-  }
-}
-
-locals {
-  spoke2_dns_rr1 = "${local.spoke2_eu_region}=${local.spoke2_eu_td_envoy_bridge_ilb4_addr}"
-  spoke2_dns_rr2 = "${local.spoke2_us_region}=${local.spoke2_us_td_envoy_bridge_ilb4_addr}"
-  spoke2_dns_routing_data = {
-    ("${local.spoke2_td_envoy_bridge_ilb4_dns}.${local.spoke2_domain}.${local.cloud_domain}.") = {
-      zone        = "${local.spoke2_prefix}private",
-      policy_type = "GEO", ttl = 300, type = "A",
-      policy_data = "${local.spoke2_dns_rr1};${local.spoke2_dns_rr2}"
-    }
-  }
-  spoke2_dns_routing_create = templatefile("../../scripts/dns/record-create.sh", {
-    PROJECT = var.project_id_spoke2
-    RECORDS = local.spoke2_dns_routing_data
-  })
-  spoke2_dns_routing_delete = templatefile("../../scripts/dns/record-delete.sh", {
-    PROJECT = var.project_id_spoke2
-    RECORDS = local.spoke2_dns_routing_data
-  })
-}
-
-resource "null_resource" "spoke2_dns_routing" {
-  triggers = {
-    create = local.spoke2_dns_routing_create
-    delete = local.spoke2_dns_routing_delete
-  }
-  provisioner "local-exec" {
-    command = self.triggers.create
-  }
-  provisioner "local-exec" {
-    when    = destroy
-    command = self.triggers.delete
-  }
-  depends_on = [
-    module.spoke2_dns_private_zone,
-  ]
-}
-
 # reverse zone
 
 locals {
-  _spoke2_eu_test_vm_google_reverse_internal = google_compute_instance.spoke2_eu_test_vm.network_interface.0.network_ip
-  _spoke2_eu_subnet1_reverse_custom          = split("/", local.spoke2_subnets["${local.spoke2_prefix}eu-subnet1"].ip_cidr_range).0
-  _spoke2_us_subnet1_reverse_custom          = split("/", local.spoke2_subnets["${local.spoke2_prefix}us-subnet1"].ip_cidr_range).0
-  spoke2_eu_test_vm_google_reverse_internal = (format("%s.%s.%s.%s.in-addr.arpa.",
-    element(split(".", local._spoke2_eu_test_vm_google_reverse_internal), 3),
-    element(split(".", local._spoke2_eu_test_vm_google_reverse_internal), 2),
-    element(split(".", local._spoke2_eu_test_vm_google_reverse_internal), 1),
-    element(split(".", local._spoke2_eu_test_vm_google_reverse_internal), 0),
-  ))
-  spoke2_eu_subnet1_reverse_custom = (format("%s.%s.%s.in-addr.arpa.",
-    element(split(".", local._spoke2_eu_subnet1_reverse_custom), 2),
-    element(split(".", local._spoke2_eu_subnet1_reverse_custom), 1),
-    element(split(".", local._spoke2_eu_subnet1_reverse_custom), 0),
-  ))
-  spoke2_us_subnet1_reverse_custom = (format("%s.%s.%s.in-addr.arpa.",
-    element(split(".", local._spoke2_us_subnet1_reverse_custom), 2),
-    element(split(".", local._spoke2_us_subnet1_reverse_custom), 1),
-    element(split(".", local._spoke2_us_subnet1_reverse_custom), 0),
-  ))
+  _spoke2_eu_main_reverse_custom = split("/", local.spoke2_subnets_eu["eu-main"].ip_cidr_range).0
+  _spoke2_us_main_reverse_custom = split("/", local.spoke2_subnets_us["us-main"].ip_cidr_range).0
+  spoke2_eu_main_reverse_custom = format("%s.%s.%s.in-addr.arpa.",
+    element(split(".", local._spoke2_eu_main_reverse_custom), 2),
+    element(split(".", local._spoke2_eu_main_reverse_custom), 1),
+    element(split(".", local._spoke2_eu_main_reverse_custom), 0)
+  )
+  spoke2_us_main_reverse_custom = format("%s.%s.%s.in-addr.arpa.",
+    element(split(".", local._spoke2_us_main_reverse_custom), 2),
+    element(split(".", local._spoke2_us_main_reverse_custom), 1),
+    element(split(".", local._spoke2_us_main_reverse_custom), 0)
+  )
 }
 
 # reverse lookup zone (self-managed reverse lookup zones)
 
-module "spoke2_eu_subnet1_reverse_custom" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
+module "spoke2_eu_main_reverse_custom" {
+  source      = "../../modules/dns"
   project_id  = var.project_id_spoke2
-  type        = "private"
-  name        = "${local.spoke2_prefix}eu-subnet1-reverse-custom"
-  domain      = local.spoke2_eu_subnet1_reverse_custom
-  description = "eu-subnet1 reverse custom zone"
-  client_networks = [
-    module.hub_vpc.self_link,
-    module.spoke1_vpc.self_link,
-    module.spoke2_vpc.self_link,
-  ]
+  name        = "${local.spoke2_prefix}eu-main-reverse-custom"
+  description = "eu-main reverse custom zone"
+  zone_config = {
+    domain = local.spoke2_eu_main_reverse_custom
+    private = {
+      client_networks = [
+        module.hub_vpc.self_link,
+        module.spoke1_vpc.self_link,
+        module.spoke2_vpc.self_link,
+      ]
+    }
+  }
   recordsets = {
-    "PTR 30" = { type = "PTR", ttl = 300, records = ["${local.spoke2_eu_ilb4_dns}.${local.spoke2_domain}.${local.cloud_domain}."] },
-    "PTR 40" = { type = "PTR", ttl = 300, records = ["${local.spoke2_eu_ilb7_dns}.${local.spoke2_domain}.${local.cloud_domain}."] },
+    "PTR 30" = { ttl = 300, records = ["${local.spoke2_eu_ilb4_fqdn}."] },
+    "PTR 40" = { ttl = 300, records = ["${local.spoke2_eu_ilb7_fqdn}."] },
   }
 }
 
-module "spoke2_us_subnet1_reverse_custom" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
+module "spoke2_us_main_reverse_custom" {
+  source      = "../../modules/dns"
   project_id  = var.project_id_spoke2
-  type        = "private"
-  name        = "${local.spoke2_prefix}us-subnet1-reverse-custom"
-  domain      = local.spoke2_us_subnet1_reverse_custom
-  description = "us-subnet1 reverse custom zone"
-  client_networks = [
-    module.hub_vpc.self_link,
-    module.spoke1_vpc.self_link,
-    module.spoke2_vpc.self_link,
-  ]
+  name        = "${local.spoke2_prefix}us-main-reverse-custom"
+  description = "us-main reverse custom zone"
+  zone_config = {
+    domain = local.spoke2_us_main_reverse_custom
+    private = {
+      client_networks = [
+        module.hub_vpc.self_link,
+        module.spoke1_vpc.self_link,
+        module.spoke2_vpc.self_link,
+      ]
+    }
+  }
   recordsets = {
-    "PTR 30" = { type = "PTR", ttl = 300, records = ["${local.spoke2_us_ilb4_dns}.${local.spoke2_domain}.${local.cloud_domain}."] },
-    "PTR 40" = { type = "PTR", ttl = 300, records = ["${local.spoke2_us_ilb7_dns}.${local.spoke2_domain}.${local.cloud_domain}."] },
+    "PTR 30" = { ttl = 300, records = ["${local.spoke2_us_ilb4_fqdn}."] },
+    "PTR 40" = { ttl = 300, records = ["${local.spoke2_us_ilb7_fqdn}."] },
   }
 }
-
-# reverse zone (google-managed reverse lookup for everything else)
-
-resource "google_dns_managed_zone" "spoke2_eu_test_vm_google_reverse_internal" {
-  provider       = google-beta
-  project        = var.project_id_spoke2
-  name           = "${local.spoke2_prefix}eu-test-vm-google-reverse-internal"
-  dns_name       = local.spoke2_eu_test_vm_google_reverse_internal
-  description    = "eu-test-vm reverse internal zone"
-  visibility     = "private"
-  reverse_lookup = true
-  private_visibility_config {
-    networks { network_url = module.hub_vpc.self_link }
-    networks { network_url = module.spoke1_vpc.self_link }
-    networks { network_url = module.spoke2_vpc.self_link }
-  }
-}
-*/
 
 # vm - us
 #---------------------------------
