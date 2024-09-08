@@ -14,7 +14,7 @@ done
 
 script_path="$HOME/GCP/gcp-network-terraform/helpers/scripts/tfstate.sh"
 sudo bash -c "cat <<EOF > /etc/cron.d/tfstate-backup
-*/1 * * * * . $script_path 2>&1 > /dev/null
+*/5 * * * * . $script_path 2>&1 > /dev/null
 EOF"
 crontab /etc/cron.d/tfstate-backup
 
