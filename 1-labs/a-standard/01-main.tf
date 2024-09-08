@@ -235,6 +235,8 @@ locals {
   onprem_forward_zones = [
     { zone = "${local.cloud_domain}.", targets = [local.hub_eu_ns_addr, local.hub_us_ns_addr] },
     { zone = "${local.hub_psc_api_fr_name}.p.googleapis.com", targets = [local.hub_eu_ns_addr, local.hub_us_ns_addr] },
+    { zone = local.spoke1_reverse_zone, targets = [local.hub_eu_ns_addr, local.hub_us_ns_addr] },
+    { zone = local.spoke2_reverse_zone, targets = [local.hub_us_ns_addr, local.hub_eu_ns_addr] },
     { zone = ".", targets = ["8.8.8.8", "8.8.4.4"] },
   ]
 }

@@ -252,12 +252,9 @@ The script save the output to the file [_output/site1-vm-api-discoverz.sh`](./_o
 cd gcp-network-terraform/1-blueprints-nextgen/f-simple-hybrid
 ```
 
-2\. Run terraform destroy twice.
-
-The second run is required to delete the the *null_resource* resource that could not be deleted on the first run due to race conditions.
+2\. Run terraform destroy.
 
 ```sh
-terraform destroy -auto-approve
 terraform destroy -auto-approve
 ```
 

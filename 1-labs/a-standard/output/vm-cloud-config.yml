@@ -361,16 +361,16 @@ write_files:
       echo -e "\n PTR ipv4 ...\n"
       arpa_zone=$(dig -x 10.11.11.30 | grep "QUESTION SECTION" -A 1 | tail -n 1 | awk '{print $1}')
       ptr_record=$(timeout 5 dig -x 10.11.11.30 +short)
-      echo "spoke1-eu-ilb4 - 10.11.11.30 --> $ptr_record [arpa: $arpa_zone]"
+      echo "spoke1-eu-ilb4 - 10.11.11.30 --> $ptr_record [$arpa_zone]"
       arpa_zone=$(dig -x 10.11.11.40 | grep "QUESTION SECTION" -A 1 | tail -n 1 | awk '{print $1}')
       ptr_record=$(timeout 5 dig -x 10.11.11.40 +short)
-      echo "spoke1-eu-ilb7 - 10.11.11.40 --> $ptr_record [arpa: $arpa_zone]"
+      echo "spoke1-eu-ilb7 - 10.11.11.40 --> $ptr_record [$arpa_zone]"
       arpa_zone=$(dig -x 10.22.21.30 | grep "QUESTION SECTION" -A 1 | tail -n 1 | awk '{print $1}')
       ptr_record=$(timeout 5 dig -x 10.22.21.30 +short)
-      echo "spoke2-us-ilb4 - 10.22.21.30 --> $ptr_record [arpa: $arpa_zone]"
+      echo "spoke2-us-ilb4 - 10.22.21.30 --> $ptr_record [$arpa_zone]"
       arpa_zone=$(dig -x 10.22.21.40 | grep "QUESTION SECTION" -A 1 | tail -n 1 | awk '{print $1}')
       ptr_record=$(timeout 5 dig -x 10.22.21.40 +short)
-      echo "spoke2-us-ilb7 - 10.22.21.40 --> $ptr_record [arpa: $arpa_zone]"
+      echo "spoke2-us-ilb7 - 10.22.21.40 --> $ptr_record [$arpa_zone]"
       EOF
       chmod a+x /usr/local/bin/ptr-ipv4
       

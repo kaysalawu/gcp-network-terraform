@@ -112,32 +112,15 @@ module "spoke1_dns_peering_to_hub_to_onprem" {
   }
 }
 
-# reverse zone
-
-locals {
-  _spoke1_eu_main_reverse_custom = split("/", local.spoke1_subnets_eu["eu-main"].ip_cidr_range).0
-  _spoke1_us_main_reverse_custom = split("/", local.spoke1_subnets_us["us-main"].ip_cidr_range).0
-  spoke1_eu_main_reverse_custom = format("%s.%s.%s.in-addr.arpa.",
-    element(split(".", local._spoke1_eu_main_reverse_custom), 2),
-    element(split(".", local._spoke1_eu_main_reverse_custom), 1),
-    element(split(".", local._spoke1_eu_main_reverse_custom), 0)
-  )
-  spoke1_us_main_reverse_custom = format("%s.%s.%s.in-addr.arpa.",
-    element(split(".", local._spoke1_us_main_reverse_custom), 2),
-    element(split(".", local._spoke1_us_main_reverse_custom), 1),
-    element(split(".", local._spoke1_us_main_reverse_custom), 0)
-  )
-}
-
 # reverse lookup zone (self-managed reverse lookup zones)
 
-module "spoke1_eu_main_reverse_custom" {
+module "spoke1_reverse_zone" {
   source      = "../../modules/dns"
   project_id  = var.project_id_spoke1
-  name        = "${local.spoke1_prefix}eu-main-reverse-custom"
-  description = "eu-main reverse custom zone"
+  name        = "${local.spoke1_prefix}reverse-zone"
+  description = "spoke1 reverse zone"
   zone_config = {
-    domain = local.spoke1_eu_main_reverse_custom
+    domain = local.spoke1_reverse_zone
     private = {
       client_networks = [
         module.hub_vpc.self_link,
@@ -147,29 +130,8 @@ module "spoke1_eu_main_reverse_custom" {
     }
   }
   recordsets = {
-    "PTR 30" = { ttl = 300, records = ["${local.spoke1_eu_ilb4_fqdn}."] },
-    "PTR 40" = { ttl = 300, records = ["${local.spoke1_eu_ilb7_fqdn}."] },
-  }
-}
-
-module "spoke1_us_main_reverse_custom" {
-  source      = "../../modules/dns"
-  project_id  = var.project_id_spoke1
-  name        = "${local.spoke1_prefix}us-main-reverse-custom"
-  description = "us-main reverse custom zone"
-  zone_config = {
-    domain = local.spoke1_us_main_reverse_custom
-    private = {
-      client_networks = [
-        module.hub_vpc.self_link,
-        module.spoke1_vpc.self_link,
-        module.spoke2_vpc.self_link,
-      ]
-    }
-  }
-  recordsets = {
-    "PTR 30" = { ttl = 300, records = ["${local.spoke1_eu_ilb4_fqdn}."] },
-    "PTR 40" = { ttl = 300, records = ["${local.spoke1_eu_ilb7_fqdn}."] },
+    "PTR ${local.spoke1_eu_ilb4_reverse_suffix}" = { ttl = 300, records = ["${local.spoke1_eu_ilb4_fqdn}."] },
+    "PTR ${local.spoke1_eu_ilb7_reverse_suffix}" = { ttl = 300, records = ["${local.spoke1_eu_ilb7_fqdn}."] },
   }
 }
 

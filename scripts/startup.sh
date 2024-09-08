@@ -89,7 +89,7 @@ echo -e "\n PTR ipv4 ...\n"
 %{~ if try(target.ipv4, "") != "" ~}
 arpa_zone=$(dig -x ${target.ipv4} | grep "QUESTION SECTION" -A 1 | tail -n 1 | awk '{print $1}')
 ptr_record=$(timeout 5 dig -x ${target.ipv4} +short)
-echo "${target.name} - ${target.ipv4} --> $ptr_record [arpa: $arpa_zone]"
+echo "${target.name} - ${target.ipv4} --> $ptr_record [$arpa_zone]"
 %{ endif ~}
 %{ endif ~}
 %{ endfor ~}

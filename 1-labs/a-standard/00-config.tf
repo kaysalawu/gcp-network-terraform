@@ -411,6 +411,20 @@ locals {
 
   # psc/ilb consumer
   spoke1_us_psc4_consumer_spoke2_us_svc_dns = "psc4.consumer.spoke2-us-svc" # spoke1 consumer endpoint dns for spoke2 producer service
+
+  # reverse dns
+  spoke1_eu_ilb4_reverse_suffix = format("%s.%s.${local.spoke1_reverse_zone}",
+    element(split(".", local.spoke1_eu_ilb4_addr), 3),
+    element(split(".", local.spoke1_eu_ilb4_addr), 2)
+  )
+  spoke1_eu_ilb7_reverse_suffix = format("%s.%s.${local.spoke1_reverse_zone}",
+    element(split(".", local.spoke1_eu_ilb7_addr), 3),
+    element(split(".", local.spoke1_eu_ilb7_addr), 2)
+  )
+  spoke1_reverse_zone = format("%s.%s.in-addr.arpa.",
+    element(split(".", local.spoke1_supernet), 1),
+    element(split(".", local.spoke1_supernet), 0)
+  )
 }
 
 # spoke2
@@ -509,4 +523,18 @@ locals {
 
   # psc/ilb consumer
   spoke2_eu_psc4_consumer_spoke1_eu_svc_dns = "psc4.consumer.spoke1-eu-svc" # spoke2 consumer endpoint dns for spoke1 producer service
+
+  # reverse dns
+  spoke2_us_ilb4_reverse_suffix = format("%s.%s.${local.spoke2_reverse_zone}",
+    element(split(".", local.spoke2_us_ilb4_addr), 3),
+    element(split(".", local.spoke2_us_ilb4_addr), 2)
+  )
+  spoke2_us_ilb7_reverse_suffix = format("%s.%s.${local.spoke2_reverse_zone}",
+    element(split(".", local.spoke2_us_ilb7_addr), 3),
+    element(split(".", local.spoke2_us_ilb7_addr), 2)
+  )
+  spoke2_reverse_zone = format("%s.%s.in-addr.arpa.",
+    element(split(".", local.spoke2_supernet), 1),
+    element(split(".", local.spoke2_supernet), 0)
+  )
 }
