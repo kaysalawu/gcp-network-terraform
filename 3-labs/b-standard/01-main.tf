@@ -70,6 +70,7 @@ locals {
     { name = "spoke2-us-ilb7", host = local.spoke2_us_ilb7_fqdn, ipv4 = local.spoke2_us_ilb7_addr, ipv6 = local.spoke2_us_ilb7_addr_v6, probe = true, ptr = true },
   ]
   vm_script_targets_misc = [
+    { name = "hub-geo-ilb4", host = local.hub_geo_ilb4_fqdn, probe = false },
     { name = "internet", host = "icanhazip.com", ipv4 = "icanhazip.com", ipv6 = "icanhazip.com", probe = true },
     { name = "www", host = "www.googleapis.com", ipv4 = "www.googleapis.com", ipv6 = "www.googleapis.com", path = "/generate_204", probe = true, ping = false },
     { name = "storage", host = "storage.googleapis.com", ipv4 = "storage.googleapis.com", ipv6 = "storage.googleapis.com", path = "/generate_204", probe = true, ping = false },
@@ -78,7 +79,6 @@ locals {
     { name = "hub-eu-run", host = local.hub_eu_run_httpbin_host, probe = true, path = "/generate_204", ping = false },
     { name = "spoke1-eu-run", host = local.spoke1_eu_run_httpbin_host, probe = true, path = "/generate_204", ping = false },
     { name = "spoke2-us-run", host = local.spoke2_us_run_httpbin_host, probe = true, path = "/generate_204", ping = false },
-    { name = "hub-ilb4-geo", host = local.hub_ilb4_fqdn, probe = false },
   ]
   vm_script_targets = concat(
     local.vm_script_targets_region1,
@@ -201,43 +201,6 @@ module "proxy_vm_cloud_init" {
     ". ${local.init_dir}/squid/setup-squid.sh",
     "docker-compose -f ${local.init_dir}/unbound/docker-compose.yml up -d",
     "docker-compose -f ${local.init_dir}/squid/docker-compose.yml up -d",
-  ]
-}
-
-############################################
-# on-premises
-############################################
-
-# unbound config
-#---------------------------------
-
-locals {
-  onprem_local_records = [
-    { name = local.site1_vm_fqdn, rdata = local.site1_vm_addr, ttl = "300", type = "A" },
-    { name = local.site2_vm_fqdn, rdata = local.site2_vm_addr, ttl = "300", type = "A" },
-  ]
-  # hosts redirected to psc endpoint
-  onprem_redirected_hosts = [
-    {
-      class = "IN", ttl = "3600", type = "A", rdata = local.hub_psc_api_all_fr_addr
-      hosts = [
-        "storage.googleapis.com",
-        "bigquery.googleapis.com",
-        "${local.hub_eu_region}-aiplatform.googleapis.com",
-        "${local.hub_us_region}-aiplatform.googleapis.com",
-        "run.app",
-      ]
-    },
-    # authoritative hosts
-    { hosts = [local.hub_eu_psc_https_ctrl_run_dns], class = "IN", ttl = "3600", type = "A", rdata = local.hub_eu_ilb7_addr },
-    { hosts = [local.hub_us_psc_https_ctrl_run_dns], class = "IN", ttl = "3600", type = "A", rdata = local.hub_us_ilb7_addr },
-  ]
-  onprem_forward_zones = [
-    { zone = "${local.cloud_domain}.", targets = [local.hub_eu_ns_addr, local.hub_us_ns_addr] },
-    { zone = "${local.hub_psc_api_fr_name}.p.googleapis.com", targets = [local.hub_eu_ns_addr, local.hub_us_ns_addr] },
-    { zone = local.spoke1_reverse_zone, targets = [local.hub_eu_ns_addr, local.hub_us_ns_addr] },
-    { zone = local.spoke2_reverse_zone, targets = [local.hub_us_ns_addr, local.hub_eu_ns_addr] },
-    { zone = ".", targets = ["8.8.8.8", "8.8.4.4"] },
   ]
 }
 
@@ -620,15 +583,6 @@ resource "google_storage_bucket_object" "spoke2_us_storage_bucket_file" {
   bucket  = module.spoke2_us_storage_bucket.name
   content = "<--- SPOKE 2 --->"
 }
-
-# values
-#----------------------------
-
-# resource "google_tags_tag_value" "value" {
-#   parent      = "tagKeys/${google_tags_tag_key.key.name}"
-#   short_name  = "valuename"
-#   description = "For valuename resources."
-# }
 
 ####################################################
 # output files

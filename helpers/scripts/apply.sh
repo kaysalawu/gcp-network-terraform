@@ -11,5 +11,6 @@ terraform_apply() {
   rm -f tfplan
 }
 
+tfswitch 1.8.3 && source ~/.profile
 terraform_plan
 terraform_apply

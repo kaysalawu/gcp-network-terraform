@@ -9,13 +9,9 @@ locals {
   us_repo_name = google_artifact_registry_repository.us_repo.name
   httpbin_port = 80
 
-  hub_psc_api_secure    = false
-  spoke1_psc_api_secure = true
-  spoke2_psc_api_secure = true
+  hub_psc_api_secure = false
 
-  hub_eu_run_httpbin_host    = module.hub_eu_run_httpbin.service.uri
-  spoke1_eu_run_httpbin_host = module.spoke1_eu_run_httpbin.service.uri
-  spoke2_us_run_httpbin_host = module.spoke2_us_run_httpbin.service.uri
+  hub_eu_run_httpbin_host = module.hub_eu_run_httpbin.service.uri
 
   enable_ipv6 = false
 }
@@ -53,32 +49,23 @@ locals {
   vm_script_targets_region1 = [
     { name = "site1-vm      ", host = local.site1_vm_fqdn, ipv4 = local.site1_vm_addr, ipv6 = local.site1_vm_addr_v6, probe = true },
     { name = "hub-eu-vm     ", host = local.hub_eu_vm_fqdn, ipv4 = local.hub_eu_vm_addr, ipv6 = local.hub_eu_vm_addr_v6, probe = true },
-    { name = "spoke1-eu-vm  ", host = local.spoke1_eu_vm_fqdn, ipv4 = local.spoke1_eu_vm_addr, ipv6 = local.spoke1_eu_vm_addr_v6, probe = true },
-    { name = "spoke2-eu-vm  ", host = local.spoke2_eu_vm_fqdn, ipv4 = local.spoke2_eu_vm_addr, ipv6 = local.spoke2_eu_vm_addr_v6, probe = false },
     { name = "hub-eu-ilb4   ", host = local.hub_eu_ilb4_fqdn, ipv4 = local.hub_eu_ilb4_addr, ipv6 = local.hub_eu_ilb4_addr_v6, probe = true },
     { name = "hub-eu-ilb7   ", host = local.hub_eu_ilb7_fqdn, ipv4 = local.hub_eu_ilb7_addr, ipv6 = local.hub_eu_ilb7_addr_v6, probe = true },
-    { name = "spoke1-eu-ilb4", host = local.spoke1_eu_ilb4_fqdn, ipv4 = local.spoke1_eu_ilb4_addr, ipv6 = local.spoke1_eu_ilb4_addr_v6, probe = true, ptr = true },
-    { name = "spoke1-eu-ilb7", host = local.spoke1_eu_ilb7_fqdn, ipv4 = local.spoke1_eu_ilb7_addr, ipv6 = local.spoke1_eu_ilb7_addr_v6, probe = true, ptr = true },
   ]
   vm_script_targets_region2 = [
     { name = "site2-vm      ", host = local.site2_vm_fqdn, ipv4 = local.site2_vm_addr, ipv6 = local.site2_vm_addr_v6, probe = true },
     { name = "hub-us-vm     ", host = local.hub_us_vm_fqdn, ipv4 = local.hub_us_vm_addr, ipv6 = local.hub_us_vm_addr_v6, probe = true },
-    { name = "spoke2-us-vm  ", host = local.spoke2_us_vm_fqdn, ipv4 = local.spoke2_us_vm_addr, ipv6 = local.spoke2_us_vm_addr_v6, probe = true },
     { name = "hub-us-ilb4   ", host = local.hub_us_ilb4_fqdn, ipv4 = local.hub_us_ilb4_addr, ipv6 = local.hub_us_ilb4_addr_v6, probe = true },
     { name = "hub-us-ilb7   ", host = local.hub_us_ilb7_fqdn, ipv4 = local.hub_us_ilb7_addr, ipv6 = local.hub_us_ilb7_addr_v6, probe = true },
-    { name = "spoke2-us-ilb4", host = local.spoke2_us_ilb4_fqdn, ipv4 = local.spoke2_us_ilb4_addr, ipv6 = local.spoke2_us_ilb4_addr_v6, probe = true, ptr = true },
-    { name = "spoke2-us-ilb7", host = local.spoke2_us_ilb7_fqdn, ipv4 = local.spoke2_us_ilb7_addr, ipv6 = local.spoke2_us_ilb7_addr_v6, probe = true, ptr = true },
   ]
   vm_script_targets_misc = [
+    { name = "hub-geo-ilb4", host = local.hub_geo_ilb4_fqdn, probe = false },
     { name = "internet", host = "icanhazip.com", ipv4 = "icanhazip.com", ipv6 = "icanhazip.com", probe = true },
     { name = "www", host = "www.googleapis.com", ipv4 = "www.googleapis.com", ipv6 = "www.googleapis.com", path = "/generate_204", probe = true, ping = false },
     { name = "storage", host = "storage.googleapis.com", ipv4 = "storage.googleapis.com", ipv6 = "storage.googleapis.com", path = "/generate_204", probe = true, ping = false },
     { name = "hub-eu-psc-https", host = local.hub_eu_psc_https_ctrl_run_dns, path = "/generate_204", probe = false, ping = false },
     { name = "hub-us-psc-https", host = local.hub_us_psc_https_ctrl_run_dns, path = "/generate_204", probe = false, ping = false },
     { name = "hub-eu-run", host = local.hub_eu_run_httpbin_host, probe = true, path = "/generate_204", ping = false },
-    { name = "spoke1-eu-run", host = local.spoke1_eu_run_httpbin_host, probe = true, path = "/generate_204", ping = false },
-    { name = "spoke2-us-run", host = local.spoke2_us_run_httpbin_host, probe = true, path = "/generate_204", ping = false },
-    { name = "hub-ilb4-geo", host = local.hub_ilb4_fqdn, probe = false },
   ]
   vm_script_targets = concat(
     local.vm_script_targets_region1,
@@ -205,43 +192,6 @@ module "proxy_vm_cloud_init" {
 }
 
 ############################################
-# on-premises
-############################################
-
-# unbound config
-#---------------------------------
-
-locals {
-  onprem_local_records = [
-    { name = local.site1_vm_fqdn, rdata = local.site1_vm_addr, ttl = "300", type = "A" },
-    { name = local.site2_vm_fqdn, rdata = local.site2_vm_addr, ttl = "300", type = "A" },
-  ]
-  # hosts redirected to psc endpoint
-  onprem_redirected_hosts = [
-    {
-      class = "IN", ttl = "3600", type = "A", rdata = local.hub_psc_api_all_fr_addr
-      hosts = [
-        "storage.googleapis.com",
-        "bigquery.googleapis.com",
-        "${local.hub_eu_region}-aiplatform.googleapis.com",
-        "${local.hub_us_region}-aiplatform.googleapis.com",
-        "run.app",
-      ]
-    },
-    # authoritative hosts
-    { hosts = [local.hub_eu_psc_https_ctrl_run_dns], class = "IN", ttl = "3600", type = "A", rdata = local.hub_eu_ilb7_addr },
-    { hosts = [local.hub_us_psc_https_ctrl_run_dns], class = "IN", ttl = "3600", type = "A", rdata = local.hub_us_ilb7_addr },
-  ]
-  onprem_forward_zones = [
-    { zone = "${local.cloud_domain}.", targets = [local.hub_eu_ns_addr, local.hub_us_ns_addr] },
-    { zone = "${local.hub_psc_api_fr_name}.p.googleapis.com", targets = [local.hub_eu_ns_addr, local.hub_us_ns_addr] },
-    { zone = local.spoke1_reverse_zone, targets = [local.hub_eu_ns_addr, local.hub_us_ns_addr] },
-    { zone = local.spoke2_reverse_zone, targets = [local.hub_us_ns_addr, local.hub_eu_ns_addr] },
-    { zone = ".", targets = ["8.8.8.8", "8.8.4.4"] },
-  ]
-}
-
-############################################
 # addresses
 ############################################
 
@@ -266,8 +216,6 @@ module "site1_sa" {
   iam_project_roles = {
     (var.project_id_onprem) = ["roles/owner", ]
     (var.project_id_hub)    = ["roles/owner", ]
-    (var.project_id_spoke1) = ["roles/owner", ]
-    (var.project_id_spoke2) = ["roles/owner", ]
   }
 }
 
@@ -292,8 +240,6 @@ module "site2_sa" {
   iam_project_roles = {
     (var.project_id_onprem) = ["roles/owner", ]
     (var.project_id_hub)    = ["roles/owner", ]
-    (var.project_id_spoke1) = ["roles/owner", ]
-    (var.project_id_spoke2) = ["roles/owner", ]
   }
 }
 
@@ -361,8 +307,6 @@ module "hub_sa" {
   iam_project_roles = {
     (var.project_id_onprem) = ["roles/owner", ]
     (var.project_id_hub)    = ["roles/owner", ]
-    (var.project_id_spoke1) = ["roles/owner", ]
-    (var.project_id_spoke2) = ["roles/owner", ]
   }
 }
 
@@ -401,8 +345,6 @@ module "hub_eu_storage_bucket" {
       "serviceAccount:${module.site1_sa.email}",
       "serviceAccount:${module.site2_sa.email}",
       "serviceAccount:${module.hub_sa.email}",
-      "serviceAccount:${module.spoke1_sa.email}",
-      "serviceAccount:${module.spoke2_sa.email}",
     ]
   }
 }
@@ -425,8 +367,6 @@ module "hub_us_storage_bucket" {
       "serviceAccount:${module.site1_sa.email}",
       "serviceAccount:${module.site2_sa.email}",
       "serviceAccount:${module.hub_sa.email}",
-      "serviceAccount:${module.spoke1_sa.email}",
-      "serviceAccount:${module.spoke2_sa.email}",
     ]
   }
 }
@@ -444,191 +384,6 @@ resource "google_storage_bucket_object" "hub_us_storage_bucket_file" {
 data "google_project" "host_project_number" {
   project_id = var.project_id_host
 }
-
-############################################
-# spoke1
-############################################
-
-data "google_project" "spoke1_project_number" {
-  project_id = var.project_id_spoke1
-}
-
-locals {
-  spoke1_psc_api_fr_name = (
-    local.spoke1_psc_api_secure ?
-    local.spoke1_psc_api_sec_fr_name :
-    local.spoke1_psc_api_all_fr_name
-  )
-  spoke1_psc_api_fr_addr = (
-    local.spoke1_psc_api_secure ?
-    local.spoke1_psc_api_sec_fr_addr :
-    local.spoke1_psc_api_all_fr_addr
-  )
-  spoke1_psc_api_fr_target = (
-    local.spoke1_psc_api_secure ?
-    "vpc-sc" :
-    "all-apis"
-  )
-}
-
-# service account
-
-module "spoke1_sa" {
-  source       = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v33.0.0"
-  project_id   = var.project_id_spoke1
-  name         = trimsuffix("${local.spoke1_prefix}sa", "-")
-  generate_key = false
-  iam_project_roles = {
-    (var.project_id_onprem) = ["roles/owner", ]
-    (var.project_id_hub)    = ["roles/owner", ]
-    (var.project_id_spoke1) = ["roles/owner", ]
-    (var.project_id_spoke2) = ["roles/owner", ]
-  }
-}
-
-# cloud run
-
-module "spoke1_eu_run_httpbin" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/cloud-run-v2?ref=v33.0.0"
-  project_id = var.project_id_spoke1
-  name       = "${local.spoke1_prefix}eu-run-httpbin"
-  region     = local.spoke1_eu_region
-  iam        = { "roles/run.invoker" = ["allUsers"] }
-  containers = {
-    httpbin = {
-      image = "kennethreitz/httpbin"
-      ports = {
-        httpbin = { name = "http1", container_port = local.httpbin_port }
-      }
-      resources     = null
-      volume_mounts = null
-    }
-  }
-}
-
-# storage
-
-module "spoke1_eu_storage_bucket" {
-  source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/gcs?ref=v33.0.0"
-  project_id    = var.project_id_spoke1
-  prefix        = null
-  name          = "${local.spoke1_prefix}eu-storage-bucket"
-  location      = local.spoke1_eu_region
-  storage_class = "STANDARD"
-  force_destroy = true
-  iam = {
-    "roles/storage.objectViewer" = [
-      "serviceAccount:${module.site1_sa.email}",
-      "serviceAccount:${module.site2_sa.email}",
-      "serviceAccount:${module.hub_sa.email}",
-      "serviceAccount:${module.spoke1_sa.email}",
-      "serviceAccount:${module.spoke2_sa.email}",
-    ]
-  }
-}
-
-resource "google_storage_bucket_object" "spoke1_eu_storage_bucket_file" {
-  name    = "${local.spoke1_prefix}object.txt"
-  bucket  = module.spoke1_eu_storage_bucket.name
-  content = "<--- SPOKE 1 --->"
-}
-
-############################################
-# spoke2
-############################################
-
-data "google_project" "spoke2_project_number" {
-  project_id = var.project_id_spoke2
-}
-
-locals {
-  spoke2_psc_api_fr_name = (
-    local.spoke2_psc_api_secure ?
-    local.spoke2_psc_api_sec_fr_name :
-    local.spoke2_psc_api_all_fr_name
-  )
-  spoke2_psc_api_fr_addr = (
-    local.spoke2_psc_api_secure ?
-    local.spoke2_psc_api_sec_fr_addr :
-    local.spoke2_psc_api_all_fr_addr
-  )
-  spoke2_psc_api_fr_target = (
-    local.spoke2_psc_api_secure ?
-    "vpc-sc" :
-    "all-apis"
-  )
-}
-
-# service account
-
-module "spoke2_sa" {
-  source       = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v33.0.0"
-  project_id   = var.project_id_spoke2
-  name         = trimsuffix("${local.spoke2_prefix}sa", "-")
-  generate_key = false
-  iam_project_roles = {
-    (var.project_id_onprem) = ["roles/owner", ]
-    (var.project_id_hub)    = ["roles/owner", ]
-    (var.project_id_spoke1) = ["roles/owner", ]
-    (var.project_id_spoke2) = ["roles/owner", ]
-  }
-}
-
-# cloud run
-
-module "spoke2_us_run_httpbin" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/cloud-run-v2?ref=v33.0.0"
-  project_id = var.project_id_spoke2
-  name       = "${local.spoke2_prefix}us-run-httpbin"
-  region     = local.spoke2_us_region
-  iam        = { "roles/run.invoker" = ["allUsers"] }
-  containers = {
-    httpbin = {
-      image = "kennethreitz/httpbin"
-      ports = {
-        httpbin = { name = "http1", container_port = local.httpbin_port }
-      }
-      resources     = null
-      volume_mounts = null
-    }
-  }
-}
-
-# storage
-
-module "spoke2_us_storage_bucket" {
-  source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/gcs?ref=v33.0.0"
-  project_id    = var.project_id_spoke2
-  prefix        = null
-  name          = "${local.spoke2_prefix}us-storage-bucket"
-  location      = local.spoke2_us_region
-  storage_class = "STANDARD"
-  force_destroy = true
-  iam = {
-    "roles/storage.objectViewer" = [
-      "serviceAccount:${module.site1_sa.email}",
-      "serviceAccount:${module.site2_sa.email}",
-      "serviceAccount:${module.hub_sa.email}",
-      "serviceAccount:${module.spoke1_sa.email}",
-      "serviceAccount:${module.spoke2_sa.email}",
-    ]
-  }
-}
-
-resource "google_storage_bucket_object" "spoke2_us_storage_bucket_file" {
-  name    = "${local.spoke2_prefix}object.txt"
-  bucket  = module.spoke2_us_storage_bucket.name
-  content = "<--- SPOKE 2 --->"
-}
-
-# values
-#----------------------------
-
-# resource "google_tags_tag_value" "value" {
-#   parent      = "tagKeys/${google_tags_tag_key.key.name}"
-#   short_name  = "valuename"
-#   description = "For valuename resources."
-# }
 
 ####################################################
 # output files

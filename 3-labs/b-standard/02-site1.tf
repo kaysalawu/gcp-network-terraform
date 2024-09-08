@@ -181,15 +181,40 @@ module "site1_vpc_firewall" {
 locals {
   site1_unbound_startup = templatefile("../../scripts/unbound/unbound.sh", local.site1_dns_vars)
   site1_dns_vars = {
-    ONPREM_LOCAL_RECORDS = local.onprem_local_records
-    REDIRECTED_HOSTS     = local.onprem_redirected_hosts
-    FORWARD_ZONES        = local.onprem_forward_zones
+    ONPREM_LOCAL_RECORDS = local.onprem_local_records_site1
+    REDIRECTED_HOSTS     = local.onprem_redirected_hosts_site1
+    FORWARD_ZONES        = local.onprem_forward_zones_site1
     TARGETS              = local.vm_script_targets
     ACCESS_CONTROL_PREFIXES = concat(
       local.netblocks.internal,
       ["127.0.0.0/8", "35.199.192.0/19", "fd00::/8", ]
     )
   }
+  onprem_local_records_site1 = [
+    { name = local.site1_vm_fqdn, rdata = local.site1_vm_addr, ttl = "300", type = "A" },
+    { name = local.site2_vm_fqdn, rdata = local.site2_vm_addr, ttl = "300", type = "A" },
+  ]
+  # hosts redirected to psc endpoint
+  onprem_redirected_hosts_site1 = [
+    {
+      class = "IN", ttl = "3600", type = "A", rdata = local.hub_psc_api_all_fr_addr
+      hosts = [
+        "storage.googleapis.com",
+        "bigquery.googleapis.com",
+        "${local.hub_eu_region}-aiplatform.googleapis.com",
+        "${local.hub_us_region}-aiplatform.googleapis.com",
+        "run.app",
+      ]
+    },
+    # authoritative hosts
+    { hosts = [local.hub_eu_psc_https_ctrl_run_dns], class = "IN", ttl = "3600", type = "A", rdata = local.hub_eu_ilb7_addr },
+    { hosts = [local.hub_us_psc_https_ctrl_run_dns], class = "IN", ttl = "3600", type = "A", rdata = local.hub_us_ilb7_addr },
+  ]
+  onprem_forward_zones_site1 = [
+    { zone = "${local.cloud_domain}.", targets = [local.hub_eu_ns_addr, ] },
+    { zone = "${local.hub_psc_api_fr_name}.p.googleapis.com", targets = [local.hub_eu_ns_addr, ] },
+    { zone = ".", targets = ["8.8.8.8", "8.8.4.4"] },
+  ]
 }
 
 # unbound instance

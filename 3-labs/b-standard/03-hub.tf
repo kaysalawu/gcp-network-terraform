@@ -403,7 +403,7 @@ module "hub_dns_private_zone" {
     "A ${local.hub_us_ilb4_dns_prefix}" = { ttl = 300, records = [local.hub_us_ilb4_addr] },
     "A ${local.hub_eu_ilb7_dns_prefix}" = { ttl = 300, records = [local.hub_eu_ilb7_addr] },
     "A ${local.hub_us_ilb7_dns_prefix}" = { ttl = 300, records = [local.hub_us_ilb7_addr] },
-    "A ${local.hub_ilb4_prefix}" = {
+    "A ${local.hub_geo_ilb4_prefix}" = {
       geo_routing = [
         { location = local.hub_eu_region,
           health_checked_targets = [{

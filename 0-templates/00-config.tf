@@ -289,11 +289,12 @@ locals {
   hub_us_psc4_producer_nat = "192.168.12.0/24"
 
   # fqdn
-  hub_ilb4_prefix        = "ilb4" # geo-dns resolves to regional ilb4 endpoint
+  hub_geo_ilb4_prefix = "ilb4.geo" # geo-dns resolves to regional ilb4 endpoint
+  hub_geo_ilb4_fqdn   = "${local.hub_geo_ilb4_prefix}.${local.hub_dns_zone}"
+
   hub_eu_vm_dns_prefix   = "vm.eu"
   hub_eu_ilb4_dns_prefix = "ilb4.eu"
   hub_eu_ilb7_dns_prefix = "ilb7.eu"
-  hub_ilb4_fqdn          = "${local.hub_ilb4_prefix}.${local.hub_dns_zone}"
   hub_eu_vm_fqdn         = "${local.hub_eu_vm_dns_prefix}.${local.hub_dns_zone}"
   hub_eu_ilb4_fqdn       = "${local.hub_eu_ilb4_dns_prefix}.${local.hub_dns_zone}"
   hub_eu_ilb7_fqdn       = "${local.hub_eu_ilb7_dns_prefix}.${local.hub_dns_zone}"

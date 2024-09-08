@@ -59,21 +59,9 @@ server:
 forward-zone:
         name: "g.corp."
         forward-addr: 10.1.11.40
-        forward-addr: 10.1.21.40
 
 forward-zone:
         name: "ahuball.p.googleapis.com"
-        forward-addr: 10.1.11.40
-        forward-addr: 10.1.21.40
-
-forward-zone:
-        name: "11.10.in-addr.arpa."
-        forward-addr: 10.1.11.40
-        forward-addr: 10.1.21.40
-
-forward-zone:
-        name: "22.10.in-addr.arpa."
-        forward-addr: 10.1.21.40
         forward-addr: 10.1.11.40
 
 forward-zone:
