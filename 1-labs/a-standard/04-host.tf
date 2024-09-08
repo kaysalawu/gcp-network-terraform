@@ -1,4 +1,15 @@
 
+locals {
+  spoke1_vpc_tags = {
+    "${local.spoke1_prefix}vpc-dns" = { value = "dns", description = "custom dns servers" }
+    "${local.spoke1_prefix}vpc-gfe" = { value = "gfe", description = "load balancer backends" }
+    "${local.spoke1_prefix}vpc-nva" = { value = "nva", description = "nva appliances" }
+  }
+  spoke1_vpc_tags_dns = google_tags_tag_value.spoke1_vpc_tags["${local.spoke1_prefix}vpc-dns"]
+  spoke1_vpc_tags_gfe = google_tags_tag_value.spoke1_vpc_tags["${local.spoke1_prefix}vpc-gfe"]
+  spoke1_vpc_tags_nva = google_tags_tag_value.spoke1_vpc_tags["${local.spoke1_prefix}vpc-nva"]
+}
+
 # network
 #---------------------------------
 
@@ -17,15 +28,40 @@ module "spoke1_vpc" {
     var.project_id_spoke1
   ]
 
-  # psa_configs = [{
-  #   ranges = {
-  #     "spoke1-eu-psa-range1" = local.spoke1_eu_psa_range1
-  #     "spoke1-eu-psa-range2" = local.spoke1_eu_psa_range2
-  #   }
-  #   export_routes  = true
-  #   import_routes  = true
-  #   peered_domains = ["gcp.example.com."]
-  # }]
+  psa_configs = [{
+    ranges = {
+      "spoke1-eu-psa-range1" = local.spoke1_eu_psa_range1
+      "spoke1-eu-psa-range2" = local.spoke1_eu_psa_range2
+    }
+    export_routes  = true
+    import_routes  = true
+    peered_domains = ["gcp.example.com."]
+  }]
+}
+
+# secure tags
+#---------------------------------
+
+# keys
+
+resource "google_tags_tag_key" "spoke1_vpc" {
+  for_each    = local.spoke1_vpc_tags
+  parent      = "projects/${var.project_id_spoke1}"
+  short_name  = each.key
+  description = each.value.description
+  purpose     = "GCE_FIREWALL"
+  purpose_data = {
+    network = "${var.project_id_host}/${module.spoke1_vpc.name}"
+  }
+}
+
+# values
+
+resource "google_tags_tag_value" "spoke1_vpc_tags" {
+  for_each    = local.spoke1_vpc_tags
+  parent      = google_tags_tag_key.spoke1_vpc[each.key].id
+  short_name  = each.value.value
+  description = each.value.description
 }
 
 # addresses
@@ -98,7 +134,9 @@ module "spoke1_nat_us" {
 # firewall
 #---------------------------------
 
-module "spoke11_vpc_fw_policy" {
+# policy
+
+module "spoke1_vpc_fw_policy" {
   source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v33.0.0"
   name      = "${local.spoke1_prefix}vpc-fw-policy"
   parent_id = var.project_id_host
@@ -123,23 +161,45 @@ module "spoke11_vpc_fw_policy" {
         layer4_configs = [{ protocol = "all" }]
       }
     }
+    dns = {
+      priority    = 1100
+      target_tags = [local.spoke1_vpc_tags_dns.id, local.spoke1_vpc_tags_nva.id, ]
+      match = {
+        source_ranges  = local.netblocks.dns
+        layer4_configs = [{ protocol = "all", ports = [] }]
+      }
+    }
     ssh = {
-      priority       = 1001
+      priority       = 1200
+      target_tags    = [local.spoke1_vpc_tags_nva.id, ]
       enable_logging = true
       match = {
         source_ranges  = ["0.0.0.0/0", ]
         layer4_configs = [{ protocol = "tcp", ports = ["22"] }]
       }
     }
-    dns = {
-      priority = 1003
+    iap = {
+      priority       = 1300
+      enable_logging = true
       match = {
-        source_ranges  = local.netblocks.dns
+        source_ranges  = local.netblocks.iap
         layer4_configs = [{ protocol = "all", ports = [] }]
       }
     }
+    vpn = {
+      priority    = 1400
+      target_tags = [local.spoke1_vpc_tags_nva.id, ]
+      match = {
+        source_ranges = ["0.0.0.0/0", ]
+        layer4_configs = [
+          { protocol = "udp", ports = ["500", "4500", ] },
+          { protocol = "esp", ports = [] }
+        ]
+      }
+    }
     gfe = {
-      priority = 1004
+      priority    = 1500
+      target_tags = [local.spoke1_vpc_tags_gfe.id, ]
       match = {
         source_ranges  = local.netblocks.gfe
         layer4_configs = [{ protocol = "all", ports = [] }]
@@ -167,14 +227,14 @@ resource "google_project_organization_policy" "spoke1_subnets_for_spoke1_only" {
         module.spoke1_vpc.subnets_proxy_only["${local.spoke1_us_region}/us-reg-proxy"].id,
       ]
     }
-    suggested_value = "prj-spoke1-x has access to only spoke1 subnets in prj-central-x"
+    suggested_value = "prj-spoke1-x has access to only spoke1 subnets in prj-hub-x"
   }
 }
 
 # psc/api
 #---------------------------------
 
-# vip
+# address
 
 resource "google_compute_global_address" "spoke1_psc_api_fr_addr" {
   provider     = google-beta
@@ -186,7 +246,7 @@ resource "google_compute_global_address" "spoke1_psc_api_fr_addr" {
   address      = local.spoke1_psc_api_fr_addr
 }
 
-# fr
+# forwarding rule
 
 resource "google_compute_global_forwarding_rule" "spoke1_psc_api_fr" {
   provider              = google-beta

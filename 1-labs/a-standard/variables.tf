@@ -1,4 +1,9 @@
 
+variable "prefix" {
+  description = "prefix used for all resources"
+  default     = "a"
+}
+
 variable "organization_id" {
   description = "organization id"
   default     = null

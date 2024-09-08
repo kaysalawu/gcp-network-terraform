@@ -111,86 +111,29 @@ module "spoke1_dns_peering_to_hub_to_onprem" {
     }
   }
 }
-/*
-# reverse zone
-
-locals {
-  _spoke1_eu_subnet1_reverse_custom         = split("/", local.spoke1_subnets["${local.spoke1_prefix}eu-subnet1"].ip_cidr_range).0
-  _spoke1_us_subnet1_reverse_custom         = split("/", local.spoke1_subnets["${local.spoke1_prefix}us-subnet1"].ip_cidr_range).0
-  _spoke1_eu_random_google_reverse_internal = cidrhost(local.spoke1_subnets["${local.spoke1_prefix}eu-subnet1"].ip_cidr_range, 254)
-  spoke1_eu_subnet1_reverse_custom = (format("%s.%s.%s.in-addr.arpa.",
-    element(split(".", local._spoke1_eu_subnet1_reverse_custom), 2),
-    element(split(".", local._spoke1_eu_subnet1_reverse_custom), 1),
-    element(split(".", local._spoke1_eu_subnet1_reverse_custom), 0),
-  ))
-  spoke1_us_subnet1_reverse_custom = (format("%s.%s.%s.in-addr.arpa.",
-    element(split(".", local._spoke1_us_subnet1_reverse_custom), 2),
-    element(split(".", local._spoke1_us_subnet1_reverse_custom), 1),
-    element(split(".", local._spoke1_us_subnet1_reverse_custom), 0),
-  ))
-  spoke1_eu_random_google_reverse_internal = (format("%s.%s.%s.%s.in-addr.arpa.",
-    element(split(".", local._spoke1_eu_random_google_reverse_internal), 3),
-    element(split(".", local._spoke1_eu_random_google_reverse_internal), 2),
-    element(split(".", local._spoke1_eu_random_google_reverse_internal), 1),
-    element(split(".", local._spoke1_eu_random_google_reverse_internal), 0),
-  ))
-}
 
 # reverse lookup zone (self-managed reverse lookup zones)
 
-module "spoke1_eu_subnet1_reverse_custom" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
+module "spoke1_reverse_zone" {
+  source      = "../../modules/dns"
   project_id  = var.project_id_spoke1
-  type        = "private"
-  name        = "${local.spoke1_prefix}eu-subnet1-reverse-custom"
-  domain      = local.spoke1_eu_subnet1_reverse_custom
-  description = "eu-subnet1 reverse custom zone"
-  client_networks = [
-    module.hub_vpc.self_link,
-    module.spoke1_vpc.self_link,
-    module.spoke2_vpc.self_link,
-  ]
+  name        = "${local.spoke1_prefix}reverse-zone"
+  description = "spoke1 reverse zone"
+  zone_config = {
+    domain = local.spoke1_reverse_zone
+    private = {
+      client_networks = [
+        module.hub_vpc.self_link,
+        module.spoke1_vpc.self_link,
+        module.spoke2_vpc.self_link,
+      ]
+    }
+  }
   recordsets = {
-    "PTR 30" = { type = "PTR", ttl = 300, records = ["${local.spoke1_eu_ilb4_dns}.${local.spoke1_domain}.${local.cloud_domain}."] },
-    "PTR 40" = { type = "PTR", ttl = 300, records = ["${local.spoke1_eu_ilb7_dns}.${local.spoke1_domain}.${local.cloud_domain}."] },
+    "PTR ${local.spoke1_eu_ilb4_reverse_suffix}" = { ttl = 300, records = ["${local.spoke1_eu_ilb4_fqdn}."] },
+    "PTR ${local.spoke1_eu_ilb7_reverse_suffix}" = { ttl = 300, records = ["${local.spoke1_eu_ilb7_fqdn}."] },
   }
 }
-
-module "spoke1_us_subnet1_reverse_custom" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
-  project_id  = var.project_id_spoke1
-  type        = "private"
-  name        = "${local.spoke1_prefix}us-subnet1-reverse-custom"
-  domain      = local.spoke1_us_subnet1_reverse_custom
-  description = "us-subnet1 reverse custom zone"
-  client_networks = [
-    module.hub_vpc.self_link,
-    module.spoke1_vpc.self_link,
-    module.spoke2_vpc.self_link,
-  ]
-  recordsets = {
-    "PTR 30" = { type = "PTR", ttl = 300, records = ["${local.spoke1_us_ilb4_dns}.${local.spoke1_domain}.${local.cloud_domain}."] },
-    "PTR 40" = { type = "PTR", ttl = 300, records = ["${local.spoke1_us_ilb7_dns}.${local.spoke1_domain}.${local.cloud_domain}."] },
-  }
-}
-
-# reverse zone (google-managed reverse lookup for everything else)
-
-resource "google_dns_managed_zone" "spoke1_eu_random_google_reverse_internal" {
-  provider       = google-beta
-  project        = var.project_id_spoke1
-  name           = "${local.spoke1_prefix}eu-random-google-reverse-internal"
-  dns_name       = local.spoke1_eu_random_google_reverse_internal
-  description    = "random reverse internal zone"
-  visibility     = "private"
-  reverse_lookup = true
-  private_visibility_config {
-    networks { network_url = module.hub_vpc.self_link }
-    networks { network_url = module.spoke1_vpc.self_link }
-    networks { network_url = module.spoke2_vpc.self_link }
-  }
-}
-*/
 
 # ilb4 - eu
 #---------------------------------

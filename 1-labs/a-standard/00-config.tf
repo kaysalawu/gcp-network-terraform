@@ -78,7 +78,7 @@ resource "random_id" "random" {
 #--------------------------------
 
 locals {
-  site1_prefix   = local.prefix == "" ? "site1-" : join("-", [local.prefix, "site1-"])
+  site1_prefix   = var.prefix == "" ? "site1-" : join("-", [var.prefix, "site1-"])
   site1_asn      = "65010"
   site1_region   = local.region1
   site1_supernet = "10.10.0.0/16"
@@ -109,7 +109,7 @@ locals {
 #--------------------------------
 
 locals {
-  site2_prefix   = local.prefix == "" ? "site2-" : join("-", [local.prefix, "site2-"])
+  site2_prefix   = var.prefix == "" ? "site2-" : join("-", [var.prefix, "site2-"])
   site2_asn      = "65020"
   site2_region   = local.region2
   site2_supernet = "10.20.0.0/16"
@@ -141,7 +141,7 @@ locals {
 #=====================================================
 
 locals {
-  hub_prefix        = local.prefix == "" ? "hub-" : join("-", [local.prefix, "hub-"])
+  hub_prefix        = var.prefix == "" ? "hub-" : join("-", [var.prefix, "hub-"])
   hub_eu_region     = local.region1
   hub_us_region     = local.region2
   hub_eu_router_asn = "65001"
@@ -271,8 +271,8 @@ locals {
 
   # psc/api
   hub_psc_api_fr_range    = "10.1.0.0/24"                           # vip range
-  hub_psc_api_all_fr_name = "${local.prefix}huball"                 # all-apis forwarding rule name
-  hub_psc_api_sec_fr_name = "${local.prefix}hubsec"                 # vpc-sc forwarding rule name
+  hub_psc_api_all_fr_name = "${var.prefix}huball"                   # all-apis forwarding rule name
+  hub_psc_api_sec_fr_name = "${var.prefix}hubsec"                   # vpc-sc forwarding rule name
   hub_psc_api_all_fr_addr = cidrhost(local.hub_psc_api_fr_range, 1) # all-apis forwarding rule vip
   hub_psc_api_sec_fr_addr = cidrhost(local.hub_psc_api_fr_range, 2) # vpc-sc forwarding rule vip
 
@@ -289,9 +289,11 @@ locals {
   hub_us_psc4_producer_nat = "192.168.12.0/24"
 
   # fqdn
+  hub_ilb4_prefix        = "ilb4" # geo-dns resolves to regional ilb4 endpoint
   hub_eu_vm_dns_prefix   = "vm.eu"
   hub_eu_ilb4_dns_prefix = "ilb4.eu"
   hub_eu_ilb7_dns_prefix = "ilb7.eu"
+  hub_ilb4_fqdn          = "${local.hub_ilb4_prefix}.${local.hub_dns_zone}"
   hub_eu_vm_fqdn         = "${local.hub_eu_vm_dns_prefix}.${local.hub_dns_zone}"
   hub_eu_ilb4_fqdn       = "${local.hub_eu_ilb4_dns_prefix}.${local.hub_dns_zone}"
   hub_eu_ilb7_fqdn       = "${local.hub_eu_ilb7_dns_prefix}.${local.hub_dns_zone}"
@@ -317,7 +319,7 @@ locals {
 #=====================================================
 
 locals {
-  spoke1_prefix      = local.prefix == "" ? "spoke1-" : join("-", [local.prefix, "spoke1-"])
+  spoke1_prefix      = var.prefix == "" ? "spoke1-" : join("-", [var.prefix, "spoke1-"])
   spoke1_bucket_name = "${local.spoke1_prefix}${var.project_id_spoke1}-bucket"
   spoke1_asn         = "65411"
   spoke1_eu_region   = local.region1
@@ -398,8 +400,8 @@ locals {
   spoke1_us_ilb7_fqdn       = "${local.spoke1_us_ilb7_dns_prefix}.${local.spoke1_dns_zone}"
 
   # psc/api
-  spoke1_psc_api_all_fr_name = "${local.prefix}spoke1all"                 # all-apis forwarding rule name
-  spoke1_psc_api_sec_fr_name = "${local.prefix}spoke1sec"                 # vpc-sc forwarding rule name
+  spoke1_psc_api_all_fr_name = "${var.prefix}spoke1all"                   # all-apis forwarding rule name
+  spoke1_psc_api_sec_fr_name = "${var.prefix}spoke1sec"                   # vpc-sc forwarding rule name
   spoke1_psc_api_all_fr_addr = cidrhost(local.spoke1_psc_api_fr_range, 1) # all-apis forwarding rule vip
   spoke1_psc_api_sec_fr_addr = cidrhost(local.spoke1_psc_api_fr_range, 2) # vpc-sc forwarding rule vip
 
@@ -409,13 +411,27 @@ locals {
 
   # psc/ilb consumer
   spoke1_us_psc4_consumer_spoke2_us_svc_dns = "psc4.consumer.spoke2-us-svc" # spoke1 consumer endpoint dns for spoke2 producer service
+
+  # reverse dns
+  spoke1_eu_ilb4_reverse_suffix = format("%s.%s.${local.spoke1_reverse_zone}",
+    element(split(".", local.spoke1_eu_ilb4_addr), 3),
+    element(split(".", local.spoke1_eu_ilb4_addr), 2)
+  )
+  spoke1_eu_ilb7_reverse_suffix = format("%s.%s.${local.spoke1_reverse_zone}",
+    element(split(".", local.spoke1_eu_ilb7_addr), 3),
+    element(split(".", local.spoke1_eu_ilb7_addr), 2)
+  )
+  spoke1_reverse_zone = format("%s.%s.in-addr.arpa.",
+    element(split(".", local.spoke1_supernet), 1),
+    element(split(".", local.spoke1_supernet), 0)
+  )
 }
 
 # spoke2
 #=====================================================
 
 locals {
-  spoke2_prefix      = local.prefix == "" ? "spoke2-" : join("-", [local.prefix, "spoke2-"])
+  spoke2_prefix      = var.prefix == "" ? "spoke2-" : join("-", [var.prefix, "spoke2-"])
   spoke2_bucket_name = "${local.spoke2_prefix}${var.project_id_spoke2}-bucket"
   spoke2_asn         = "65422"
   spoke2_eu_region   = local.region1
@@ -496,8 +512,8 @@ locals {
   spoke2_us_ilb7_fqdn       = "${local.spoke2_us_ilb7_dns_prefix}.${local.spoke2_dns_zone}"
 
   # psc/api
-  spoke2_psc_api_all_fr_name = "${local.prefix}spoke2all"                 # all-apis forwarding rule name
-  spoke2_psc_api_sec_fr_name = "${local.prefix}spoke2sec"                 # vpc-sc forwarding rule name
+  spoke2_psc_api_all_fr_name = "${var.prefix}spoke2all"                   # all-apis forwarding rule name
+  spoke2_psc_api_sec_fr_name = "${var.prefix}spoke2sec"                   # vpc-sc forwarding rule name
   spoke2_psc_api_all_fr_addr = cidrhost(local.spoke2_psc_api_fr_range, 1) # all-apis forwarding rule vip
   spoke2_psc_api_sec_fr_addr = cidrhost(local.spoke2_psc_api_fr_range, 2) # vpc-sc forwarding rule vip
 
@@ -507,4 +523,18 @@ locals {
 
   # psc/ilb consumer
   spoke2_eu_psc4_consumer_spoke1_eu_svc_dns = "psc4.consumer.spoke1-eu-svc" # spoke2 consumer endpoint dns for spoke1 producer service
+
+  # reverse dns
+  spoke2_us_ilb4_reverse_suffix = format("%s.%s.${local.spoke2_reverse_zone}",
+    element(split(".", local.spoke2_us_ilb4_addr), 3),
+    element(split(".", local.spoke2_us_ilb4_addr), 2)
+  )
+  spoke2_us_ilb7_reverse_suffix = format("%s.%s.${local.spoke2_reverse_zone}",
+    element(split(".", local.spoke2_us_ilb7_addr), 3),
+    element(split(".", local.spoke2_us_ilb7_addr), 2)
+  )
+  spoke2_reverse_zone = format("%s.%s.in-addr.arpa.",
+    element(split(".", local.spoke2_supernet), 1),
+    element(split(".", local.spoke2_supernet), 0)
+  )
 }

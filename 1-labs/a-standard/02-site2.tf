@@ -34,13 +34,15 @@ module "site2_nat" {
 # firewall
 #---------------------------------
 
+# policy
+
 module "site2_vpc_fw_policy" {
   source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v33.0.0"
   name      = "${local.site2_prefix}vpc-fw-policy"
   parent_id = var.project_id_onprem
   region    = "global"
   attachments = {
-    hub-vpc = module.site2_vpc.self_link
+    site2-vpc = module.site2_vpc.self_link
   }
   egress_rules = {
     smtp = {
@@ -48,6 +50,14 @@ module "site2_vpc_fw_policy" {
       match = {
         destination_ranges = ["0.0.0.0/0"]
         layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
+      }
+    }
+    all = {
+      priority = 910
+      action   = "allow"
+      match = {
+        destination_ranges = ["0.0.0.0/0"]
+        layer4_configs     = [{ protocol = "all", ports = [] }]
       }
     }
   }
@@ -59,16 +69,31 @@ module "site2_vpc_fw_policy" {
         layer4_configs = [{ protocol = "all" }]
       }
     }
+    dns = {
+      priority = 1100
+      match = {
+        source_ranges  = local.netblocks.dns
+        layer4_configs = [{ protocol = "all", ports = [] }]
+      }
+    }
     ssh = {
-      priority       = 1001
+      priority       = 1200
       enable_logging = true
       match = {
         source_ranges  = ["0.0.0.0/0", ]
         layer4_configs = [{ protocol = "tcp", ports = ["22"] }]
       }
     }
+    iap = {
+      priority       = 1300
+      enable_logging = true
+      match = {
+        source_ranges  = local.netblocks.iap
+        layer4_configs = [{ protocol = "all", ports = [] }]
+      }
+    }
     vpn = {
-      priority = 1002
+      priority = 1400
       match = {
         source_ranges = ["0.0.0.0/0", ]
         layer4_configs = [
@@ -77,12 +102,73 @@ module "site2_vpc_fw_policy" {
         ]
       }
     }
-    dns = {
-      priority = 1003
+    gfe = {
+      priority = 1500
       match = {
-        source_ranges  = local.netblocks.dns
+        source_ranges  = local.netblocks.gfe
         layer4_configs = [{ protocol = "all", ports = [] }]
       }
+    }
+  }
+}
+
+# vpc
+
+module "site2_vpc_firewall" {
+  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc-firewall?ref=v33.0.0"
+  project_id = var.project_id_onprem
+  network    = module.site2_vpc.name
+
+  egress_rules = {
+    "${local.site2_prefix}allow-egress-smtp" = {
+      priority           = 900
+      description        = "block smtp"
+      destination_ranges = ["0.0.0.0/0", ]
+      rules              = [{ protocol = "tcp", ports = [25, ] }]
+    }
+    "${local.site2_prefix}allow-egress-all" = {
+      priority           = 1000
+      deny               = false
+      description        = "allow egress"
+      destination_ranges = ["0.0.0.0/0", ]
+      rules              = [{ protocol = "all", ports = [] }]
+    }
+  }
+  ingress_rules = {
+    "${local.site2_prefix}allow-ingress-internal" = {
+      priority      = 1000
+      description   = "allow internal"
+      source_ranges = local.netblocks.internal
+      rules         = [{ protocol = "all", ports = [] }]
+    }
+    "${local.site2_prefix}allow-ingress-dns" = {
+      priority      = 1100
+      description   = "allow dns"
+      source_ranges = local.netblocks.dns
+      rules         = [{ protocol = "all", ports = [] }]
+    }
+    "${local.site2_prefix}allow-ingress-ssh" = {
+      priority       = 1200
+      description    = "allow ingress ssh"
+      source_ranges  = ["0.0.0.0/0"]
+      targets        = [local.tag_router]
+      rules          = [{ protocol = "tcp", ports = [22] }]
+      enable_logging = {}
+    }
+    "${local.site2_prefix}allow-ingress-iap" = {
+      priority       = 1300
+      description    = "allow ingress iap"
+      source_ranges  = local.netblocks.iap
+      targets        = [local.tag_router]
+      rules          = [{ protocol = "all", ports = [] }]
+      enable_logging = {}
+    }
+    "${local.site2_prefix}allow-ingress-dns-proxy" = {
+      priority      = 1400
+      description   = "allow dns egress proxy"
+      source_ranges = local.netblocks.dns
+      targets       = [local.tag_dns]
+      rules         = [{ protocol = "all", ports = [] }]
     }
   }
 }
@@ -136,18 +222,16 @@ resource "time_sleep" "site2_dns_forward_to_dns_wait_120s" {
 }
 
 module "site2_dns_forward_to_dns" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v15.0.0"
+  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
   project_id  = var.project_id_onprem
-  type        = "forwarding"
   name        = "${local.site2_prefix}to-dns"
   description = "forward all dns queries to custom resolvers"
-  domain      = "."
-  client_networks = [
-    module.site2_vpc.self_link
-  ]
-  forwarders = {
-    (local.site2_ns_addr) = "private"
-    (local.site2_ns_addr) = "private"
+  zone_config = {
+    domain = "."
+    forwarding = {
+      client_networks = [module.site2_vpc.self_link, ]
+      forwarders      = { (local.site2_ns_addr) = "private" }
+    }
   }
   depends_on = [time_sleep.site2_dns_forward_to_dns_wait_120s]
 }
@@ -185,7 +269,7 @@ module "site2_vm" {
 
 locals {
   site2_files = {
-    "output/site2-unbound-startup.sh" = local.site2_unbound_startup
+    "output/site2-unbound.sh" = local.site2_unbound_startup
   }
 }
 

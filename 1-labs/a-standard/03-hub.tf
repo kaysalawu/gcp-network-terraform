@@ -1,4 +1,15 @@
 
+locals {
+  hub_vpc_tags = {
+    "${local.hub_prefix}vpc-dns" = { value = "dns", description = "custom dns servers" }
+    "${local.hub_prefix}vpc-gfe" = { value = "gfe", description = "load balancer backends" }
+    "${local.hub_prefix}vpc-nva" = { value = "nva", description = "nva appliances" }
+  }
+  hub_vpc_tags_dns = google_tags_tag_value.hub_vpc_tags["${local.hub_prefix}vpc-dns"]
+  hub_vpc_tags_gfe = google_tags_tag_value.hub_vpc_tags["${local.hub_prefix}vpc-gfe"]
+  hub_vpc_tags_nva = google_tags_tag_value.hub_vpc_tags["${local.hub_prefix}vpc-nva"]
+}
+
 # network
 #---------------------------------
 
@@ -12,15 +23,40 @@ module "hub_vpc" {
   subnets_proxy_only  = local.hub_subnets_proxy_only_list
   subnets_psc         = local.hub_subnets_psc_list
 
-  # psa_configs = [{
-  #   ranges = {
-  #     "hub-eu-psa-range1" = local.hub_eu_psa_range1
-  #     "hub-eu-psa-range2" = local.hub_eu_psa_range2
-  #   }
-  #   export_routes  = true
-  #   import_routes  = true
-  #   peered_domains = ["gcp.example.com."]
-  # }]
+  psa_configs = [{
+    ranges = {
+      "hub-eu-psa-range1" = local.hub_eu_psa_range1
+      "hub-eu-psa-range2" = local.hub_eu_psa_range2
+    }
+    export_routes  = true
+    import_routes  = true
+    peered_domains = ["gcp.example.com."]
+  }]
+}
+
+# secure tags
+#---------------------------------
+
+# keys
+
+resource "google_tags_tag_key" "hub_vpc" {
+  for_each    = local.hub_vpc_tags
+  parent      = "projects/${var.project_id_hub}"
+  short_name  = each.key
+  description = each.value.description
+  purpose     = "GCE_FIREWALL"
+  purpose_data = {
+    network = "${var.project_id_hub}/${module.hub_vpc.name}"
+  }
+}
+
+# values
+
+resource "google_tags_tag_value" "hub_vpc_tags" {
+  for_each    = local.hub_vpc_tags
+  parent      = google_tags_tag_key.hub_vpc[each.key].id
+  short_name  = each.value.value
+  description = each.value.description
 }
 
 # addresses
@@ -92,6 +128,8 @@ module "hub_nat_us" {
 # firewall
 #---------------------------------
 
+# policy
+
 module "hub_vpc_fw_policy" {
   source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v33.0.0"
   name      = "${local.hub_prefix}vpc-fw-policy"
@@ -108,6 +146,14 @@ module "hub_vpc_fw_policy" {
         layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
       }
     }
+    # all = {
+    #   priority = 910
+    #   action   = "allow"
+    #   match = {
+    #     destination_ranges = ["0.0.0.0/0"]
+    #     layer4_configs     = [{ protocol = "all", ports = [] }]
+    #   }
+    # }
   }
   ingress_rules = {
     internal = {
@@ -117,16 +163,34 @@ module "hub_vpc_fw_policy" {
         layer4_configs = [{ protocol = "all" }]
       }
     }
+    dns = {
+      priority    = 1100
+      target_tags = [local.hub_vpc_tags_dns.id, local.hub_vpc_tags_nva.id, ]
+      match = {
+        source_ranges  = local.netblocks.dns
+        layer4_configs = [{ protocol = "all", ports = [] }]
+      }
+    }
     ssh = {
-      priority       = 1001
+      priority       = 1200
+      target_tags    = [local.hub_vpc_tags_nva.id, ]
       enable_logging = true
       match = {
         source_ranges  = ["0.0.0.0/0", ]
         layer4_configs = [{ protocol = "tcp", ports = ["22"] }]
       }
     }
+    iap = {
+      priority       = 1300
+      enable_logging = true
+      match = {
+        source_ranges  = local.netblocks.iap
+        layer4_configs = [{ protocol = "all", ports = [] }]
+      }
+    }
     vpn = {
-      priority = 1002
+      priority    = 1400
+      target_tags = [local.hub_vpc_tags_nva.id, ]
       match = {
         source_ranges = ["0.0.0.0/0", ]
         layer4_configs = [
@@ -135,15 +199,9 @@ module "hub_vpc_fw_policy" {
         ]
       }
     }
-    dns = {
-      priority = 1003
-      match = {
-        source_ranges  = local.netblocks.dns
-        layer4_configs = [{ protocol = "all", ports = [] }]
-      }
-    }
     gfe = {
-      priority = 1004
+      priority    = 1500
+      target_tags = [local.hub_vpc_tags_gfe.id, ]
       match = {
         source_ranges  = local.netblocks.gfe
         layer4_configs = [{ protocol = "all", ports = [] }]
@@ -163,7 +221,9 @@ module "hub_eu_dns" {
   name       = "${local.hub_prefix}eu-dns"
   zone       = "${local.hub_eu_region}-b"
   tags       = [local.tag_dns, local.tag_ssh]
-
+  tag_bindings_firewall = {
+    (local.hub_vpc_tags_dns.parent) = local.hub_vpc_tags_dns.id
+  }
   network_interfaces = [{
     network    = module.hub_vpc.self_link
     subnetwork = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
@@ -186,7 +246,9 @@ module "hub_us_dns" {
   name       = "${local.hub_prefix}us-dns"
   zone       = "${local.hub_us_region}-b"
   tags       = [local.tag_dns, local.tag_ssh]
-
+  tag_bindings_firewall = {
+    (local.hub_vpc_tags_dns.parent) = local.hub_vpc_tags_dns.id
+  }
   network_interfaces = [{
     network    = module.hub_vpc.self_link
     subnetwork = module.hub_vpc.subnet_self_links["${local.hub_us_region}/us-main"]
@@ -204,7 +266,7 @@ module "hub_us_dns" {
 # psc/api
 #---------------------------------
 
-# hub
+# address
 
 resource "google_compute_global_address" "hub_psc_api_fr_addr" {
   provider     = google-beta
@@ -215,6 +277,8 @@ resource "google_compute_global_address" "hub_psc_api_fr_addr" {
   network      = module.hub_vpc.self_link
   address      = local.hub_psc_api_fr_addr
 }
+
+# forwarding rule
 
 resource "google_compute_global_forwarding_rule" "hub_psc_api_fr" {
   provider              = google-beta
@@ -339,6 +403,32 @@ module "hub_dns_private_zone" {
     "A ${local.hub_us_ilb4_dns_prefix}" = { ttl = 300, records = [local.hub_us_ilb4_addr] },
     "A ${local.hub_eu_ilb7_dns_prefix}" = { ttl = 300, records = [local.hub_eu_ilb7_addr] },
     "A ${local.hub_us_ilb7_dns_prefix}" = { ttl = 300, records = [local.hub_us_ilb7_addr] },
+    "A ${local.hub_ilb4_prefix}" = {
+      geo_routing = [
+        { location = local.hub_eu_region,
+          health_checked_targets = [{
+            load_balancer_type = "regionalL4ilb"
+            ip_address         = module.hub_eu_ilb4.forwarding_rule_addresses["fr"]
+            port               = local.svc_web.port
+            ip_protocol        = "tcp"
+            network_url        = module.hub_vpc.self_link
+            project            = var.project_id_hub
+            region             = local.hub_eu_region
+          }]
+        },
+        { location = local.hub_us_region,
+          health_checked_targets = [{
+            load_balancer_type = "regionalL4ilb"
+            ip_address         = module.hub_us_ilb4.forwarding_rule_addresses["fr"]
+            port               = local.svc_web.port
+            ip_protocol        = "tcp"
+            network_url        = module.hub_vpc.self_link
+            project            = var.project_id_hub
+            region             = local.hub_us_region
+          }]
+        }
+      ]
+    }
   }
 }
 
@@ -353,6 +443,9 @@ module "hub_eu_vm" {
   name       = "${local.hub_prefix}eu-vm"
   zone       = "${local.hub_eu_region}-b"
   tags       = [local.tag_ssh, local.tag_gfe]
+  tag_bindings_firewall = {
+    (local.hub_vpc_tags_gfe.parent) = local.hub_vpc_tags_gfe.id
+  }
   network_interfaces = [{
     network    = module.hub_vpc.self_link
     subnetwork = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
@@ -399,7 +492,8 @@ module "hub_eu_ilb4" {
     fr = {
       address  = local.hub_eu_ilb4_addr
       target   = google_compute_instance_group.hub_eu_ilb4_ig.self_link
-      protocol = "L3_DEFAULT"
+      protocol = "TCP"                  # protocol required for this load balancer to be used for dns geo routing
+      ports    = [local.svc_web.port, ] # port required for this load balancer to be used for dns geo routing
     }
   }
   backends = [{
@@ -429,6 +523,9 @@ module "hub_us_vm" {
   name       = "${local.hub_prefix}us-vm"
   zone       = "${local.hub_us_region}-b"
   tags       = [local.tag_ssh, local.tag_gfe]
+  tag_bindings_firewall = {
+    (local.hub_vpc_tags_gfe.parent) = local.hub_vpc_tags_gfe.id
+  }
   network_interfaces = [{
     network    = module.hub_vpc.self_link
     subnetwork = module.hub_vpc.subnet_self_links["${local.hub_us_region}/us-main"]
@@ -475,7 +572,8 @@ module "hub_us_ilb4" {
     fr = {
       address  = local.hub_us_ilb4_addr
       target   = google_compute_instance_group.hub_us_ilb4_ig.self_link
-      protocol = "L3_DEFAULT"
+      protocol = "TCP"                  # protocol required for this load balancer to be used for dns geo routing
+      ports    = [local.svc_web.port, ] # port required for this load balancer to be used for dns geo routing
     }
   }
   backends = [{
@@ -512,6 +610,9 @@ module "hub_eu_vm7" {
   name       = "${local.hub_prefix}eu-vm7"
   zone       = "${local.hub_eu_region}-b"
   tags       = [local.tag_ssh, local.tag_gfe]
+  tag_bindings_firewall = {
+    (local.hub_vpc_tags_gfe.parent) = local.hub_vpc_tags_gfe.id
+  }
   network_interfaces = [{
     network    = module.hub_vpc.self_link
     subnetwork = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
@@ -612,6 +713,9 @@ module "hub_us_vm7" {
   name       = "${local.hub_prefix}us-vm7"
   zone       = "${local.hub_us_region}-b"
   tags       = [local.tag_ssh, local.tag_gfe]
+  tag_bindings_firewall = {
+    (local.hub_vpc_tags_gfe.parent) = local.hub_vpc_tags_gfe.id
+  }
   network_interfaces = [{
     network    = module.hub_vpc.self_link
     subnetwork = module.hub_vpc.subnet_self_links["${local.hub_us_region}/us-main"]

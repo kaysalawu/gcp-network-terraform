@@ -3,7 +3,6 @@
 ####################################################
 
 locals {
-  prefix       = "a"
   eu_ar_host   = "eu-docker.pkg.dev"
   us_ar_host   = "us-docker.pkg.dev"
   eu_repo_name = google_artifact_registry_repository.eu_repo.name
@@ -30,14 +29,14 @@ locals {
 resource "google_artifact_registry_repository" "eu_repo" {
   project       = var.project_id_hub
   location      = local.hub_eu_region
-  repository_id = "${local.prefix}-eu-repo"
+  repository_id = "${local.hub_prefix}eu-repo"
   format        = "DOCKER"
 }
 
 resource "google_artifact_registry_repository" "us_repo" {
   project       = var.project_id_hub
   location      = local.hub_us_region
-  repository_id = "${local.prefix}-us-repo"
+  repository_id = "${local.hub_prefix}us-repo"
   format        = "DOCKER"
 }
 
@@ -58,8 +57,8 @@ locals {
     { name = "spoke2-eu-vm  ", host = local.spoke2_eu_vm_fqdn, ipv4 = local.spoke2_eu_vm_addr, ipv6 = local.spoke2_eu_vm_addr_v6, probe = false },
     { name = "hub-eu-ilb4   ", host = local.hub_eu_ilb4_fqdn, ipv4 = local.hub_eu_ilb4_addr, ipv6 = local.hub_eu_ilb4_addr_v6, probe = true },
     { name = "hub-eu-ilb7   ", host = local.hub_eu_ilb7_fqdn, ipv4 = local.hub_eu_ilb7_addr, ipv6 = local.hub_eu_ilb7_addr_v6, probe = true },
-    { name = "spoke1-eu-ilb4", host = local.spoke1_eu_ilb4_fqdn, ipv4 = local.spoke1_eu_ilb4_addr, ipv6 = local.spoke1_eu_ilb4_addr_v6, probe = true },
-    { name = "spoke1-eu-ilb7", host = local.spoke1_eu_ilb7_fqdn, ipv4 = local.spoke1_eu_ilb7_addr, ipv6 = local.spoke1_eu_ilb7_addr_v6, probe = true },
+    { name = "spoke1-eu-ilb4", host = local.spoke1_eu_ilb4_fqdn, ipv4 = local.spoke1_eu_ilb4_addr, ipv6 = local.spoke1_eu_ilb4_addr_v6, probe = true, ptr = true },
+    { name = "spoke1-eu-ilb7", host = local.spoke1_eu_ilb7_fqdn, ipv4 = local.spoke1_eu_ilb7_addr, ipv6 = local.spoke1_eu_ilb7_addr_v6, probe = true, ptr = true },
   ]
   vm_script_targets_region2 = [
     { name = "site2-vm      ", host = local.site2_vm_fqdn, ipv4 = local.site2_vm_addr, ipv6 = local.site2_vm_addr_v6, probe = true },
@@ -67,18 +66,19 @@ locals {
     { name = "spoke2-us-vm  ", host = local.spoke2_us_vm_fqdn, ipv4 = local.spoke2_us_vm_addr, ipv6 = local.spoke2_us_vm_addr_v6, probe = true },
     { name = "hub-us-ilb4   ", host = local.hub_us_ilb4_fqdn, ipv4 = local.hub_us_ilb4_addr, ipv6 = local.hub_us_ilb4_addr_v6, probe = true },
     { name = "hub-us-ilb7   ", host = local.hub_us_ilb7_fqdn, ipv4 = local.hub_us_ilb7_addr, ipv6 = local.hub_us_ilb7_addr_v6, probe = true },
-    { name = "spoke2-us-ilb4", host = local.spoke2_us_ilb4_fqdn, ipv4 = local.spoke2_us_ilb4_addr, ipv6 = local.spoke2_us_ilb4_addr_v6, probe = true },
-    { name = "spoke2-us-ilb7", host = local.spoke2_us_ilb7_fqdn, ipv4 = local.spoke2_us_ilb7_addr, ipv6 = local.spoke2_us_ilb7_addr_v6, probe = true },
+    { name = "spoke2-us-ilb4", host = local.spoke2_us_ilb4_fqdn, ipv4 = local.spoke2_us_ilb4_addr, ipv6 = local.spoke2_us_ilb4_addr_v6, probe = true, ptr = true },
+    { name = "spoke2-us-ilb7", host = local.spoke2_us_ilb7_fqdn, ipv4 = local.spoke2_us_ilb7_addr, ipv6 = local.spoke2_us_ilb7_addr_v6, probe = true, ptr = true },
   ]
   vm_script_targets_misc = [
     { name = "internet", host = "icanhazip.com", ipv4 = "icanhazip.com", ipv6 = "icanhazip.com", probe = true },
     { name = "www", host = "www.googleapis.com", ipv4 = "www.googleapis.com", ipv6 = "www.googleapis.com", path = "/generate_204", probe = true, ping = false },
     { name = "storage", host = "storage.googleapis.com", ipv4 = "storage.googleapis.com", ipv6 = "storage.googleapis.com", path = "/generate_204", probe = true, ping = false },
-    { name = "hub-eu-psc-https", host = "${local.hub_eu_psc_https_ctrl_run_dns}", path = "/generate_204", probe = false, ping = false },
-    { name = "hub-us-psc-https", host = "${local.hub_us_psc_https_ctrl_run_dns}", path = "/generate_204", probe = false, ping = false },
-    { name = "hub-eu-run", host = "${local.hub_eu_run_httpbin_host}", probe = true, path = "/generate_204", ping = false },
-    { name = "spoke1-eu-run", host = "${local.spoke1_eu_run_httpbin_host}", probe = true, path = "/generate_204", ping = false },
-    { name = "spoke2-us-run", host = "${local.spoke2_us_run_httpbin_host}", probe = true, path = "/generate_204", ping = false },
+    { name = "hub-eu-psc-https", host = local.hub_eu_psc_https_ctrl_run_dns, path = "/generate_204", probe = false, ping = false },
+    { name = "hub-us-psc-https", host = local.hub_us_psc_https_ctrl_run_dns, path = "/generate_204", probe = false, ping = false },
+    { name = "hub-eu-run", host = local.hub_eu_run_httpbin_host, probe = true, path = "/generate_204", ping = false },
+    { name = "spoke1-eu-run", host = local.spoke1_eu_run_httpbin_host, probe = true, path = "/generate_204", ping = false },
+    { name = "spoke2-us-run", host = local.spoke2_us_run_httpbin_host, probe = true, path = "/generate_204", ping = false },
+    { name = "hub-ilb4-geo", host = local.hub_ilb4_fqdn, probe = false },
   ]
   vm_script_targets = concat(
     local.vm_script_targets_region1,
@@ -235,6 +235,8 @@ locals {
   onprem_forward_zones = [
     { zone = "${local.cloud_domain}.", targets = [local.hub_eu_ns_addr, local.hub_us_ns_addr] },
     { zone = "${local.hub_psc_api_fr_name}.p.googleapis.com", targets = [local.hub_eu_ns_addr, local.hub_us_ns_addr] },
+    { zone = local.spoke1_reverse_zone, targets = [local.hub_eu_ns_addr, local.hub_us_ns_addr] },
+    { zone = local.spoke2_reverse_zone, targets = [local.hub_us_ns_addr, local.hub_eu_ns_addr] },
     { zone = ".", targets = ["8.8.8.8", "8.8.4.4"] },
   ]
 }
@@ -314,7 +316,8 @@ locals {
     )
   })
   cloud_forward_zones = [
-    { zone = "onprem.", targets = [local.site1_ns_addr, local.site2_ns_addr] },
+    { zone = "${local.cloud_domain}.", targets = ["169.254.169.254"] },
+    { zone = "${local.onprem_domain}.", targets = [local.site1_ns_addr, local.site2_ns_addr] },
     { zone = ".", targets = ["169.254.169.254"] },
   ]
   hub_psc_api_fr_name = (
@@ -617,6 +620,15 @@ resource "google_storage_bucket_object" "spoke2_us_storage_bucket_file" {
   bucket  = module.spoke2_us_storage_bucket.name
   content = "<--- SPOKE 2 --->"
 }
+
+# values
+#----------------------------
+
+# resource "google_tags_tag_value" "value" {
+#   parent      = "tagKeys/${google_tags_tag_key.key.name}"
+#   short_name  = "valuename"
+#   description = "For valuename resources."
+# }
 
 ####################################################
 # output files
