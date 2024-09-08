@@ -20,12 +20,12 @@ if [[ $PWD == '/' ]]; then
 fi
 
 terraform_docs_dirs=(
-1-labs
+3-labs
 modules
 )
 
 main_dirs=(
-1-labs
+3-labs
 )
 
 main_dirs_excluded=(
