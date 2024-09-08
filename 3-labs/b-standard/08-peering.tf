@@ -2,30 +2,49 @@
 # vpc peering
 #------------------------------------
 
-# hub
+# hub1 <--> spoke1
 
-resource "google_compute_network_peering" "peering_hub_to_spoke1" {
-  name         = "${local.hub_prefix}to-spoke1"
-  network      = module.hub_vpc.self_link
-  peer_network = module.spoke1_vpc.self_link
-
-  export_custom_routes = true
-  import_custom_routes = true
-
-  export_subnet_routes_with_public_ip = true
-  import_subnet_routes_with_public_ip = true
+module "hub_spoke1" {
+  source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc-peering?ref=v33.0.0"
+  prefix        = "${local.hub_prefix}--spoke1"
+  local_network = module.hub_vpc.self_link
+  peer_network  = module.spoke1_vpc.self_link
+  routes_config = {
+    local  = { import = true, export = true }
+    remote = { import = true, export = true }
+  }
 }
 
-# spoke1
+# hub1 <--> spoke2
 
-resource "google_compute_network_peering" "peering_spoke1_to_hub" {
-  name         = "${local.spoke1_prefix}to-hub"
-  network      = module.spoke1_vpc.self_link
-  peer_network = module.hub_vpc.self_link
+module "hub_spoke2" {
+  source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc-peering?ref=v33.0.0"
+  prefix        = "${local.hub_prefix}--spoke2"
+  local_network = module.hub_vpc.self_link
+  peer_network  = module.spoke2_vpc.self_link
+  routes_config = {
+    local  = { import = true, export = true }
+    remote = { import = true, export = true }
+  }
+  depends_on = [
+    module.hub_spoke1
+  ]
+}
 
-  export_custom_routes = true
-  import_custom_routes = true
 
-  export_subnet_routes_with_public_ip = true
-  import_subnet_routes_with_public_ip = true
+# spoke1 <--> spoke2
+
+module "spoke1_spoke2" {
+  source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc-peering?ref=v33.0.0"
+  prefix        = "${local.spoke1_prefix}--spoke2"
+  local_network = module.spoke1_vpc.self_link
+  peer_network  = module.spoke2_vpc.self_link
+  routes_config = {
+    local  = { import = true, export = true }
+    remote = { import = true, export = true }
+  }
+  depends_on = [
+    module.hub_spoke1,
+    module.hub_spoke2
+  ]
 }

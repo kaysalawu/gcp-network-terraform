@@ -146,6 +146,9 @@ module "spoke1_eu_vm" {
   name       = "${local.spoke1_prefix}eu-vm"
   zone       = "${local.spoke1_eu_region}-b"
   tags       = [local.tag_ssh, local.tag_gfe]
+  tag_bindings_firewall = {
+    (local.spoke1_vpc_tags_gfe.parent) = local.spoke1_vpc_tags_gfe.id
+  }
   network_interfaces = [{
     network    = module.spoke1_vpc.self_link
     subnetwork = module.spoke1_vpc.subnet_self_links["${local.spoke1_eu_region}/eu-main"]
@@ -222,6 +225,9 @@ module "spoke1_eu_vm7" {
   name       = "${local.spoke1_prefix}eu-vm7"
   zone       = "${local.spoke1_eu_region}-b"
   tags       = [local.tag_ssh, local.tag_gfe]
+  tag_bindings_firewall = {
+    (local.spoke1_vpc_tags_gfe.parent) = local.spoke1_vpc_tags_gfe.id
+  }
   network_interfaces = [{
     network    = module.spoke1_vpc.self_link
     subnetwork = module.spoke1_vpc.subnet_self_links["${local.spoke1_eu_region}/eu-main"]
