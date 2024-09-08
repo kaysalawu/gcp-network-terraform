@@ -1,179 +1,210 @@
 
 locals {
-  spoke1_subnet_names = keys(local.spoke1_subnets)
-  spoke1_regions      = [local.spoke1_eu_region, local.spoke1_us_region, ]
-  spoke1_eu_subnet1   = google_compute_subnetwork.spoke1_subnets["${local.spoke1_prefix}eu-subnet1"]
-  spoke1_eu_subnet2   = google_compute_subnetwork.spoke1_subnets["${local.spoke1_prefix}eu-subnet2"]
-  spoke1_eu_subnet3   = google_compute_subnetwork.spoke1_subnets["${local.spoke1_prefix}eu-subnet3"]
-  spoke1_us_subnet1   = google_compute_subnetwork.spoke1_subnets["${local.spoke1_prefix}us-subnet1"]
-  spoke1_us_subnet2   = google_compute_subnetwork.spoke1_subnets["${local.spoke1_prefix}us-subnet2"]
-  spoke1_us_subnet3   = google_compute_subnetwork.spoke1_subnets["${local.spoke1_prefix}us-subnet3"]
-
-  spoke1_eu_psc_producer_nat_subnet1 = google_compute_subnetwork.spoke1_subnets["${local.spoke1_prefix}eu-psc-producer-nat-subnet1"]
-  spoke1_us_psc_producer_nat_subnet1 = google_compute_subnetwork.spoke1_subnets["${local.spoke1_prefix}us-psc-producer-nat-subnet1"]
+  spoke1_vpc_tags = {
+    "${local.spoke1_prefix}vpc-dns" = { value = "dns", description = "custom dns servers" }
+    "${local.spoke1_prefix}vpc-gfe" = { value = "gfe", description = "load balancer backends" }
+    "${local.spoke1_prefix}vpc-nva" = { value = "nva", description = "nva appliances" }
+  }
+  spoke1_vpc_tags_dns = google_tags_tag_value.spoke1_vpc_tags["${local.spoke1_prefix}vpc-dns"]
+  spoke1_vpc_tags_gfe = google_tags_tag_value.spoke1_vpc_tags["${local.spoke1_prefix}vpc-gfe"]
+  spoke1_vpc_tags_nva = google_tags_tag_value.spoke1_vpc_tags["${local.spoke1_prefix}vpc-nva"]
 }
 
 # network
 #---------------------------------
 
-resource "google_compute_network" "spoke1_vpc" {
-  project      = var.project_id_host
-  name         = "${local.spoke1_prefix}vpc"
-  routing_mode = "GLOBAL"
-  mtu          = 1460
+module "spoke1_vpc" {
+  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc?ref=v33.0.0"
+  project_id = var.project_id_host
+  name       = "${local.spoke1_prefix}vpc"
 
-  auto_create_subnetworks         = false
-  delete_default_routes_on_create = false
+  subnets             = local.spoke1_subnets_list
+  subnets_private_nat = local.spoke1_subnets_private_nat_list
+  subnets_proxy_only  = local.spoke1_subnets_proxy_only_list
+  subnets_psc         = local.spoke1_subnets_psc_list
+
+  shared_vpc_host = true
+  shared_vpc_service_projects = [
+    var.project_id_spoke1
+  ]
+
+  psa_configs = [{
+    ranges = {
+      "spoke1-eu-psa-range1" = local.spoke1_eu_psa_range1
+      "spoke1-eu-psa-range2" = local.spoke1_eu_psa_range2
+    }
+    export_routes  = true
+    import_routes  = true
+    peered_domains = ["gcp.example.com."]
+  }]
 }
 
-# subnets
+# secure tags
 #---------------------------------
 
-resource "google_compute_subnetwork" "spoke1_subnets" {
-  for_each      = local.spoke1_subnets
-  provider      = google-beta
-  project       = var.project_id_host
-  name          = each.key
-  network       = google_compute_network.spoke1_vpc.id
-  region        = each.value.region
-  ip_cidr_range = each.value.ip_cidr_range
-  secondary_ip_range = each.value.secondary_ip_range == null ? [] : [
-    for name, range in each.value.secondary_ip_range :
-    { range_name = name, ip_cidr_range = range }
-  ]
-  purpose = each.value.purpose
-  role    = each.value.role
+# keys
+
+resource "google_tags_tag_key" "spoke1_vpc" {
+  for_each    = local.spoke1_vpc_tags
+  parent      = "projects/${var.project_id_spoke1}"
+  short_name  = each.key
+  description = each.value.description
+  purpose     = "GCE_FIREWALL"
+  purpose_data = {
+    network = "${var.project_id_host}/${module.spoke1_vpc.name}"
+  }
+}
+
+# values
+
+resource "google_tags_tag_value" "spoke1_vpc_tags" {
+  for_each    = local.spoke1_vpc_tags
+  parent      = google_tags_tag_key.spoke1_vpc[each.key].id
+  short_name  = each.value.value
+  description = each.value.description
 }
 
 # addresses
 #---------------------------------
 
-resource "google_compute_global_address" "spoke1_eu_psa_range1" {
-  project       = var.project_id_host
-  name          = "${local.spoke1_prefix}spoke1-eu-psa-range1"
-  network       = google_compute_network.spoke1_vpc.self_link
-  purpose       = "VPC_PEERING"
-  address_type  = "INTERNAL"
-  address       = split("/", local.spoke1_eu_psa_range1).0
-  prefix_length = split("/", local.spoke1_eu_psa_range1).1
+resource "google_compute_address" "spoke1_eu_main_addresses" {
+  for_each     = local.spoke1_eu_main_addresses
+  project      = var.project_id_spoke1
+  name         = each.key
+  subnetwork   = module.spoke1_vpc.subnet_ids["${local.spoke1_eu_region}/eu-main"]
+  address_type = "INTERNAL"
+  address      = each.value.ipv4
+  region       = local.spoke1_eu_region
 }
 
-resource "google_compute_global_address" "spoke1_eu_psa_range2" {
-  project       = var.project_id_host
-  name          = "${local.spoke1_prefix}spoke1-eu-psa-range2"
-  network       = google_compute_network.spoke1_vpc.self_link
-  purpose       = "VPC_PEERING"
-  address_type  = "INTERNAL"
-  address       = split("/", local.spoke1_eu_psa_range2).0
-  prefix_length = split("/", local.spoke1_eu_psa_range2).1
+resource "google_compute_address" "spoke1_us_main_addresses" {
+  for_each     = local.spoke1_us_main_addresses
+  project      = var.project_id_spoke1
+  name         = each.key
+  subnetwork   = module.spoke1_vpc.subnet_ids["${local.spoke1_us_region}/us-main"]
+  address_type = "INTERNAL"
+  address      = each.value.ipv4
+  region       = local.spoke1_us_region
 }
+
 
 # service networking connection
 #---------------------------------
 
-resource "google_service_networking_connection" "spoke1_eu_psa_ranges" {
-  provider = google-beta
-  network  = google_compute_network.spoke1_vpc.self_link
-  service  = "servicenetworking.googleapis.com"
+# resource "google_service_networking_connection" "spoke1_eu_psa_ranges" {
+#   provider = google-beta
+#   network  = google_compute_network.spoke1_vpc.self_link
+#   service  = "servicenetworking.googleapis.com"
 
-  reserved_peering_ranges = [
-    google_compute_global_address.spoke1_eu_psa_range1.name,
-    google_compute_global_address.spoke1_eu_psa_range2.name
-  ]
-}
+#   reserved_peering_ranges = [
+#     google_compute_global_address.spoke1_eu_psa_range1.name,
+#     google_compute_global_address.spoke1_eu_psa_range2.name
+#   ]
+# }
 
 # nat
 #---------------------------------
 
-module "spoke1_nat" {
-  source                = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v15.0.0"
-  for_each              = toset(local.spoke1_regions)
-  project_id            = var.project_id_host
-  region                = each.key
-  name                  = "${local.spoke1_prefix}${each.key}"
-  router_network        = google_compute_network.spoke1_vpc.self_link
-  router_create         = true
-  config_source_subnets = "ALL_SUBNETWORKS_ALL_PRIMARY_IP_RANGES"
+module "spoke1_nat_eu" {
+  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v33.0.0"
+  project_id     = var.project_id_host
+  region         = local.spoke1_eu_region
+  name           = "${local.spoke1_prefix}eu-nat"
+  router_network = module.spoke1_vpc.self_link
+  router_create  = true
+
+  config_source_subnetworks = {
+    primary_ranges_only = true
+  }
+}
+
+module "spoke1_nat_us" {
+  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v33.0.0"
+  project_id     = var.project_id_host
+  region         = local.spoke1_us_region
+  name           = "${local.spoke1_prefix}us-nat"
+  router_network = module.spoke1_vpc.self_link
+  router_create  = true
+
+  config_source_subnetworks = {
+    primary_ranges_only = true
+  }
 }
 
 # firewall
 #---------------------------------
 
-module "spoke1_vpc_firewall" {
-  source              = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc-firewall?ref=v15.0.0"
-  project_id          = var.project_id_host
-  network             = google_compute_network.spoke1_vpc.name
-  admin_ranges        = []
-  http_source_ranges  = []
-  https_source_ranges = []
-  custom_rules = {
-    "${local.spoke1_prefix}internal" = {
-      description          = "allow internal"
-      direction            = "INGRESS"
-      action               = "allow"
-      sources              = []
-      ranges               = local.netblocks.internal
-      targets              = []
-      use_service_accounts = false
-      rules                = [{ protocol = "all", ports = [] }]
-      extra_attributes     = {}
-    }
-    "${local.spoke1_prefix}gfe" = {
-      description          = "allow gfe"
-      direction            = "INGRESS"
-      action               = "allow"
-      sources              = []
-      ranges               = local.netblocks.gfe
-      targets              = [local.tag_gfe]
-      use_service_accounts = false
-      rules                = [{ protocol = "all", ports = [] }]
-      extra_attributes     = {}
-    }
-    "${local.spoke1_prefix}ssh" = {
-      description          = "allow ssh"
-      direction            = "INGRESS"
-      action               = "allow"
-      sources              = []
-      ranges               = ["0.0.0.0/0"]
-      targets              = []
-      use_service_accounts = false
-      rules                = [{ protocol = "tcp", ports = [22] }]
-      extra_attributes     = {}
+# policy
+
+module "spoke1_vpc_fw_policy" {
+  source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v33.0.0"
+  name      = "${local.spoke1_prefix}vpc-fw-policy"
+  parent_id = var.project_id_host
+  region    = "global"
+  attachments = {
+    spoke1-vpc = module.spoke1_vpc.self_link
+  }
+  egress_rules = {
+    smtp = {
+      priority = 900
+      match = {
+        destination_ranges = ["0.0.0.0/0"]
+        layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
+      }
     }
   }
-}
-
-# shared vpc
-#---------------------------------
-
-resource "google_compute_shared_vpc_host_project" "central" {
-  project = var.project_id_host
-}
-
-resource "google_compute_shared_vpc_service_project" "spoke1" {
-  host_project    = google_compute_shared_vpc_host_project.central.project
-  service_project = var.project_id_spoke1
-  depends_on      = [google_compute_shared_vpc_host_project.central]
-}
-
-locals {
-  remove_service_project_spoke1 = <<EOT
-  gcloud compute shared-vpc associated-projects remove ${var.project_id_spoke1} --host-project=${var.project_id_host}
-EOT
-}
-
-resource "null_resource" "remove_service_project_spoke1" {
-  depends_on = [google_compute_shared_vpc_service_project.spoke1]
-  triggers = {
-    create = ":"
-    delete = local.remove_service_project_spoke1
-  }
-  provisioner "local-exec" {
-    command = self.triggers.create
-  }
-  provisioner "local-exec" {
-    when    = destroy
-    command = self.triggers.delete
+  ingress_rules = {
+    internal = {
+      priority = 1000
+      match = {
+        source_ranges  = local.netblocks.internal
+        layer4_configs = [{ protocol = "all" }]
+      }
+    }
+    dns = {
+      priority    = 1100
+      target_tags = [local.spoke1_vpc_tags_dns.id, local.spoke1_vpc_tags_nva.id, ]
+      match = {
+        source_ranges  = local.netblocks.dns
+        layer4_configs = [{ protocol = "all", ports = [] }]
+      }
+    }
+    ssh = {
+      priority       = 1200
+      target_tags    = [local.spoke1_vpc_tags_nva.id, ]
+      enable_logging = true
+      match = {
+        source_ranges  = ["0.0.0.0/0", ]
+        layer4_configs = [{ protocol = "tcp", ports = ["22"] }]
+      }
+    }
+    iap = {
+      priority       = 1300
+      enable_logging = true
+      match = {
+        source_ranges  = local.netblocks.iap
+        layer4_configs = [{ protocol = "all", ports = [] }]
+      }
+    }
+    vpn = {
+      priority    = 1400
+      target_tags = [local.spoke1_vpc_tags_nva.id, ]
+      match = {
+        source_ranges = ["0.0.0.0/0", ]
+        layer4_configs = [
+          { protocol = "udp", ports = ["500", "4500", ] },
+          { protocol = "esp", ports = [] }
+        ]
+      }
+    }
+    gfe = {
+      priority    = 1500
+      target_tags = [local.spoke1_vpc_tags_gfe.id, ]
+      match = {
+        source_ranges  = local.netblocks.gfe
+        layer4_configs = [{ protocol = "all", ports = [] }]
+      }
+    }
   }
 }
 
@@ -186,22 +217,24 @@ resource "google_project_organization_policy" "spoke1_subnets_for_spoke1_only" {
   list_policy {
     allow {
       values = [
-        local.spoke1_eu_subnet1.id,
-        local.spoke1_eu_subnet2.id,
-        local.spoke1_eu_subnet3.id,
-        local.spoke1_us_subnet1.id,
-        local.spoke1_us_subnet2.id,
-        local.spoke1_us_subnet3.id,
+        module.spoke1_vpc.subnet_ids["${local.spoke1_eu_region}/eu-main"],
+        module.spoke1_vpc.subnet_ids["${local.spoke1_eu_region}/eu-gke"],
+        module.spoke1_vpc.subnet_ids["${local.spoke1_us_region}/us-main"],
+        module.spoke1_vpc.subnet_ids["${local.spoke1_us_region}/us-gke"],
+        module.spoke1_vpc.subnets_psc["${local.spoke1_eu_region}/eu-psc-nat"].id,
+        module.spoke1_vpc.subnets_psc["${local.spoke1_us_region}/us-psc-nat"].id,
+        module.spoke1_vpc.subnets_proxy_only["${local.spoke1_eu_region}/eu-reg-proxy"].id,
+        module.spoke1_vpc.subnets_proxy_only["${local.spoke1_us_region}/us-reg-proxy"].id,
       ]
     }
-    suggested_value = "spoke1-project-x has access to only spoke1 subnets in central-project-x"
+    suggested_value = "prj-spoke1-x has access to only spoke1 subnets in prj-hub-x"
   }
 }
 
 # psc/api
 #---------------------------------
 
-# vip
+# address
 
 resource "google_compute_global_address" "spoke1_psc_api_fr_addr" {
   provider     = google-beta
@@ -209,18 +242,18 @@ resource "google_compute_global_address" "spoke1_psc_api_fr_addr" {
   name         = local.spoke1_psc_api_fr_name
   address_type = "INTERNAL"
   purpose      = "PRIVATE_SERVICE_CONNECT"
-  network      = google_compute_network.spoke1_vpc.self_link
+  network      = module.spoke1_vpc.self_link
   address      = local.spoke1_psc_api_fr_addr
 }
 
-# fr
+# forwarding rule
 
 resource "google_compute_global_forwarding_rule" "spoke1_psc_api_fr" {
   provider              = google-beta
   project               = var.project_id_host
   name                  = local.spoke1_psc_api_fr_name
   target                = local.spoke1_psc_api_fr_target
-  network               = google_compute_network.spoke1_vpc.self_link
+  network               = module.spoke1_vpc.self_link
   ip_address            = google_compute_global_address.spoke1_psc_api_fr_addr.id
   load_balancing_scheme = ""
 }
