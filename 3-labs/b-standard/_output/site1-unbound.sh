@@ -65,6 +65,14 @@ forward-zone:
         forward-addr: 10.1.11.40
 
 forward-zone:
+        name: "11.10.in-addr.arpa."
+        forward-addr: 10.1.11.40
+
+forward-zone:
+        name: "22.10.in-addr.arpa."
+        forward-addr: 10.1.11.40
+
+forward-zone:
         name: "."
         forward-addr: 8.8.8.8
         forward-addr: 8.8.4.4
