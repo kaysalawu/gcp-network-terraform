@@ -61,7 +61,7 @@ forward-zone:
         forward-addr: 10.1.11.40
 
 forward-zone:
-        name: "bhuball.p.googleapis.com"
+        name: "chuball.p.googleapis.com"
         forward-addr: 10.1.11.40
 
 forward-zone:

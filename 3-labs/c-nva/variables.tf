@@ -34,3 +34,8 @@ variable "project_id_onprem" {
   description = "onprem project id (for onprem site1 and site2)"
 }
 
+variable "image_vyos" {
+  description = "vyos image from gcp marketplace"
+  type        = string
+  default     = "https://www.googleapis.com/compute/v1/projects/sentrium-public/global/images/vyos-1-3-0"
+}
