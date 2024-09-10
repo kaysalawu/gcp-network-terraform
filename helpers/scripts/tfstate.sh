@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Sync terraform state to another directory using cron job.
+# I know this is not the best way to do it, but it saves from loosing tfstate file whilst switching branches.
+# Set the root_dir and dest_dir to your desired directories.
+
 root_dir="$HOME/GCP/gcp-network-terraform"
 dest_dir="$HOME/TFSTATE"
 
