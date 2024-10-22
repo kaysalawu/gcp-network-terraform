@@ -5,7 +5,7 @@
 # Set the root_dir and dest_dir to your desired directories.
 
 root_dir="$HOME/GCP/gcp-network-terraform"
-dest_dir="$HOME/TFSTATE"
+dest_dir="$HOME/TFSTATE/GCP"
 
 echo "Scanning from root_dir: $root_dir"
 
@@ -17,9 +17,9 @@ find "$root_dir" -type f -name "terraform.tfstate" | while read -r tfstate_file;
 done
 
 script_path="$HOME/GCP/gcp-network-terraform/helpers/scripts/tfstate.sh"
-sudo bash -c "cat <<EOF > /etc/cron.d/tfstate-backup
+sudo bash -c "cat <<EOF > /etc/cron.d/tfstate-backup-gcp
 */5 * * * * . $script_path 2>&1 > /dev/null
 EOF"
-crontab /etc/cron.d/tfstate-backup
+crontab /etc/cron.d/tfstate-backup-gcp
 
 
