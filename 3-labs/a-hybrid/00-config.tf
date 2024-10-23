@@ -187,12 +187,14 @@ locals {
     eu-gke       = { region = local.hub_eu_region, ip_cidr_range = "10.1.12.0/24", ipv6 = {}, enable_private_access = true, secondary_ip_ranges = { pods = "10.1.100.0/23", services = "10.1.102.0/24" } }
     eu-reg-proxy = { region = local.hub_eu_region, ip_cidr_range = "10.1.13.0/24", ipv6 = {}, enable_private_access = false, purpose = "REGIONAL_MANAGED_PROXY", role = "ACTIVE" }
     eu-psc-nat   = { region = local.hub_eu_region, ip_cidr_range = "10.1.14.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    eu-psc-nat6  = { region = local.hub_eu_region, ip_cidr_range = "10.1.15.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
   }
   hub_subnets_us = {
     us-main      = { region = local.hub_us_region, ip_cidr_range = "10.1.21.0/24", ipv6 = {}, enable_private_access = true }
     us-gke       = { region = local.hub_us_region, ip_cidr_range = "10.1.22.0/24", ipv6 = {}, enable_private_access = true, secondary_ip_ranges = { pods = "10.1.200.0/23", services = "10.1.202.0/24" } }
     us-reg-proxy = { region = local.hub_us_region, ip_cidr_range = "10.1.23.0/24", ipv6 = {}, enable_private_access = false, purpose = "REGIONAL_MANAGED_PROXY", role = "ACTIVE" }
     us-psc-nat   = { region = local.hub_us_region, ip_cidr_range = "10.1.24.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    us-psc-nat6  = { region = local.hub_us_region, ip_cidr_range = "10.1.25.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
   }
 
   # external
@@ -329,12 +331,14 @@ locals {
     eu-gke       = { region = local.spoke1_eu_region, ip_cidr_range = "10.11.12.0/24", ipv6 = {}, enable_private_access = true, secondary_ip_ranges = { pods = "10.11.100.0/23", services = "10.11.102.0/24" } }
     eu-reg-proxy = { region = local.spoke1_eu_region, ip_cidr_range = "10.11.13.0/24", ipv6 = {}, enable_private_access = false, purpose = "REGIONAL_MANAGED_PROXY", role = "ACTIVE" }
     eu-psc-nat   = { region = local.spoke1_eu_region, ip_cidr_range = "10.11.14.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    eu-psc-nat6  = { region = local.spoke1_eu_region, ip_cidr_range = "10.11.15.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
   }
   spoke1_subnets_us = {
     us-main      = { region = local.spoke1_us_region, ip_cidr_range = "10.11.21.0/24", ipv6 = {}, enable_private_access = true }
     us-gke       = { region = local.spoke1_us_region, ip_cidr_range = "10.11.22.0/24", ipv6 = {}, enable_private_access = true, secondary_ip_ranges = { pods = "10.11.200.0/23", services = "10.11.202.0/24" } }
     us-reg-proxy = { region = local.spoke1_us_region, ip_cidr_range = "10.11.23.0/24", ipv6 = {}, enable_private_access = false, purpose = "REGIONAL_MANAGED_PROXY", role = "ACTIVE" }
     us-psc-nat   = { region = local.spoke1_us_region, ip_cidr_range = "10.11.24.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    us-psc-nat6  = { region = local.spoke1_us_region, ip_cidr_range = "10.11.25.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
   }
 
   spoke1_gke_master_cidr1     = "172.16.11.0/28"
@@ -431,12 +435,14 @@ locals {
     eu-gke       = { region = local.spoke2_eu_region, ip_cidr_range = "10.22.12.0/24", ipv6 = {}, enable_private_access = true, secondary_ip_ranges = { pods = "10.22.100.0/23", services = "10.22.102.0/24" } }
     eu-reg-proxy = { region = local.spoke2_eu_region, ip_cidr_range = "10.22.13.0/24", ipv6 = {}, enable_private_access = false, purpose = "REGIONAL_MANAGED_PROXY", role = "ACTIVE" }
     eu-psc-nat   = { region = local.spoke2_eu_region, ip_cidr_range = "10.22.14.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    eu-psc-nat6  = { region = local.spoke2_eu_region, ip_cidr_range = "10.22.15.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
   }
   spoke2_subnets_us = {
     us-main      = { region = local.spoke2_us_region, ip_cidr_range = "10.22.21.0/24", ipv6 = {}, enable_private_access = true }
     us-gke       = { region = local.spoke2_us_region, ip_cidr_range = "10.22.22.0/24", ipv6 = {}, enable_private_access = true, secondary_ip_ranges = { pods = "10.22.200.0/23", services = "10.22.202.0/24" } }
     us-reg-proxy = { region = local.spoke2_us_region, ip_cidr_range = "10.22.23.0/24", ipv6 = {}, enable_private_access = false, purpose = "REGIONAL_MANAGED_PROXY", role = "ACTIVE" }
     us-psc-nat   = { region = local.spoke2_us_region, ip_cidr_range = "10.22.24.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    us-psc-nat6  = { region = local.spoke2_us_region, ip_cidr_range = "10.22.25.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
   }
 
   spoke2_gke_master_cidr1     = "172.16.22.0/28"

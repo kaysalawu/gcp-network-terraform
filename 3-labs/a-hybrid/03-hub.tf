@@ -18,9 +18,6 @@ locals {
   hub_us_ilb4_ipv6     = split("/", module.hub_us_ilb4.forwarding_rule_addresses["fr-ipv6"])[0]
 }
 
-output "test" {
-  value = module.hub_vpc.internal_ipv6_range
-}
 # network
 #---------------------------------
 
@@ -601,6 +598,16 @@ module "hub_eu_ilb4" {
       response           = local.uhc_config.response
     }
   }
+  # service_attachments = {
+  #   fr-ipv4 = {
+  #     nat_subnets          = [module.hub_vpc.subnets_psc["${local.hub_eu_region}/eu-psc-nat"].self_link]
+  #     automatic_connection = true
+  #   }
+  #   fr-ipv6 = {
+  #     nat_subnets          = [module.hub_vpc.subnets_psc["${local.hub_eu_region}/eu-psc-nat6"].self_link]
+  #     automatic_connection = true
+  #   }
+  # }
 }
 
 # ilb4: hub-us
@@ -689,6 +696,16 @@ module "hub_us_ilb4" {
       response           = local.uhc_config.response
     }
   }
+  # service_attachments = {
+  #   fr-ipv4 = {
+  #     nat_subnets          = [module.hub_vpc.subnets_psc["${local.hub_us_region}/us-psc-nat"].self_link]
+  #     automatic_connection = true
+  #   }
+  #   fr-ipv6 = {
+  #     nat_subnets          = [module.hub_vpc.subnets_psc["${local.hub_us_region}/us-psc-nat6"].self_link]
+  #     automatic_connection = true
+  #   }
+  # }
 }
 
 # ilb7: hub-eu

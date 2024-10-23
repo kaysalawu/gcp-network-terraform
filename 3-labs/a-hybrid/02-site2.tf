@@ -1,6 +1,7 @@
 
 
 locals {
+  site2_vpc_ipv6_cidr = module.site2_vpc.internal_ipv6_range
   site2_dns_main_ipv6 = module.site2_dns.internal_ipv6
   site2_vm_main_ipv6  = module.site2_vm.internal_ipv6
 }
@@ -9,7 +10,8 @@ locals {
 #---------------------------------
 
 module "site2_vpc" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc?ref=v33.0.0"
+  # source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc?ref=v33.0.0"
+  source     = "../../modules/net-vpc"
   project_id = var.project_id_onprem
   name       = "${local.site2_prefix}vpc"
   subnets    = local.site2_subnets_list
