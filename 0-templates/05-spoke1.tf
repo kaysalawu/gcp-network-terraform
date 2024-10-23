@@ -244,7 +244,7 @@ module "spoke1_eu_vm7" {
 # ilb7
 
 module "spoke1_eu_ilb7" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-app-int?ref=v33.0.0"
+  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-app-int?ref=v34.1.0"
   project_id = var.project_id_spoke1
   name       = "${local.spoke1_prefix}eu-ilb7"
   region     = local.spoke1_eu_region

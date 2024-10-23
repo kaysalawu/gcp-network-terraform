@@ -278,10 +278,10 @@ Requires=docker.service
 [Service]
 Type=simple
 Environment="HOSTNAME=$(hostname)"
-ExecStart=/usr/bin/docker-compose -f /var/lib/gcp/fastapi/docker-compose-http-80.yml up -d && \
-          /usr/bin/docker-compose -f /var/lib/gcp/fastapi/docker-compose-http-8080.yml up -d
-ExecStop=/usr/bin/docker-compose -f /var/lib/gcp/fastapi/docker-compose-http-80.yml down && \
-         /usr/bin/docker-compose -f /var/lib/gcp/fastapi/docker-compose-http-8080.yml down
+ExecStart=/usr/bin/docker compose -f /var/lib/gcp/fastapi/docker-compose-http-80.yml up -d && \
+          /usr/bin/docker compose -f /var/lib/gcp/fastapi/docker-compose-http-8080.yml up -d
+ExecStop=/usr/bin/docker compose -f /var/lib/gcp/fastapi/docker-compose-http-80.yml down && \
+         /usr/bin/docker compose -f /var/lib/gcp/fastapi/docker-compose-http-8080.yml down
 Restart=always
 StandardOutput=journal
 StandardError=journal

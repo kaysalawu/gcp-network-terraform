@@ -629,7 +629,7 @@ module "hub_eu_vm7" {
 # ilb7
 
 module "hub_eu_ilb7" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-app-int?ref=v33.0.0"
+  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-app-int?ref=v34.1.0"
   project_id = var.project_id_hub
   name       = "${local.hub_prefix}eu-ilb7"
   region     = local.hub_eu_region
@@ -732,7 +732,7 @@ module "hub_us_vm7" {
 # ilb7
 
 module "hub_us_ilb7" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-app-int?ref=v33.0.0"
+  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-app-int?ref=v34.1.0"
   project_id = var.project_id_hub
   name       = "${local.hub_prefix}us-ilb7"
   region     = local.hub_us_region

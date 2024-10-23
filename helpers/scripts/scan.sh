@@ -23,11 +23,13 @@ terraform_docs_dirs=(
 1-org
 2-projects
 3-labs
+4-general
 modules
 )
 
 main_dirs=(
 3-labs
+4-general
 )
 
 main_dirs_excluded=(

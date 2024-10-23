@@ -1,4 +1,10 @@
 
+
+locals {
+  site2_dns_main_ipv6 = module.site2_dns.internal_ipv6
+  site2_vm_main_ipv6  = module.site2_vm.internal_ipv6
+}
+
 # network
 #---------------------------------
 
@@ -7,6 +13,10 @@ module "site2_vpc" {
   project_id = var.project_id_onprem
   name       = "${local.site2_prefix}vpc"
   subnets    = local.site2_subnets_list
+
+  ipv6_config = {
+    enable_ula_internal = true
+  }
 }
 
 # nat
@@ -44,72 +54,8 @@ module "site2_vpc_fw_policy" {
   attachments = {
     site2-vpc = module.site2_vpc.self_link
   }
-  egress_rules = {
-    smtp = {
-      priority = 900
-      match = {
-        destination_ranges = ["0.0.0.0/0"]
-        layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
-      }
-    }
-    all = {
-      priority = 910
-      action   = "allow"
-      match = {
-        destination_ranges = ["0.0.0.0/0"]
-        layer4_configs     = [{ protocol = "all", ports = [] }]
-      }
-    }
-  }
-  ingress_rules = {
-    internal = {
-      priority = 1000
-      match = {
-        source_ranges  = local.netblocks.internal
-        layer4_configs = [{ protocol = "all" }]
-      }
-    }
-    dns = {
-      priority = 1100
-      match = {
-        source_ranges  = local.netblocks.dns
-        layer4_configs = [{ protocol = "all", ports = [] }]
-      }
-    }
-    ssh = {
-      priority       = 1200
-      enable_logging = true
-      match = {
-        source_ranges  = ["0.0.0.0/0", ]
-        layer4_configs = [{ protocol = "tcp", ports = ["22"] }]
-      }
-    }
-    iap = {
-      priority       = 1300
-      enable_logging = true
-      match = {
-        source_ranges  = local.netblocks.iap
-        layer4_configs = [{ protocol = "all", ports = [] }]
-      }
-    }
-    vpn = {
-      priority = 1400
-      match = {
-        source_ranges = ["0.0.0.0/0", ]
-        layer4_configs = [
-          { protocol = "udp", ports = ["500", "4500", ] },
-          { protocol = "esp", ports = [] }
-        ]
-      }
-    }
-    gfe = {
-      priority = 1500
-      match = {
-        source_ranges  = local.netblocks.gfe
-        layer4_configs = [{ protocol = "all", ports = [] }]
-      }
-    }
-  }
+  egress_rules  = local.firewall_policies.site_egress_rules
+  ingress_rules = local.firewall_policies.site_ingress_rules
 }
 
 # vpc
@@ -120,6 +66,7 @@ module "site2_vpc_firewall" {
   network    = module.site2_vpc.name
 
   egress_rules = {
+    # ipv4
     "${local.site2_prefix}allow-egress-smtp" = {
       priority           = 900
       description        = "block smtp"
@@ -133,8 +80,23 @@ module "site2_vpc_firewall" {
       destination_ranges = ["0.0.0.0/0", ]
       rules              = [{ protocol = "all", ports = [] }]
     }
+    # ipv6
+    "${local.site2_prefix}allow-egress-smtp-ipv6" = {
+      priority           = 901
+      description        = "block smtp"
+      destination_ranges = ["0::/0", ]
+      rules              = [{ protocol = "tcp", ports = [25, ] }]
+    }
+    "${local.site2_prefix}allow-egress-all" = {
+      priority           = 1001
+      deny               = false
+      description        = "allow egress"
+      destination_ranges = ["0::/0", ]
+      rules              = [{ protocol = "all", ports = [] }]
+    }
   }
   ingress_rules = {
+    # ipv4
     "${local.site2_prefix}allow-ingress-internal" = {
       priority      = 1000
       description   = "allow internal"
@@ -170,6 +132,28 @@ module "site2_vpc_firewall" {
       targets       = [local.tag_dns]
       rules         = [{ protocol = "all", ports = [] }]
     }
+    # ipv6
+    "${local.site2_prefix}allow-ingress-internal-ipv6" = {
+      priority      = 1000
+      description   = "allow internal"
+      source_ranges = local.netblocks_ipv6.internal
+      rules         = [{ protocol = "all", ports = [] }]
+    }
+    "${local.site2_prefix}allow-ingress-ssh-ipv6" = {
+      priority       = 1200
+      description    = "allow ingress ssh"
+      source_ranges  = ["0::/0"]
+      targets        = [local.tag_router]
+      rules          = [{ protocol = "tcp", ports = [22] }]
+      enable_logging = {}
+    }
+    "${local.site2_prefix}allow-ingress-dns-proxy" = {
+      priority      = 1400
+      description   = "allow dns egress proxy"
+      source_ranges = local.netblocks.dns
+      targets       = [local.tag_dns]
+      rules         = [{ protocol = "all", ports = [] }]
+    }
   }
 }
 
@@ -193,6 +177,8 @@ locals {
   onprem_local_records_site2 = [
     { name = local.site1_vm_fqdn, rdata = local.site1_vm_addr, ttl = "300", type = "A" },
     { name = local.site2_vm_fqdn, rdata = local.site2_vm_addr, ttl = "300", type = "A" },
+    { name = lower(local.site1_vm_fqdn), rdata = local.site1_vm_main_ipv6, ttl = "300", type = "AAAA" },
+    { name = lower(local.site2_vm_fqdn), rdata = local.site2_vm_main_ipv6, ttl = "300", type = "AAAA" },
   ]
   # hosts redirected to psc endpoint
   onprem_redirected_hosts_site2 = [
@@ -229,6 +215,7 @@ module "site2_dns" {
   tags       = [local.tag_dns, local.tag_ssh]
 
   network_interfaces = [{
+    stack_type = local.enable_ipv6 ? "IPV4_IPV6" : "IPV4_ONLY"
     network    = module.site2_vpc.self_link
     subnetwork = module.site2_vpc.subnet_self_links["${local.site2_region}/main"]
     addresses  = { internal = local.site2_ns_addr }
@@ -276,6 +263,7 @@ module "site2_vm" {
   tags       = [local.tag_ssh, local.tag_http]
 
   network_interfaces = [{
+    stack_type = local.enable_ipv6 ? "IPV4_IPV6" : "IPV4_ONLY"
     network    = module.site2_vpc.self_link
     subnetwork = module.site2_vpc.subnet_self_links["${local.site2_region}/main"]
     addresses  = { internal = local.site2_vm_addr }

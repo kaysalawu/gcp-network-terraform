@@ -47,11 +47,27 @@ output "internal_ip" {
   )
 }
 
+output "internal_ipv6" {
+  description = "Instance main interface internal IPv6 address."
+  value = try(
+    google_compute_instance.default[0].network_interface[0].ipv6_address,
+    null
+  )
+}
+
 output "internal_ips" {
   description = "Instance interfaces internal IP addresses."
   value = [
     for nic in try(google_compute_instance.default[0].network_interface, [])
-    : nic.network_ip
+    : nic.ipv6_address
+  ]
+}
+
+output "internal_ipv6s" {
+  description = "Instance interfaces internal IP addresses."
+  value = [
+    for nic in try(google_compute_instance.default[0].network_interface, [])
+    : nic.ipv6_address
   ]
 }
 

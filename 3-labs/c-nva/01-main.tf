@@ -153,8 +153,8 @@ module "vm_cloud_init" {
   ]
   run_commands = [
     ". ${local.init_dir}/init/startup.sh",
-    "HOSTNAME=$(hostname) docker-compose -f ${local.init_dir}/fastapi/docker-compose-http-80.yml up -d",
-    "HOSTNAME=$(hostname) docker-compose -f ${local.init_dir}/fastapi/docker-compose-http-8080.yml up -d",
+    "HOSTNAME=$(hostname) docker compose -f ${local.init_dir}/fastapi/docker-compose-http-80.yml up -d",
+    "HOSTNAME=$(hostname) docker compose -f ${local.init_dir}/fastapi/docker-compose-http-8080.yml up -d",
   ]
 }
 
@@ -169,8 +169,8 @@ module "probe_vm_cloud_init" {
   ]
   run_commands = [
     ". ${local.init_dir}/init/startup.sh",
-    "HOSTNAME=$(hostname) docker-compose -f ${local.init_dir}/fastapi/docker-compose-http-80.yml up -d",
-    "HOSTNAME=$(hostname) docker-compose -f ${local.init_dir}/fastapi/docker-compose-http-8080.yml up -d",
+    "HOSTNAME=$(hostname) docker compose -f ${local.init_dir}/fastapi/docker-compose-http-80.yml up -d",
+    "HOSTNAME=$(hostname) docker compose -f ${local.init_dir}/fastapi/docker-compose-http-8080.yml up -d",
   ]
 }
 
@@ -199,8 +199,8 @@ module "proxy_vm_cloud_init" {
     ". ${local.init_dir}/init/startup.sh",
     ". ${local.init_dir}/unbound/setup-unbound.sh",
     ". ${local.init_dir}/squid/setup-squid.sh",
-    "docker-compose -f ${local.init_dir}/unbound/docker-compose.yml up -d",
-    "docker-compose -f ${local.init_dir}/squid/docker-compose.yml up -d",
+    "docker compose -f ${local.init_dir}/unbound/docker-compose.yml up -d",
+    "docker compose -f ${local.init_dir}/squid/docker-compose.yml up -d",
   ]
 }
 
