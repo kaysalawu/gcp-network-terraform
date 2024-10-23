@@ -84,14 +84,14 @@ module "site2_vpc_firewall" {
     "${local.site2_prefix}allow-egress-smtp-ipv6" = {
       priority           = 901
       description        = "block smtp"
-      destination_ranges = ["0::/0", ]
+      destination_ranges = ["::/0", ]
       rules              = [{ protocol = "tcp", ports = [25, ] }]
     }
     "${local.site2_prefix}allow-egress-all" = {
       priority           = 1001
       deny               = false
       description        = "allow egress"
-      destination_ranges = ["0::/0", ]
+      destination_ranges = ["::/0", ]
       rules              = [{ protocol = "all", ports = [] }]
     }
   }
@@ -142,7 +142,7 @@ module "site2_vpc_firewall" {
     "${local.site2_prefix}allow-ingress-ssh-ipv6" = {
       priority       = 1200
       description    = "allow ingress ssh"
-      source_ranges  = ["0::/0"]
+      source_ranges  = ["::/0"]
       targets        = [local.tag_router]
       rules          = [{ protocol = "tcp", ports = [22] }]
       enable_logging = {}

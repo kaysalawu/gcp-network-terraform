@@ -9,6 +9,7 @@ locals {
   hub_vpc_tags_gfe = google_tags_tag_value.hub_vpc_tags["${local.hub_prefix}vpc-gfe"]
   hub_vpc_tags_nva = google_tags_tag_value.hub_vpc_tags["${local.hub_prefix}vpc-nva"]
 
+  hub_vpc_ipv6_cidr    = module.hub_vpc.internal_ipv6_range
   hub_eu_vm_main_ipv6  = module.hub_eu_vm.internal_ipv6
   hub_us_vm_main_ipv6  = module.hub_us_vm.internal_ipv6
   hub_eu_vm7_main_ipv6 = module.hub_eu_vm7.internal_ipv6
@@ -17,11 +18,15 @@ locals {
   hub_us_ilb4_ipv6     = split("/", module.hub_us_ilb4.forwarding_rule_addresses["fr-ipv6"])[0]
 }
 
+output "test" {
+  value = module.hub_vpc.internal_ipv6_range
+}
 # network
 #---------------------------------
 
 module "hub_vpc" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc?ref=v33.0.0"
+  # source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc?ref=v33.0.0"
+  source     = "../../modules/net-vpc"
   project_id = var.project_id_hub
   name       = "${local.hub_prefix}vpc"
 
@@ -160,7 +165,7 @@ module "hub_vpc_fw_policy" {
     smtp-ipv6 = {
       priority = 901
       match = {
-        destination_ranges = ["::/0"]
+        destination_ranges = ["0::/0"]
         layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
       }
     }
@@ -230,7 +235,7 @@ module "hub_vpc_fw_policy" {
       target_tags    = [local.hub_vpc_tags_nva.id, ]
       enable_logging = true
       match = {
-        source_ranges  = ["::/0"]
+        source_ranges  = ["0::/0"]
         layer4_configs = [{ protocol = "tcp", ports = ["22"] }]
       }
     }
@@ -238,7 +243,7 @@ module "hub_vpc_fw_policy" {
       priority    = 1401
       target_tags = [local.hub_vpc_tags_nva.id, ]
       match = {
-        source_ranges = ["::/0"]
+        source_ranges = ["0::/0"]
         layer4_configs = [
           { protocol = "udp", ports = ["500", "4500", ] },
           { protocol = "esp", ports = [] }

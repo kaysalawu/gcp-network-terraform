@@ -211,7 +211,7 @@ locals {
       smtp = {
         priority = 901
         match = {
-          destination_ranges = ["::/0"]
+          destination_ranges = ["0::/0"]
           layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
         }
       }
@@ -219,7 +219,7 @@ locals {
         priority = 911
         action   = "allow"
         match = {
-          destination_ranges = ["::/0"]
+          destination_ranges = ["0::/0"]
           layer4_configs     = [{ protocol = "all", ports = [] }]
         }
       }
@@ -285,14 +285,14 @@ locals {
         priority       = 1201
         enable_logging = true
         match = {
-          source_ranges  = ["::/0", ]
+          source_ranges  = ["0::/0", ]
           layer4_configs = [{ protocol = "tcp", ports = ["22"] }]
         }
       }
       vpn-6 = {
         priority = 1401
         match = {
-          source_ranges = ["::/0", ]
+          source_ranges = ["0::/0", ]
           layer4_configs = [
             { protocol = "udp", ports = ["500", "4500", ] },
             { protocol = "esp", ports = [] }
