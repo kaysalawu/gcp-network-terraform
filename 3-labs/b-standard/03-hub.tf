@@ -8,13 +8,22 @@ locals {
   hub_vpc_tags_dns = google_tags_tag_value.hub_vpc_tags["${local.hub_prefix}vpc-dns"]
   hub_vpc_tags_gfe = google_tags_tag_value.hub_vpc_tags["${local.hub_prefix}vpc-gfe"]
   hub_vpc_tags_nva = google_tags_tag_value.hub_vpc_tags["${local.hub_prefix}vpc-nva"]
+
+  hub_vpc_ipv6_cidr    = module.hub_vpc.internal_ipv6_range
+  hub_eu_vm_main_ipv6  = module.hub_eu_vm.internal_ipv6
+  hub_us_vm_main_ipv6  = module.hub_us_vm.internal_ipv6
+  hub_eu_vm7_main_ipv6 = module.hub_eu_vm7.internal_ipv6
+  hub_us_vm7_main_ipv6 = module.hub_us_vm7.internal_ipv6
+  hub_eu_ilb4_ipv6     = split("/", module.hub_eu_ilb4.forwarding_rule_addresses["fr-ipv6"])[0]
+  hub_us_ilb4_ipv6     = split("/", module.hub_us_ilb4.forwarding_rule_addresses["fr-ipv6"])[0]
 }
 
 # network
 #---------------------------------
 
 module "hub_vpc" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc?ref=v33.0.0"
+  # source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc?ref=v33.0.0"
+  source     = "../../modules/net-vpc"
   project_id = var.project_id_hub
   name       = "${local.hub_prefix}vpc"
 
@@ -22,6 +31,10 @@ module "hub_vpc" {
   subnets_private_nat = local.hub_subnets_private_nat_list
   subnets_proxy_only  = local.hub_subnets_proxy_only_list
   subnets_psc         = local.hub_subnets_psc_list
+
+  ipv6_config = {
+    enable_ula_internal = true
+  }
 
   psa_configs = [{
     ranges = {
@@ -146,14 +159,13 @@ module "hub_vpc_fw_policy" {
         layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
       }
     }
-    # all = {
-    #   priority = 910
-    #   action   = "allow"
-    #   match = {
-    #     destination_ranges = ["0.0.0.0/0"]
-    #     layer4_configs     = [{ protocol = "all", ports = [] }]
-    #   }
-    # }
+    smtp-ipv6 = {
+      priority = 901
+      match = {
+        destination_ranges = ["0::/0"]
+        layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
+      }
+    }
   }
   ingress_rules = {
     internal = {
@@ -207,6 +219,42 @@ module "hub_vpc_fw_policy" {
         layer4_configs = [{ protocol = "all", ports = [] }]
       }
     }
+    # ipv6
+    internal-6 = {
+      priority = 1001
+      match = {
+        source_ranges  = local.netblocks_ipv6.internal
+        layer4_configs = [{ protocol = "all" }]
+      }
+    }
+    ssh-6 = {
+      priority       = 1201
+      target_tags    = [local.hub_vpc_tags_nva.id, ]
+      enable_logging = true
+      match = {
+        source_ranges  = ["0::/0"]
+        layer4_configs = [{ protocol = "tcp", ports = ["22"] }]
+      }
+    }
+    vpn-6 = {
+      priority    = 1401
+      target_tags = [local.hub_vpc_tags_nva.id, ]
+      match = {
+        source_ranges = ["0::/0"]
+        layer4_configs = [
+          { protocol = "udp", ports = ["500", "4500", ] },
+          { protocol = "esp", ports = [] }
+        ]
+      }
+    }
+    gfe-6 = {
+      priority    = 1501
+      target_tags = [local.hub_vpc_tags_gfe.id, ]
+      match = {
+        source_ranges  = local.netblocks_ipv6.gfe
+        layer4_configs = [{ protocol = "all", ports = [] }]
+      }
+    }
   }
 }
 
@@ -225,6 +273,7 @@ module "hub_eu_dns" {
     (local.hub_vpc_tags_dns.parent) = local.hub_vpc_tags_dns.id
   }
   network_interfaces = [{
+    stack_type = local.enable_ipv6 ? "IPV4_IPV6" : "IPV4_ONLY"
     network    = module.hub_vpc.self_link
     subnetwork = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
     addresses = {
@@ -250,6 +299,7 @@ module "hub_us_dns" {
     (local.hub_vpc_tags_dns.parent) = local.hub_vpc_tags_dns.id
   }
   network_interfaces = [{
+    stack_type = local.enable_ipv6 ? "IPV4_IPV6" : "IPV4_ONLY"
     network    = module.hub_vpc.self_link
     subnetwork = module.hub_vpc.subnet_self_links["${local.hub_us_region}/us-main"]
     addresses = {
@@ -397,18 +447,22 @@ module "hub_dns_private_zone" {
     }
   }
   recordsets = {
-    "A ${local.hub_eu_vm_dns_prefix}"   = { ttl = 300, records = [local.hub_eu_vm_addr] },
-    "A ${local.hub_us_vm_dns_prefix}"   = { ttl = 300, records = [local.hub_us_vm_addr] },
-    "A ${local.hub_eu_ilb4_dns_prefix}" = { ttl = 300, records = [local.hub_eu_ilb4_addr] },
-    "A ${local.hub_us_ilb4_dns_prefix}" = { ttl = 300, records = [local.hub_us_ilb4_addr] },
-    "A ${local.hub_eu_ilb7_dns_prefix}" = { ttl = 300, records = [local.hub_eu_ilb7_addr] },
-    "A ${local.hub_us_ilb7_dns_prefix}" = { ttl = 300, records = [local.hub_us_ilb7_addr] },
+    "A ${local.hub_eu_vm_dns_prefix}"      = { ttl = 300, records = [local.hub_eu_vm_addr, ] },
+    "A ${local.hub_us_vm_dns_prefix}"      = { ttl = 300, records = [local.hub_us_vm_addr, ] },
+    "A ${local.hub_eu_ilb4_dns_prefix}"    = { ttl = 300, records = [local.hub_eu_ilb4_addr, ] },
+    "A ${local.hub_us_ilb4_dns_prefix}"    = { ttl = 300, records = [local.hub_us_ilb4_addr, ] },
+    "A ${local.hub_eu_ilb7_dns_prefix}"    = { ttl = 300, records = [local.hub_eu_ilb7_addr, ] },
+    "A ${local.hub_us_ilb7_dns_prefix}"    = { ttl = 300, records = [local.hub_us_ilb7_addr, ] },
+    "AAAA ${local.hub_eu_vm_dns_prefix}"   = { ttl = 300, records = [local.hub_eu_vm_main_ipv6, ] },
+    "AAAA ${local.hub_us_vm_dns_prefix}"   = { ttl = 300, records = [local.hub_us_vm_main_ipv6, ] },
+    "AAAA ${local.hub_eu_ilb4_dns_prefix}" = { ttl = 300, records = [local.hub_eu_ilb4_ipv6, ] },
+    "AAAA ${local.hub_us_ilb4_dns_prefix}" = { ttl = 300, records = [local.hub_us_ilb4_ipv6, ] },
     "A ${local.hub_geo_ilb4_prefix}" = {
       geo_routing = [
         { location = local.hub_eu_region,
           health_checked_targets = [{
             load_balancer_type = "regionalL4ilb"
-            ip_address         = module.hub_eu_ilb4.forwarding_rule_addresses["fr"]
+            ip_address         = module.hub_eu_ilb4.forwarding_rule_addresses["fr-ipv4"]
             port               = local.svc_web.port
             ip_protocol        = "tcp"
             network_url        = module.hub_vpc.self_link
@@ -419,7 +473,7 @@ module "hub_dns_private_zone" {
         { location = local.hub_us_region,
           health_checked_targets = [{
             load_balancer_type = "regionalL4ilb"
-            ip_address         = module.hub_us_ilb4.forwarding_rule_addresses["fr"]
+            ip_address         = module.hub_us_ilb4.forwarding_rule_addresses["fr-ipv4"]
             port               = local.svc_web.port
             ip_protocol        = "tcp"
             network_url        = module.hub_vpc.self_link
@@ -429,6 +483,32 @@ module "hub_dns_private_zone" {
         }
       ]
     }
+    # "AAAA ${local.hub_geo_ilb4_prefix}" = {
+    #   geo_routing = [
+    #     { location = local.hub_eu_region,
+    #       health_checked_targets = [{
+    #         load_balancer_type = "regionalL4ilb"
+    #         ip_address         = local.hub_eu_ilb4_ipv6
+    #         port               = local.svc_web.port
+    #         ip_protocol        = "tcp"
+    #         network_url        = module.hub_vpc.self_link
+    #         project            = var.project_id_hub
+    #         region             = local.hub_eu_region
+    #       }]
+    #     },
+    #     { location = local.hub_us_region,
+    #       health_checked_targets = [{
+    #         load_balancer_type = "regionalL4ilb"
+    #         ip_address         = local.hub_us_ilb4_ipv6
+    #         port               = local.svc_web.port
+    #         ip_protocol        = "tcp"
+    #         network_url        = module.hub_vpc.self_link
+    #         project            = var.project_id_hub
+    #         region             = local.hub_us_region
+    #       }]
+    #     }
+    #   ]
+    # }
   }
 }
 
@@ -447,6 +527,7 @@ module "hub_eu_vm" {
     (local.hub_vpc_tags_gfe.parent) = local.hub_vpc_tags_gfe.id
   }
   network_interfaces = [{
+    stack_type = local.enable_ipv6 ? "IPV4_IPV6" : "IPV4_ONLY"
     network    = module.hub_vpc.self_link
     subnetwork = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
     addresses  = { internal = local.hub_eu_vm_addr }
@@ -460,25 +541,10 @@ module "hub_eu_vm" {
   }
 }
 
-# instance group
-
-resource "google_compute_instance_group" "hub_eu_ilb4_ig" {
-  project = var.project_id_hub
-  zone    = "${local.hub_eu_region}-b"
-  name    = "${local.hub_prefix}eu-ilb4-ig"
-  instances = [
-    module.hub_eu_vm.self_link,
-  ]
-  named_port {
-    name = local.svc_web.name
-    port = local.svc_web.port
-  }
-}
-
 # ilb4
 
 module "hub_eu_ilb4" {
-  source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-int?ref=v33.0.0"
+  source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-int?ref=v34.1.0"
   project_id    = var.project_id_hub
   region        = local.hub_eu_region
   name          = "${local.hub_prefix}eu-ilb4"
@@ -488,17 +554,29 @@ module "hub_eu_ilb4" {
     network    = module.hub_vpc.self_link
     subnetwork = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
   }
+  group_configs = {
+    main = {
+      zone        = "${local.hub_eu_region}-b"
+      instances   = [module.hub_eu_vm.self_link, ]
+      named_ports = { (local.svc_web.name) = local.svc_web.port }
+    }
+  }
   forwarding_rules_config = {
-    fr = {
-      address  = local.hub_eu_ilb4_addr
-      target   = google_compute_instance_group.hub_eu_ilb4_ig.self_link
-      protocol = "TCP"                  # protocol required for this load balancer to be used for dns geo routing
-      ports    = [local.svc_web.port, ] # port required for this load balancer to be used for dns geo routing
+    fr-ipv4 = {
+      address    = local.hub_eu_ilb4_addr
+      protocol   = "TCP"                  # NOTE: protocol required for this load balancer to be used for dns geo routing
+      ports      = [local.svc_web.port, ] # NOTE: port required for this load balancer to be used for dns geo routing
+      ip_version = "IPV4"
+    }
+    fr-ipv6 = {
+      protocol   = "TCP"
+      ports      = [local.svc_web.port, ]
+      ip_version = "IPV6"
     }
   }
   backends = [{
     failover = false
-    group    = google_compute_instance_group.hub_eu_ilb4_ig.self_link
+    group    = module.hub_eu_ilb4.groups.main.self_link
   }]
   health_check_config = {
     enable_logging = true
@@ -510,6 +588,16 @@ module "hub_eu_ilb4" {
       response           = local.uhc_config.response
     }
   }
+  # service_attachments = {
+  #   fr-ipv4 = {
+  #     nat_subnets          = [module.hub_vpc.subnets_psc["${local.hub_eu_region}/eu-psc-nat"].self_link]
+  #     automatic_connection = true
+  #   }
+  #   fr-ipv6 = {
+  #     nat_subnets          = [module.hub_vpc.subnets_psc["${local.hub_eu_region}/eu-psc-nat6"].self_link]
+  #     automatic_connection = true
+  #   }
+  # }
 }
 
 # ilb4: hub-us
@@ -527,6 +615,7 @@ module "hub_us_vm" {
     (local.hub_vpc_tags_gfe.parent) = local.hub_vpc_tags_gfe.id
   }
   network_interfaces = [{
+    stack_type = local.enable_ipv6 ? "IPV4_IPV6" : "IPV4_ONLY"
     network    = module.hub_vpc.self_link
     subnetwork = module.hub_vpc.subnet_self_links["${local.hub_us_region}/us-main"]
     addresses  = { internal = local.hub_us_vm_addr }
@@ -537,21 +626,6 @@ module "hub_us_vm" {
   }
   metadata = {
     user-data = module.vm_cloud_init.cloud_config
-  }
-}
-
-# instance group
-
-resource "google_compute_instance_group" "hub_us_ilb4_ig" {
-  project = var.project_id_hub
-  zone    = "${local.hub_us_region}-b"
-  name    = "${local.hub_prefix}us-ilb4-ig"
-  instances = [
-    module.hub_us_vm.self_link,
-  ]
-  named_port {
-    name = local.svc_web.name
-    port = local.svc_web.port
   }
 }
 
@@ -568,17 +642,29 @@ module "hub_us_ilb4" {
     network    = module.hub_vpc.self_link
     subnetwork = module.hub_vpc.subnet_self_links["${local.hub_us_region}/us-main"]
   }
+  group_configs = {
+    main = {
+      zone        = "${local.hub_us_region}-b"
+      instances   = [module.hub_us_vm.self_link, ]
+      named_ports = { (local.svc_web.name) = local.svc_web.port }
+    }
+  }
   forwarding_rules_config = {
-    fr = {
-      address  = local.hub_us_ilb4_addr
-      target   = google_compute_instance_group.hub_us_ilb4_ig.self_link
-      protocol = "TCP"                  # protocol required for this load balancer to be used for dns geo routing
-      ports    = [local.svc_web.port, ] # port required for this load balancer to be used for dns geo routing
+    fr-ipv4 = {
+      address    = local.hub_us_ilb4_addr
+      protocol   = "TCP"                  # protocol required for this load balancer to be used for dns geo routing
+      ports      = [local.svc_web.port, ] # port required for this load balancer to be used for dns geo routing
+      ip_version = "IPV4"
+    }
+    fr-ipv6 = {
+      protocol   = "TCP"
+      ports      = [local.svc_web.port, ]
+      ip_version = "IPV6"
     }
   }
   backends = [{
     failover = false
-    group    = google_compute_instance_group.hub_us_ilb4_ig.self_link
+    group    = module.hub_us_ilb4.groups.main.self_link
   }]
   health_check_config = {
     enable_logging = true
@@ -590,6 +676,16 @@ module "hub_us_ilb4" {
       response           = local.uhc_config.response
     }
   }
+  # service_attachments = {
+  #   fr-ipv4 = {
+  #     nat_subnets          = [module.hub_vpc.subnets_psc["${local.hub_us_region}/us-psc-nat"].self_link]
+  #     automatic_connection = true
+  #   }
+  #   fr-ipv6 = {
+  #     nat_subnets          = [module.hub_vpc.subnets_psc["${local.hub_us_region}/us-psc-nat6"].self_link]
+  #     automatic_connection = true
+  #   }
+  # }
 }
 
 # ilb7: hub-eu
@@ -614,6 +710,7 @@ module "hub_eu_vm7" {
     (local.hub_vpc_tags_gfe.parent) = local.hub_vpc_tags_gfe.id
   }
   network_interfaces = [{
+    stack_type = local.enable_ipv6 ? "IPV4_IPV6" : "IPV4_ONLY"
     network    = module.hub_vpc.self_link
     subnetwork = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
   }]
@@ -717,6 +814,7 @@ module "hub_us_vm7" {
     (local.hub_vpc_tags_gfe.parent) = local.hub_vpc_tags_gfe.id
   }
   network_interfaces = [{
+    stack_type = local.enable_ipv6 ? "IPV4_IPV6" : "IPV4_ONLY"
     network    = module.hub_vpc.self_link
     subnetwork = module.hub_vpc.subnet_self_links["${local.hub_us_region}/us-main"]
   }]

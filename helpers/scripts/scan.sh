@@ -29,7 +29,6 @@ modules
 
 main_dirs=(
 3-labs
-4-general
 )
 
 main_dirs_excluded=(
