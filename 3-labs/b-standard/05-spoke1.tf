@@ -1,6 +1,12 @@
 
+locals {
+  spoke1_eu_vm_main_ipv6 = module.spoke1_eu_vm.internal_ipv6
+  spoke1_eu_ilb4_ipv6    = split("/", module.spoke1_eu_ilb4.forwarding_rule_addresses["fr-ipv6"])[0]
+}
+
+####################################################
 # dns policy
-#---------------------------------
+####################################################
 
 resource "google_dns_policy" "spoke1_dns_policy" {
   provider                  = google-beta
@@ -11,8 +17,9 @@ resource "google_dns_policy" "spoke1_dns_policy" {
   networks { network_url = module.spoke1_vpc.self_link }
 }
 
+####################################################
 # dns response policy
-#---------------------------------
+####################################################
 
 # rules - local
 
@@ -41,8 +48,9 @@ module "spoke1_dns_response_policy" {
   }
 }
 
+####################################################
 # cloud dns
-#---------------------------------
+####################################################
 
 # psc zone
 
@@ -87,12 +95,14 @@ module "spoke1_dns_private_zone" {
     }
   }
   recordsets = {
-    "A ${local.spoke1_eu_vm_dns_prefix}"   = { ttl = 300, records = [local.spoke1_eu_vm_addr] },
-    "A ${local.spoke1_us_vm_dns_prefix}"   = { ttl = 300, records = [local.spoke1_us_vm_addr] },
-    "A ${local.spoke1_eu_ilb4_dns_prefix}" = { ttl = 300, records = [local.spoke1_eu_ilb4_addr] },
-    "A ${local.spoke1_us_ilb4_dns_prefix}" = { ttl = 300, records = [local.spoke1_us_ilb4_addr] },
-    "A ${local.spoke1_eu_ilb7_dns_prefix}" = { ttl = 300, records = [local.spoke1_eu_ilb7_addr] },
-    "A ${local.spoke1_us_ilb7_dns_prefix}" = { ttl = 300, records = [local.spoke1_us_ilb7_addr] },
+    "A ${local.spoke1_eu_vm_dns_prefix}"      = { ttl = 300, records = [local.spoke1_eu_vm_addr] },
+    "A ${local.spoke1_us_vm_dns_prefix}"      = { ttl = 300, records = [local.spoke1_us_vm_addr] },
+    "A ${local.spoke1_eu_ilb4_dns_prefix}"    = { ttl = 300, records = [local.spoke1_eu_ilb4_addr] },
+    "A ${local.spoke1_us_ilb4_dns_prefix}"    = { ttl = 300, records = [local.spoke1_us_ilb4_addr] },
+    "A ${local.spoke1_eu_ilb7_dns_prefix}"    = { ttl = 300, records = [local.spoke1_eu_ilb7_addr] },
+    "A ${local.spoke1_us_ilb7_dns_prefix}"    = { ttl = 300, records = [local.spoke1_us_ilb7_addr] },
+    "AAAA ${local.spoke1_eu_vm_dns_prefix}"   = { ttl = 300, records = [local.spoke1_eu_vm_main_ipv6] },
+    "AAAA ${local.spoke1_eu_ilb4_dns_prefix}" = { ttl = 300, records = [local.spoke1_eu_ilb4_ipv6] },
   }
 }
 
@@ -135,8 +145,9 @@ module "spoke1_reverse_zone" {
   }
 }
 
+####################################################
 # ilb4 - eu
-#---------------------------------
+####################################################
 
 # instance
 
@@ -150,6 +161,7 @@ module "spoke1_eu_vm" {
     (local.spoke1_vpc_tags_gfe.parent) = local.spoke1_vpc_tags_gfe.id
   }
   network_interfaces = [{
+    stack_type = local.enable_ipv6 ? "IPV4_IPV6" : "IPV4_ONLY"
     network    = module.spoke1_vpc.self_link
     subnetwork = module.spoke1_vpc.subnet_self_links["${local.spoke1_eu_region}/eu-main"]
     addresses  = { internal = local.spoke1_eu_vm_addr }
@@ -160,21 +172,6 @@ module "spoke1_eu_vm" {
   }
   metadata = {
     user-data = module.vm_cloud_init.cloud_config
-  }
-}
-
-# instance group
-
-resource "google_compute_instance_group" "spoke1_eu_ilb4_ig" {
-  project = var.project_id_spoke1
-  zone    = "${local.spoke1_eu_region}-b"
-  name    = "${local.spoke1_prefix}eu-ilb4-ig"
-  instances = [
-    module.spoke1_eu_vm.self_link,
-  ]
-  named_port {
-    name = local.svc_web.name
-    port = local.svc_web.port
   }
 }
 
@@ -191,16 +188,29 @@ module "spoke1_eu_ilb4" {
     network    = module.spoke1_vpc.self_link
     subnetwork = module.spoke1_vpc.subnet_self_links["${local.spoke1_eu_region}/eu-main"]
   }
+  group_configs = {
+    main = {
+      zone        = "${local.spoke1_eu_region}-b"
+      instances   = [module.spoke1_eu_vm.self_link, ]
+      named_ports = { (local.svc_web.name) = local.svc_web.port }
+    }
+  }
   forwarding_rules_config = {
-    fr = {
-      address  = local.spoke1_eu_ilb4_addr
-      target   = google_compute_instance_group.spoke1_eu_ilb4_ig.self_link
-      protocol = "L3_DEFAULT"
+    fr-ipv4 = {
+      address    = local.spoke1_eu_ilb4_addr
+      protocol   = "TCP"                  # NOTE: protocol required for geo routing, service attachment etc
+      ports      = [local.svc_web.port, ] # NOTE: port required for geo routing, service attachment etc
+      ip_version = "IPV4"
+    }
+    fr-ipv6 = {
+      protocol   = "TCP"
+      ports      = [local.svc_web.port, ]
+      ip_version = "IPV6"
     }
   }
   backends = [{
     failover = false
-    group    = google_compute_instance_group.spoke1_eu_ilb4_ig.self_link
+    group    = module.spoke1_eu_ilb4.groups.main.self_link
   }]
   health_check_config = {
     enable_logging = true
@@ -212,10 +222,21 @@ module "spoke1_eu_ilb4" {
       response           = local.uhc_config.response
     }
   }
+  service_attachments = {
+    fr-ipv4 = {
+      nat_subnets          = [module.spoke1_vpc.subnets_psc["${local.spoke1_eu_region}/eu-psc-ilb4-nat"].self_link]
+      automatic_connection = true
+    }
+    fr-ipv6 = {
+      nat_subnets          = [module.spoke1_vpc.subnets_psc["${local.spoke1_eu_region}/eu-psc-ilb4-nat6"].self_link]
+      automatic_connection = true
+    }
+  }
 }
 
+####################################################
 # ilb7: spoke1-eu
-#---------------------------------
+####################################################
 
 # instance
 
@@ -229,6 +250,7 @@ module "spoke1_eu_vm7" {
     (local.spoke1_vpc_tags_gfe.parent) = local.spoke1_vpc_tags_gfe.id
   }
   network_interfaces = [{
+    stack_type = local.enable_ipv6 ? "IPV4_IPV6" : "IPV4_ONLY"
     network    = module.spoke1_vpc.self_link
     subnetwork = module.spoke1_vpc.subnet_self_links["${local.spoke1_eu_region}/eu-main"]
   }]
@@ -314,5 +336,9 @@ module "spoke1_eu_ilb7" {
         response           = local.uhc_config.response
       }
     }
+  }
+  service_attachment = {
+    nat_subnets          = [module.spoke1_vpc.subnets_psc["${local.spoke1_eu_region}/eu-psc-ilb7-nat"].self_link]
+    automatic_connection = true
   }
 }

@@ -152,6 +152,7 @@ module "hub_vpc_fw_policy" {
     hub-vpc = module.hub_vpc.self_link
   }
   egress_rules = {
+    # ipv4
     smtp = {
       priority = 900
       match = {
@@ -159,6 +160,7 @@ module "hub_vpc_fw_policy" {
         layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
       }
     }
+    # ipv6
     smtp-ipv6 = {
       priority = 901
       match = {
@@ -168,6 +170,7 @@ module "hub_vpc_fw_policy" {
     }
   }
   ingress_rules = {
+    # ipv4
     internal = {
       priority = 1000
       match = {
@@ -437,6 +440,7 @@ module "hub_dns_forward_to_onprem" {
 
 module "hub_dns_private_zone" {
   source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
+  depends_on  = [module.hub_eu_ilb4, ]
   project_id  = var.project_id_hub
   name        = "${local.hub_prefix}private"
   description = "local data"
@@ -564,8 +568,8 @@ module "hub_eu_ilb4" {
   forwarding_rules_config = {
     fr-ipv4 = {
       address    = local.hub_eu_ilb4_addr
-      protocol   = "TCP"                  # NOTE: protocol required for this load balancer to be used for dns geo routing
-      ports      = [local.svc_web.port, ] # NOTE: port required for this load balancer to be used for dns geo routing
+      protocol   = "TCP"                  # NOTE: protocol required for geo routing, service attachment etc
+      ports      = [local.svc_web.port, ] # NOTE: port required for geo routing, service attachment etc
       ip_version = "IPV4"
     }
     fr-ipv6 = {
@@ -652,8 +656,8 @@ module "hub_us_ilb4" {
   forwarding_rules_config = {
     fr-ipv4 = {
       address    = local.hub_us_ilb4_addr
-      protocol   = "TCP"                  # protocol required for this load balancer to be used for dns geo routing
-      ports      = [local.svc_web.port, ] # port required for this load balancer to be used for dns geo routing
+      protocol   = "TCP"                  # protocol required for geo routing, service attachment etc
+      ports      = [local.svc_web.port, ] # port required for geo routing, service attachment etc
       ip_version = "IPV4"
     }
     fr-ipv6 = {

@@ -564,8 +564,8 @@ module "hub_eu_ilb4" {
   forwarding_rules_config = {
     fr-ipv4 = {
       address    = local.hub_eu_ilb4_addr
-      protocol   = "TCP"                  # NOTE: protocol required for this load balancer to be used for dns geo routing
-      ports      = [local.svc_web.port, ] # NOTE: port required for this load balancer to be used for dns geo routing
+      protocol   = "TCP"                  # NOTE: protocol required for geo routing, service attachment etc
+      ports      = [local.svc_web.port, ] # NOTE: port required for geo routing, service attachment etc
       ip_version = "IPV4"
     }
     fr-ipv6 = {
@@ -652,8 +652,8 @@ module "hub_us_ilb4" {
   forwarding_rules_config = {
     fr-ipv4 = {
       address    = local.hub_us_ilb4_addr
-      protocol   = "TCP"                  # protocol required for this load balancer to be used for dns geo routing
-      ports      = [local.svc_web.port, ] # port required for this load balancer to be used for dns geo routing
+      protocol   = "TCP"                  # protocol required for geo routing, service attachment etc
+      ports      = [local.svc_web.port, ] # port required for geo routing, service attachment etc
       ip_version = "IPV4"
     }
     fr-ipv6 = {

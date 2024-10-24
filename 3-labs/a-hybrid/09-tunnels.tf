@@ -7,10 +7,10 @@ locals {
     hub_to_site2 = { (local.supernet) = "supernet" }
   }
   advertised_prefixes_ipv6 = {
-    site1_to_hub = { (local.site1_vpc_ipv6_cidr) = "site1 ipv6 ula" }
-    site2_to_hub = { (local.site2_vpc_ipv6_cidr) = "site2 ipv6 ula" }
-    hub_to_site1 = { (local.hub_vpc_ipv6_cidr) = "hub ipv6 ula" }
-    hub_to_site2 = { (local.hub_vpc_ipv6_cidr) = "hub ipv6 ula" }
+    site1_to_hub = { (local.site1_vpc_ipv6_cidr) = "site1 ipv6" }
+    site2_to_hub = { (local.site2_vpc_ipv6_cidr) = "site2 ipv6" }
+    hub_to_site1 = { (local.hub_vpc_ipv6_cidr) = "hub ipv6" }
+    hub_to_site2 = { (local.hub_vpc_ipv6_cidr) = "hub ipv6" }
   }
 }
 
