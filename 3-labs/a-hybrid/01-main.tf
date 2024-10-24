@@ -13,7 +13,7 @@ locals {
 
   hub_eu_run_httpbin_host = module.hub_eu_run_httpbin.service.uri
 
-  enable_ipv6 = false
+  enable_ipv6 = true
 }
 
 ####################################################
@@ -47,16 +47,16 @@ locals {
     health_check_response = local.uhc_config.response
   }
   vm_script_targets_region1 = [
-    { name = "site1-vm      ", host = local.site1_vm_fqdn, ipv4 = local.site1_vm_addr, ipv6 = local.site1_vm_addr_v6, probe = true },
-    { name = "hub-eu-vm     ", host = local.hub_eu_vm_fqdn, ipv4 = local.hub_eu_vm_addr, ipv6 = local.hub_eu_vm_addr_v6, probe = true },
-    { name = "hub-eu-ilb4   ", host = local.hub_eu_ilb4_fqdn, ipv4 = local.hub_eu_ilb4_addr, ipv6 = local.hub_eu_ilb4_addr_v6, probe = true },
-    { name = "hub-eu-ilb7   ", host = local.hub_eu_ilb7_fqdn, ipv4 = local.hub_eu_ilb7_addr, ipv6 = local.hub_eu_ilb7_addr_v6, probe = true },
+    { name = "site1-vm      ", host = local.site1_vm_fqdn, ipv4 = local.site1_vm_addr, probe = true },
+    { name = "hub-eu-vm     ", host = local.hub_eu_vm_fqdn, ipv4 = local.hub_eu_vm_addr, probe = true },
+    { name = "hub-eu-ilb4   ", host = local.hub_eu_ilb4_fqdn, ipv4 = local.hub_eu_ilb4_addr, probe = true },
+    { name = "hub-eu-ilb7   ", host = local.hub_eu_ilb7_fqdn, ipv4 = local.hub_eu_ilb7_addr, probe = true },
   ]
   vm_script_targets_region2 = [
-    { name = "site2-vm      ", host = local.site2_vm_fqdn, ipv4 = local.site2_vm_addr, ipv6 = local.site2_vm_addr_v6, probe = true },
-    { name = "hub-us-vm     ", host = local.hub_us_vm_fqdn, ipv4 = local.hub_us_vm_addr, ipv6 = local.hub_us_vm_addr_v6, probe = true },
-    { name = "hub-us-ilb4   ", host = local.hub_us_ilb4_fqdn, ipv4 = local.hub_us_ilb4_addr, ipv6 = local.hub_us_ilb4_addr_v6, probe = true },
-    { name = "hub-us-ilb7   ", host = local.hub_us_ilb7_fqdn, ipv4 = local.hub_us_ilb7_addr, ipv6 = local.hub_us_ilb7_addr_v6, probe = true },
+    { name = "site2-vm      ", host = local.site2_vm_fqdn, ipv4 = local.site2_vm_addr, probe = true },
+    { name = "hub-us-vm     ", host = local.hub_us_vm_fqdn, ipv4 = local.hub_us_vm_addr, probe = true },
+    { name = "hub-us-ilb4   ", host = local.hub_us_ilb4_fqdn, ipv4 = local.hub_us_ilb4_addr, probe = true },
+    { name = "hub-us-ilb7   ", host = local.hub_us_ilb7_fqdn, ipv4 = local.hub_us_ilb7_addr, probe = true },
   ]
   vm_script_targets_misc = [
     { name = "hub-geo-ilb4", host = local.hub_geo_ilb4_fqdn, probe = false },
@@ -135,13 +135,10 @@ module "vm_cloud_init" {
     local.vm_init_files,
     local.vm_startup_init_files
   )
-  packages = [
-    "docker.io", "docker-compose",
-  ]
   run_commands = [
     ". ${local.init_dir}/init/startup.sh",
-    "HOSTNAME=$(hostname) docker-compose -f ${local.init_dir}/fastapi/docker-compose-http-80.yml up -d",
-    "HOSTNAME=$(hostname) docker-compose -f ${local.init_dir}/fastapi/docker-compose-http-8080.yml up -d",
+    "HOSTNAME=$(hostname) docker compose -f ${local.init_dir}/fastapi/docker-compose-http-80.yml up -d",
+    "HOSTNAME=$(hostname) docker compose -f ${local.init_dir}/fastapi/docker-compose-http-8080.yml up -d",
   ]
 }
 
@@ -151,20 +148,16 @@ module "probe_vm_cloud_init" {
     local.vm_init_files,
     local.probe_startup_init_files,
   )
-  packages = [
-    "docker.io", "docker-compose",
-  ]
   run_commands = [
     ". ${local.init_dir}/init/startup.sh",
-    "HOSTNAME=$(hostname) docker-compose -f ${local.init_dir}/fastapi/docker-compose-http-80.yml up -d",
-    "HOSTNAME=$(hostname) docker-compose -f ${local.init_dir}/fastapi/docker-compose-http-8080.yml up -d",
+    "HOSTNAME=$(hostname) docker compose -f ${local.init_dir}/fastapi/docker-compose-http-80.yml up -d",
+    "HOSTNAME=$(hostname) docker compose -f ${local.init_dir}/fastapi/docker-compose-http-8080.yml up -d",
   ]
 }
 
 module "proxy_vm_cloud_init" {
-  source   = "../../modules/cloud-config-gen"
-  files    = local.proxy_startup_files
-  packages = ["docker.io", "docker-compose", ]
+  source = "../../modules/cloud-config-gen"
+  files  = local.proxy_startup_files
   run_commands = [
     "sysctl -w net.ipv4.ip_forward=1",
     "sysctl -w net.ipv4.conf.eth0.disable_xfrm=1",
@@ -186,9 +179,135 @@ module "proxy_vm_cloud_init" {
     ". ${local.init_dir}/init/startup.sh",
     ". ${local.init_dir}/unbound/setup-unbound.sh",
     ". ${local.init_dir}/squid/setup-squid.sh",
-    "docker-compose -f ${local.init_dir}/unbound/docker-compose.yml up -d",
-    "docker-compose -f ${local.init_dir}/squid/docker-compose.yml up -d",
+    "docker compose -f ${local.init_dir}/unbound/docker-compose.yml up -d",
+    "docker compose -f ${local.init_dir}/squid/docker-compose.yml up -d",
   ]
+}
+
+############################################
+# firewall rules
+############################################
+
+locals {
+  firewall_policies = {
+    site_egress_rules = {
+      smtp = {
+        priority = 900
+        match = {
+          destination_ranges = ["0.0.0.0/0"]
+          layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
+        }
+      }
+      all = {
+        priority = 910
+        action   = "allow"
+        match = {
+          destination_ranges = ["0.0.0.0/0"]
+          layer4_configs     = [{ protocol = "all", ports = [] }]
+        }
+      }
+    }
+    site_egress_rules_ipv6 = {
+      smtp = {
+        priority = 901
+        match = {
+          destination_ranges = ["0::/0"]
+          layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
+        }
+      }
+      all = {
+        priority = 911
+        action   = "allow"
+        match = {
+          destination_ranges = ["0::/0"]
+          layer4_configs     = [{ protocol = "all", ports = [] }]
+        }
+      }
+    }
+    site_ingress_rules = {
+      # ipv4
+      internal = {
+        priority = 1000
+        match = {
+          source_ranges  = local.netblocks.internal
+          layer4_configs = [{ protocol = "all" }]
+        }
+      }
+      dns = {
+        priority = 1100
+        match = {
+          source_ranges  = local.netblocks.dns
+          layer4_configs = [{ protocol = "all", ports = [] }]
+        }
+      }
+      ssh = {
+        priority       = 1200
+        enable_logging = true
+        match = {
+          source_ranges  = ["0.0.0.0/0", ]
+          layer4_configs = [{ protocol = "tcp", ports = ["22"] }]
+        }
+      }
+      iap = {
+        priority       = 1300
+        enable_logging = true
+        match = {
+          source_ranges  = local.netblocks.iap
+          layer4_configs = [{ protocol = "all", ports = [] }]
+        }
+      }
+      vpn = {
+        priority = 1400
+        match = {
+          source_ranges = ["0.0.0.0/0", ]
+          layer4_configs = [
+            { protocol = "udp", ports = ["500", "4500", ] },
+            { protocol = "esp", ports = [] }
+          ]
+        }
+      }
+      gfe = {
+        priority = 1500
+        match = {
+          source_ranges  = local.netblocks.gfe
+          layer4_configs = [{ protocol = "all", ports = [] }]
+        }
+      }
+      # ipv6
+      internal-6 = {
+        priority = 1001
+        match = {
+          source_ranges  = local.netblocks_ipv6.internal
+          layer4_configs = [{ protocol = "all" }]
+        }
+      }
+      ssh-6 = {
+        priority       = 1201
+        enable_logging = true
+        match = {
+          source_ranges  = ["0::/0", ]
+          layer4_configs = [{ protocol = "tcp", ports = ["22"] }]
+        }
+      }
+      vpn-6 = {
+        priority = 1401
+        match = {
+          source_ranges = ["0::/0", ]
+          layer4_configs = [
+            { protocol = "udp", ports = ["500", "4500", ] },
+            { protocol = "esp", ports = [] }
+          ]
+        }
+      }
+      gfe-6 = {
+        priority = 1501
+        match = {
+          source_ranges  = local.netblocks_ipv6.gfe
+          layer4_configs = [{ protocol = "all", ports = [] }]
+        }
+      }
+    }
+  }
 }
 
 ############################################

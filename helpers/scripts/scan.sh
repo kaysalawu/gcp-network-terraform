@@ -23,6 +23,7 @@ terraform_docs_dirs=(
 1-org
 2-projects
 3-labs
+4-general
 modules
 )
 

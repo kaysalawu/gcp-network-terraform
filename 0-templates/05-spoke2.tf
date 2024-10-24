@@ -499,7 +499,7 @@ module "spoke2_us_vm7" {
 # ilb7
 
 module "spoke2_us_ilb7" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-app-int?ref=v33.0.0"
+  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-app-int?ref=v34.1.0"
   project_id = var.project_id_spoke2
   name       = "${local.spoke2_prefix}us-ilb7"
   region     = local.spoke2_us_region
