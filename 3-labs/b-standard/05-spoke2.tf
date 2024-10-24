@@ -314,16 +314,16 @@ resource "google_compute_address" "spoke2_eu_psc_spoke1_eu_ilb4_fr_ipv4" {
 
 # forwarding rule
 
-# resource "google_compute_forwarding_rule" "spoke2_eu_psc_spoke1_eu_ilb4_fr_ipv4" {
-#   provider              = google-beta
-#   project               = var.project_id_spoke2
-#   name                  = "${local.spoke2_prefix}eu-psc-spoke1-eu-ilb4-fr-ipv4"
-#   region                = local.spoke2_eu_region
-#   network               = module.spoke2_vpc.self_link
-#   target                = module.spoke1_eu_ilb4.service_attachment_ids["fr-ipv4"]
-#   ip_address            = google_compute_address.spoke2_eu_psc_spoke1_eu_ilb4_fr_ipv4.id
-#   load_balancing_scheme = ""
-# }
+resource "google_compute_forwarding_rule" "spoke2_eu_psc_spoke1_eu_ilb4_fr_ipv4" {
+  provider              = google-beta
+  project               = var.project_id_spoke2
+  name                  = "${local.spoke2_prefix}eu-psc-spoke1-eu-ilb4-fr-ipv4"
+  region                = local.spoke2_eu_region
+  network               = module.spoke2_vpc.self_link
+  target                = module.spoke1_eu_ilb4.service_attachment_ids["fr-ipv4"]
+  ip_address            = google_compute_address.spoke2_eu_psc_spoke1_eu_ilb4_fr_ipv4.id
+  load_balancing_scheme = ""
+}
 
 # internal pass-through lb (ipv6)
 #------------------------------------
@@ -342,17 +342,17 @@ resource "google_compute_address" "spoke2_eu_psc_spoke1_eu_ilb4_fr_ipv6" {
 
 # forwarding rule
 
-resource "google_compute_forwarding_rule" "spoke2_eu_psc_spoke1_eu_ilb4_fr_ipv6" {
-  provider              = google-beta
-  project               = var.project_id_spoke2
-  name                  = "${local.spoke2_prefix}eu-psc-spoke1-eu-ilb4-fr-ipv6"
-  region                = local.spoke2_eu_region
-  network               = module.spoke2_vpc.self_link
-  target                = module.spoke1_eu_ilb4.service_attachment_ids["fr-ipv6"]
-  ip_address            = google_compute_address.spoke2_eu_psc_spoke1_eu_ilb4_fr_ipv6.id
-  load_balancing_scheme = ""
-  ip_version            = local.enable_ipv6 ? "IPV6" : null
-}
+# resource "google_compute_forwarding_rule" "spoke2_eu_psc_spoke1_eu_ilb4_fr_ipv6" {
+#   provider              = google-beta
+#   project               = var.project_id_spoke2
+#   name                  = "${local.spoke2_prefix}eu-psc-spoke1-eu-ilb4-fr-ipv6"
+#   region                = local.spoke2_eu_region
+#   network               = module.spoke2_vpc.self_link
+#   target                = module.spoke1_eu_ilb4.service_attachment_ids["fr-ipv6"]
+#   ip_address            = google_compute_address.spoke2_eu_psc_spoke1_eu_ilb4_fr_ipv6.id
+#   load_balancing_scheme = ""
+#   ip_version            = local.enable_ipv6 ? "IPV6" : null
+# }
 
 ####################################################
 # dns policy
