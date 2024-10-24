@@ -541,21 +541,6 @@ module "hub_eu_vm" {
   }
 }
 
-# instance group
-
-resource "google_compute_instance_group" "hub_eu_ilb4_ig" {
-  project = var.project_id_hub
-  zone    = "${local.hub_eu_region}-b"
-  name    = "${local.hub_prefix}eu-ilb4-ig"
-  instances = [
-    module.hub_eu_vm.self_link,
-  ]
-  named_port {
-    name = local.svc_web.name
-    port = local.svc_web.port
-  }
-}
-
 # ilb4
 
 module "hub_eu_ilb4" {
@@ -569,16 +554,21 @@ module "hub_eu_ilb4" {
     network    = module.hub_vpc.self_link
     subnetwork = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
   }
+  group_configs = {
+    main = {
+      zone        = "${local.hub_eu_region}-b"
+      instances   = [module.hub_eu_vm.self_link, ]
+      named_ports = { (local.svc_web.name) = local.svc_web.port }
+    }
+  }
   forwarding_rules_config = {
     fr-ipv4 = {
       address    = local.hub_eu_ilb4_addr
-      target     = google_compute_instance_group.hub_eu_ilb4_ig.self_link
       protocol   = "TCP"                  # NOTE: protocol required for this load balancer to be used for dns geo routing
       ports      = [local.svc_web.port, ] # NOTE: port required for this load balancer to be used for dns geo routing
       ip_version = "IPV4"
     }
     fr-ipv6 = {
-      target     = google_compute_instance_group.hub_eu_ilb4_ig.self_link
       protocol   = "TCP"
       ports      = [local.svc_web.port, ]
       ip_version = "IPV6"
@@ -586,7 +576,7 @@ module "hub_eu_ilb4" {
   }
   backends = [{
     failover = false
-    group    = google_compute_instance_group.hub_eu_ilb4_ig.self_link
+    group    = module.hub_eu_ilb4.groups.main.self_link
   }]
   health_check_config = {
     enable_logging = true
@@ -639,21 +629,6 @@ module "hub_us_vm" {
   }
 }
 
-# instance group
-
-resource "google_compute_instance_group" "hub_us_ilb4_ig" {
-  project = var.project_id_hub
-  zone    = "${local.hub_us_region}-b"
-  name    = "${local.hub_prefix}us-ilb4-ig"
-  instances = [
-    module.hub_us_vm.self_link,
-  ]
-  named_port {
-    name = local.svc_web.name
-    port = local.svc_web.port
-  }
-}
-
 # ilb4
 
 module "hub_us_ilb4" {
@@ -667,16 +642,21 @@ module "hub_us_ilb4" {
     network    = module.hub_vpc.self_link
     subnetwork = module.hub_vpc.subnet_self_links["${local.hub_us_region}/us-main"]
   }
+  group_configs = {
+    main = {
+      zone        = "${local.hub_us_region}-b"
+      instances   = [module.hub_us_vm.self_link, ]
+      named_ports = { (local.svc_web.name) = local.svc_web.port }
+    }
+  }
   forwarding_rules_config = {
     fr-ipv4 = {
       address    = local.hub_us_ilb4_addr
-      target     = google_compute_instance_group.hub_us_ilb4_ig.self_link
       protocol   = "TCP"                  # protocol required for this load balancer to be used for dns geo routing
       ports      = [local.svc_web.port, ] # port required for this load balancer to be used for dns geo routing
       ip_version = "IPV4"
     }
     fr-ipv6 = {
-      target     = google_compute_instance_group.hub_us_ilb4_ig.self_link
       protocol   = "TCP"
       ports      = [local.svc_web.port, ]
       ip_version = "IPV6"
@@ -684,7 +664,7 @@ module "hub_us_ilb4" {
   }
   backends = [{
     failover = false
-    group    = google_compute_instance_group.hub_us_ilb4_ig.self_link
+    group    = module.hub_us_ilb4.groups.main.self_link
   }]
   health_check_config = {
     enable_logging = true

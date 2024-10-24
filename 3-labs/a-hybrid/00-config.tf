@@ -106,7 +106,6 @@ locals {
   site1_asn      = "65010"
   site1_region   = local.region1
   site1_supernet = "10.10.0.0/16"
-  site1_ipv6_ula = "fd20:10:1::/48"
   site1_domain   = "site1"
   site1_dns_zone = "${local.site1_domain}.${local.onprem_domain}"
 
@@ -132,7 +131,6 @@ locals {
   site2_asn      = "65020"
   site2_region   = local.region2
   site2_supernet = "10.20.0.0/16"
-  site2_ipv6_ula = "fd20:20:1::/48"
   site2_domain   = "site2"
   site2_vm_dns   = "vm"
   site2_dns_zone = "${local.site2_domain}.${local.onprem_domain}"
@@ -170,7 +168,6 @@ locals {
   hub_svc_8001     = { name = "http8001", port = 8001 }
   hub_svc_8002     = { name = "http8002", port = 8002 }
   hub_supernet     = "10.1.0.0/16"
-  hub_ipv6_ula     = "fd20:1:0::/48"
   hub_int_supernet = "10.2.0.0/16"
   hub_mgt_supernet = "10.3.0.0/16"
 
@@ -316,7 +313,6 @@ locals {
   spoke1_eu_region   = local.region1
   spoke1_us_region   = local.region2
   spoke1_supernet    = "10.11.0.0/16"
-  spoke1_ipv6_ula    = "fd20:10:11::/48"
   spoke1_domain      = "spoke1"
   spoke1_dns_zone    = "${local.spoke1_domain}.${local.cloud_domain}"
 
