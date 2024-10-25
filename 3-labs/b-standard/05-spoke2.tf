@@ -337,22 +337,20 @@ resource "google_compute_address" "spoke2_eu_psc_spoke1_eu_ilb4_fr_ipv6" {
   region       = local.spoke2_eu_region
   subnetwork   = module.spoke2_vpc.subnet_self_links["${local.spoke2_eu_region}/eu-main"]
   address_type = "INTERNAL"
-  ip_version   = local.enable_ipv6 ? "IPV6" : null
+  ip_version   = "IPV6"
 }
 
 # forwarding rule
 
-# resource "google_compute_forwarding_rule" "spoke2_eu_psc_spoke1_eu_ilb4_fr_ipv6" {
-#   provider              = google-beta
-#   project               = var.project_id_spoke2
-#   name                  = "${local.spoke2_prefix}eu-psc-spoke1-eu-ilb4-fr-ipv6"
-#   region                = local.spoke2_eu_region
-#   network               = module.spoke2_vpc.self_link
-#   target                = module.spoke1_eu_ilb4.service_attachment_ids["fr-ipv6"]
-#   ip_address            = google_compute_address.spoke2_eu_psc_spoke1_eu_ilb4_fr_ipv6.id
-#   load_balancing_scheme = ""
-#   ip_version            = local.enable_ipv6 ? "IPV6" : null
-# }
+resource "google_compute_forwarding_rule" "spoke2_eu_psc_spoke1_eu_ilb4_fr_ipv6" {
+  project               = var.project_id_spoke2
+  name                  = "${local.spoke2_prefix}eu-psc-spoke1-eu-ilb4-fr-ipv6"
+  region                = local.spoke2_eu_region
+  network               = module.spoke2_vpc.self_link
+  target                = module.spoke1_eu_ilb4.service_attachment_ids["fr-ipv6"]
+  ip_address            = google_compute_address.spoke2_eu_psc_spoke1_eu_ilb4_fr_ipv6.id
+  load_balancing_scheme = ""
+}
 
 ####################################################
 # dns policy
