@@ -131,7 +131,7 @@ module "spoke2_nat_us" {
 # policy
 
 module "spoke2_vpc_fw_policy" {
-  source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v33.0.0"
+  # source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v33.0.0"
   name      = "${local.spoke2_prefix}vpc-fw-policy"
   parent_id = var.project_id_spoke2
   region    = "global"

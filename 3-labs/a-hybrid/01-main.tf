@@ -328,7 +328,7 @@ resource "google_compute_address" "site1_router" {
 # service account
 
 module "site1_sa" {
-  source       = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v33.0.0"
+  source       = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v34.1.0"
   project_id   = var.project_id_onprem
   name         = trimsuffix("${local.site1_prefix}sa", "-")
   generate_key = false
@@ -352,7 +352,7 @@ resource "google_compute_address" "site2_router" {
 # service account
 
 module "site2_sa" {
-  source       = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v33.0.0"
+  source       = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v34.1.0"
   project_id   = var.project_id_onprem
   name         = trimsuffix("${local.site2_prefix}sa", "-")
   generate_key = false
@@ -419,7 +419,7 @@ resource "google_compute_address" "hub_us_router" {
 # service account
 
 module "hub_sa" {
-  source       = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v33.0.0"
+  source       = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v34.1.0"
   project_id   = var.project_id_hub
   name         = trimsuffix("${local.hub_prefix}sa", "-")
   generate_key = false
@@ -432,7 +432,7 @@ module "hub_sa" {
 # cloud run
 
 module "hub_eu_run_httpbin" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/cloud-run-v2?ref=v33.0.0"
+  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/cloud-run-v2?ref=v34.1.0"
   project_id = var.project_id_hub
   name       = "${local.hub_prefix}us-run-httpbin"
   region     = local.hub_eu_region
@@ -452,7 +452,7 @@ module "hub_eu_run_httpbin" {
 # storage
 
 module "hub_eu_storage_bucket" {
-  source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/gcs?ref=v33.0.0"
+  source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/gcs?ref=v34.1.0"
   project_id    = var.project_id_hub
   prefix        = null
   name          = "${local.hub_prefix}eu-storage-bucket"
@@ -475,7 +475,7 @@ resource "google_storage_bucket_object" "hub_eu_storage_bucket_file" {
 }
 
 module "hub_us_storage_bucket" {
-  source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/gcs?ref=v33.0.0"
+  source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/gcs?ref=v34.1.0"
   project_id    = var.project_id_hub
   prefix        = null
   name          = "${local.hub_prefix}us-storage-bucket"

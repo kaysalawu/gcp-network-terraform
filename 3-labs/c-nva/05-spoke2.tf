@@ -14,7 +14,7 @@ locals {
 #---------------------------------
 
 module "spoke2_vpc" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc?ref=v33.0.0"
+  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc?ref=v34.1.0"
   project_id = var.project_id_spoke2
   name       = "${local.spoke2_prefix}vpc"
 
@@ -100,7 +100,7 @@ resource "google_compute_address" "spoke2_us_main_addresses" {
 #---------------------------------
 
 module "spoke2_nat_eu" {
-  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v33.0.0"
+  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
   project_id     = var.project_id_spoke2
   region         = local.spoke2_eu_region
   name           = "${local.spoke2_prefix}eu-nat"
@@ -113,7 +113,7 @@ module "spoke2_nat_eu" {
 }
 
 module "spoke2_nat_us" {
-  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v33.0.0"
+  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
   project_id     = var.project_id_spoke2
   region         = local.spoke2_us_region
   name           = "${local.spoke2_prefix}us-nat"
@@ -131,7 +131,7 @@ module "spoke2_nat_us" {
 # policy
 
 module "spoke2_vpc_fw_policy" {
-  source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v33.0.0"
+  # source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v34.1.0"
   name      = "${local.spoke2_prefix}vpc-fw-policy"
   parent_id = var.project_id_spoke2
   region    = "global"
@@ -262,7 +262,7 @@ locals {
 # policy
 
 module "spoke2_dns_response_policy" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns-response-policy?ref=v33.0.0"
+  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns-response-policy?ref=v34.1.0"
   project_id = var.project_id_spoke2
   name       = "${local.spoke2_prefix}drp"
   rules      = local.spoke2_dns_rp_rules
@@ -277,7 +277,7 @@ module "spoke2_dns_response_policy" {
 # psc zone
 
 module "spoke2_dns_psc" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
+  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
   project_id  = var.project_id_spoke2
   name        = "${local.spoke2_prefix}psc"
   description = "psc"
@@ -299,7 +299,7 @@ module "spoke2_dns_psc" {
 # local zone
 
 module "spoke2_dns_private_zone" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
+  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
   project_id  = var.project_id_spoke2
   name        = "${local.spoke2_prefix}private"
   description = "spoke2 network attached"
@@ -326,7 +326,7 @@ module "spoke2_dns_private_zone" {
 # onprem zone
 
 module "spoke2_dns_peering_to_hub_to_onprem" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
+  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
   project_id  = var.project_id_spoke2
   name        = "${local.spoke2_prefix}to-hub-to-onprem"
   description = "peering to hub for onprem"
@@ -436,7 +436,7 @@ resource "google_compute_instance_group" "spoke2_us_ilb4_ig" {
 # ilb4
 
 module "spoke2_us_ilb4" {
-  source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-int?ref=v33.0.0"
+  source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-int?ref=v34.1.0"
   project_id    = var.project_id_spoke2
   region        = local.spoke2_us_region
   name          = "${local.spoke2_prefix}us-ilb4"

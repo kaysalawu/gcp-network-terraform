@@ -9,8 +9,7 @@ locals {
 #---------------------------------
 
 module "site1_vpc" {
-  # source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc?ref=v33.0.0"
-  source     = "../../modules/net-vpc"
+  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc?ref=v34.1.0"
   project_id = var.project_id_onprem
   name       = "${local.site1_prefix}vpc"
   subnets    = local.site1_subnets_list
@@ -24,7 +23,7 @@ module "site1_vpc" {
 #---------------------------------
 
 module "site1_nat" {
-  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v33.0.0"
+  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
   project_id     = var.project_id_onprem
   region         = local.site1_region
   name           = "${local.site1_prefix}nat"
@@ -48,7 +47,7 @@ module "site1_nat" {
 # policy
 
 module "site1_vpc_fw_policy" {
-  source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v33.0.0"
+  source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v34.1.0"
   name      = "${local.site1_prefix}vpc-fw-policy"
   parent_id = var.project_id_onprem
   region    = "global"
@@ -62,7 +61,7 @@ module "site1_vpc_fw_policy" {
 # vpc
 
 module "site1_vpc_firewall" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc-firewall?ref=v33.0.0"
+  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc-firewall?ref=v34.1.0"
   project_id = var.project_id_onprem
   network    = module.site1_vpc.name
 
@@ -237,7 +236,7 @@ resource "time_sleep" "site1_dns_forward_to_dns_wait_120s" {
 }
 
 module "site1_dns_forward_to_dns" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
+  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
   project_id  = var.project_id_onprem
   name        = "${local.site1_prefix}to-dns"
   description = "forward all dns queries to custom resolvers"

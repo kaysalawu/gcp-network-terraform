@@ -12,6 +12,6 @@ if [ $? -eq 0 ]; then
     rm .terraform.*
     rm terraform.*
 else
-    exit 1
+    return 1
 fi
 

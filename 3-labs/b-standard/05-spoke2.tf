@@ -12,7 +12,7 @@ locals {
   spoke2_vpc_ipv6_cidr   = module.spoke2_vpc.internal_ipv6_range
   spoke2_eu_vm_main_ipv6 = module.spoke2_eu_vm.internal_ipv6
   spoke2_us_vm_main_ipv6 = module.spoke2_us_vm.internal_ipv6
-  spoke2_us_ilb4_ipv6    = split("/", module.spoke2_us_ilb4.forwarding_rule_addresses["fr-ipv6"])[0]
+  spoke2_us_ilb_ipv6     = split("/", module.spoke2_us_ilb.forwarding_rule_addresses["fr-ipv6"])[0]
 }
 
 ####################################################
@@ -20,7 +20,7 @@ locals {
 ####################################################
 
 module "spoke2_vpc" {
-  # source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc?ref=v33.0.0"
+  # source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc?ref=v34.1.0"
   source     = "../../modules/net-vpc"
   project_id = var.project_id_spoke2
   name       = "${local.spoke2_prefix}vpc"
@@ -95,9 +95,9 @@ resource "google_compute_address" "spoke2_us_main_addresses" {
   region       = local.spoke2_us_region
 }
 
-# ####################################################
-# # service networking connection
-# ####################################################
+####################################################
+# service networking connection
+####################################################
 
 # resource "google_service_networking_connection" "spoke2_us_psa_ranges" {
 #   provider = google-beta
@@ -115,7 +115,7 @@ resource "google_compute_address" "spoke2_us_main_addresses" {
 ####################################################
 
 module "spoke2_nat_eu" {
-  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v33.0.0"
+  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
   project_id     = var.project_id_spoke2
   region         = local.spoke2_eu_region
   name           = "${local.spoke2_prefix}eu-nat"
@@ -128,7 +128,7 @@ module "spoke2_nat_eu" {
 }
 
 module "spoke2_nat_us" {
-  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v33.0.0"
+  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
   project_id     = var.project_id_spoke2
   region         = local.spoke2_us_region
   name           = "${local.spoke2_prefix}us-nat"
@@ -147,7 +147,7 @@ module "spoke2_nat_us" {
 # policy
 
 module "spoke2_vpc_fw_policy" {
-  source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v33.0.0"
+  source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v34.1.0"
   name      = "${local.spoke2_prefix}vpc-fw-policy"
   parent_id = var.project_id_spoke2
   region    = "global"
@@ -163,7 +163,7 @@ module "spoke2_vpc_fw_policy" {
         layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
       }
     }
-    #ipv6
+    # ipv6
     smtp-6 = {
       priority = 901
       match = {
@@ -296,61 +296,85 @@ resource "google_compute_global_forwarding_rule" "spoke2_psc_api_fr" {
 # psc endpoints (spoke1 services)
 ####################################################
 
-# internal pass-through lb (ipv4)
-#------------------------------------
+# ipv4
+#--------------------------------------
 
-# address
+# ilb
 
-resource "google_compute_address" "spoke2_eu_psc_spoke1_eu_ilb4_fr_ipv4" {
+resource "google_compute_address" "spoke2_eu_psc_spoke1_eu_ilb_fr_ipv4" {
   provider     = google-beta
   project      = var.project_id_spoke2
-  name         = "${local.spoke2_prefix}eu-psc-spoke1-eu-ilb4-fr-ipv4"
+  name         = "${local.spoke2_prefix}eu-psc-spoke1-eu-ilb-fr-ipv4"
   region       = local.spoke2_eu_region
   subnetwork   = module.spoke2_vpc.subnet_self_links["${local.spoke2_eu_region}/eu-main"]
-  address      = local.spoke2_eu_ep_spoke1_eu_psc_ilb4_addr
+  address      = local.spoke2_eu_ep_spoke1_eu_psc_ilb_addr
   address_type = "INTERNAL"
   ip_version   = "IPV4"
 }
 
-# forwarding rule
-
-resource "google_compute_forwarding_rule" "spoke2_eu_psc_spoke1_eu_ilb4_fr_ipv4" {
+resource "google_compute_forwarding_rule" "spoke2_eu_psc_spoke1_eu_ilb_fr_ipv4" {
   provider              = google-beta
   project               = var.project_id_spoke2
-  name                  = "${local.spoke2_prefix}eu-psc-spoke1-eu-ilb4-fr-ipv4"
+  name                  = "${local.spoke2_prefix}eu-psc-spoke1-eu-ilb-fr-ipv4"
   region                = local.spoke2_eu_region
   network               = module.spoke2_vpc.self_link
-  target                = module.spoke1_eu_ilb4.service_attachment_ids["fr-ipv4"]
-  ip_address            = google_compute_address.spoke2_eu_psc_spoke1_eu_ilb4_fr_ipv4.id
+  target                = module.spoke1_eu_ilb.service_attachment_ids["fr-ipv4"]
+  ip_address            = google_compute_address.spoke2_eu_psc_spoke1_eu_ilb_fr_ipv4.id
   load_balancing_scheme = ""
 }
 
-# internal pass-through lb (ipv6)
-#------------------------------------
+# alb
 
-# address
-
-resource "google_compute_address" "spoke2_eu_psc_spoke1_eu_ilb4_fr_ipv6" {
+resource "google_compute_address" "spoke2_eu_psc_spoke1_eu_alb_fr_ipv4" {
   provider     = google-beta
   project      = var.project_id_spoke2
-  name         = "${local.spoke2_prefix}eu-psc-spoke1-eu-ilb4-fr-ipv6"
+  name         = "${local.spoke2_prefix}eu-psc-spoke1-eu-alb-fr-ipv4"
   region       = local.spoke2_eu_region
   subnetwork   = module.spoke2_vpc.subnet_self_links["${local.spoke2_eu_region}/eu-main"]
+  address      = local.spoke2_eu_ep_spoke1_eu_psc_alb_addr
   address_type = "INTERNAL"
-  ip_version   = "IPV6"
+  ip_version   = "IPV4"
 }
+
+resource "google_compute_forwarding_rule" "spoke2_eu_psc_spoke1_eu_alb_fr_ipv4" {
+  provider              = google-beta
+  project               = var.project_id_spoke2
+  name                  = "${local.spoke2_prefix}eu-psc-spoke1-eu-alb-fr-ipv4"
+  region                = local.spoke2_eu_region
+  network               = module.spoke2_vpc.self_link
+  target                = module.spoke1_eu_alb.service_attachment_id
+  ip_address            = google_compute_address.spoke2_eu_psc_spoke1_eu_alb_fr_ipv4.id
+  load_balancing_scheme = ""
+}
+
+# ipv6
+#--------------------------------------
+
+# ilb
+
+# resource "google_compute_address" "spoke2_eu_psc_spoke1_eu_ilb_fr_ipv6" {
+#   provider     = google-beta
+#   project      = var.project_id_spoke2
+#   name         = "${local.spoke2_prefix}eu-psc-spoke1-eu-ilb-fr-ipv6"
+#   region       = local.spoke2_eu_region
+#   subnetwork   = module.spoke2_vpc.subnet_self_links["${local.spoke2_eu_region}/eu-main"]
+#   address_type = "INTERNAL"
+#   ip_version   = "IPV6"
+# }
 
 # forwarding rule
 
-resource "google_compute_forwarding_rule" "spoke2_eu_psc_spoke1_eu_ilb4_fr_ipv6" {
-  project               = var.project_id_spoke2
-  name                  = "${local.spoke2_prefix}eu-psc-spoke1-eu-ilb4-fr-ipv6"
-  region                = local.spoke2_eu_region
-  network               = module.spoke2_vpc.self_link
-  target                = module.spoke1_eu_ilb4.service_attachment_ids["fr-ipv6"]
-  ip_address            = google_compute_address.spoke2_eu_psc_spoke1_eu_ilb4_fr_ipv6.id
-  load_balancing_scheme = ""
-}
+# resource "google_compute_forwarding_rule" "spoke2_eu_psc_spoke1_eu_ilb_fr_ipv6" {
+#   provider              = google-beta
+#   project               = var.project_id_spoke2
+#   name                  = "${local.spoke2_prefix}eu-psc-spoke1-eu-ilb-fr-ipv6"
+#   region                = local.spoke2_eu_region
+#   network               = module.spoke2_vpc.self_link
+#   target                = module.spoke1_eu_ilb.service_attachment_ids["fr-ipv6"]
+#   ip_address            = google_compute_address.spoke2_eu_psc_spoke1_eu_ilb_fr_ipv6.id
+#   load_balancing_scheme = ""
+# }
+
 
 ####################################################
 # dns policy
@@ -373,8 +397,8 @@ resource "google_dns_policy" "spoke2_dns_policy" {
 
 locals {
   spoke2_dns_rp_rules = {
-    drp-rule-eu-psc-https-ctrl = { dns_name = "${local.spoke2_eu_psc_https_ctrl_run_dns}.", local_data = { A = { rrdatas = [local.spoke2_eu_ilb7_addr] } } }
-    drp-rule-us-psc-https-ctrl = { dns_name = "${local.spoke2_us_psc_https_ctrl_run_dns}.", local_data = { A = { rrdatas = [local.spoke2_us_ilb7_addr] } } }
+    drp-rule-eu-psc-https-ctrl = { dns_name = "${local.spoke2_eu_psc_https_ctrl_run_dns}.", local_data = { A = { rrdatas = [local.spoke2_eu_alb_addr] } } }
+    drp-rule-us-psc-https-ctrl = { dns_name = "${local.spoke2_us_psc_https_ctrl_run_dns}.", local_data = { A = { rrdatas = [local.spoke2_us_alb_addr] } } }
     drp-rule-runapp            = { dns_name = "*.run.app.", local_data = { A = { rrdatas = [local.spoke2_psc_api_fr_addr] } } }
     drp-rule-gcr               = { dns_name = "*.gcr.io.", local_data = { A = { rrdatas = [local.spoke2_psc_api_fr_addr] } } }
     drp-rule-apis              = { dns_name = "*.googleapis.com.", local_data = { A = { rrdatas = [local.spoke2_psc_api_fr_addr] } } }
@@ -387,7 +411,7 @@ locals {
 # policy
 
 module "spoke2_dns_response_policy" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns-response-policy?ref=v33.0.0"
+  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns-response-policy?ref=v34.1.0"
   project_id = var.project_id_spoke2
   name       = "${local.spoke2_prefix}drp"
   rules      = local.spoke2_dns_rp_rules
@@ -403,7 +427,7 @@ module "spoke2_dns_response_policy" {
 # psc zone
 
 module "spoke2_dns_psc" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
+  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
   project_id  = var.project_id_spoke2
   name        = "${local.spoke2_prefix}psc"
   description = "psc"
@@ -425,7 +449,7 @@ module "spoke2_dns_psc" {
 # local zone
 
 module "spoke2_dns_private_zone" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
+  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
   project_id  = var.project_id_spoke2
   name        = "${local.spoke2_prefix}private"
   description = "spoke2 network attached"
@@ -440,25 +464,26 @@ module "spoke2_dns_private_zone" {
     }
   }
   recordsets = {
-    "A ${local.spoke2_eu_vm_dns_prefix}"                = { ttl = 300, records = [local.spoke2_eu_vm_addr] },
-    "A ${local.spoke2_eu_ep_spoke1_eu_psc_ilb4_prefix}" = { ttl = 300, records = [local.spoke2_eu_ep_spoke1_eu_psc_ilb4_addr] },
+    "A ${local.spoke2_us_vm_dns_prefix}"  = { ttl = 300, records = [local.spoke2_us_vm_addr] },
+    "A ${local.spoke2_us_ilb_dns_prefix}" = { ttl = 300, records = [local.spoke2_us_ilb_addr] },
+    "A ${local.spoke2_us_nlb_dns_prefix}" = { ttl = 300, records = [local.spoke2_us_nlb_addr] },
+    "A ${local.spoke2_us_alb_dns_prefix}" = { ttl = 300, records = [local.spoke2_us_alb_addr] },
 
-    "A ${local.spoke2_us_vm_dns_prefix}"   = { ttl = 300, records = [local.spoke2_us_vm_addr] },
-    "A ${local.spoke2_us_ilb4_dns_prefix}" = { ttl = 300, records = [local.spoke2_us_ilb4_addr] },
-    "A ${local.spoke2_us_nlb4_dns_prefix}" = { ttl = 300, records = [local.spoke2_us_nlb4_addr] },
-    "A ${local.spoke2_us_ilb7_dns_prefix}" = { ttl = 300, records = [local.spoke2_us_ilb7_addr] },
+    "AAAA ${local.spoke2_us_vm_dns_prefix}"  = { ttl = 300, records = [local.spoke2_us_vm_main_ipv6] },
+    "AAAA ${local.spoke2_us_ilb_dns_prefix}" = { ttl = 300, records = [local.spoke2_us_ilb_ipv6] },
+
+    "A ${local.spoke2_eu_vm_dns_prefix}"               = { ttl = 300, records = [local.spoke2_eu_vm_addr] },
+    "A ${local.spoke2_eu_ep_spoke1_eu_psc_ilb_prefix}" = { ttl = 300, records = [local.spoke2_eu_ep_spoke1_eu_psc_ilb_addr] },
+    "A ${local.spoke2_eu_ep_spoke1_eu_psc_alb_prefix}" = { ttl = 300, records = [local.spoke2_eu_ep_spoke1_eu_psc_alb_addr] },
 
     "AAAA ${local.spoke2_eu_vm_dns_prefix}" = { ttl = 300, records = [local.spoke2_eu_vm_main_ipv6] },
-
-    "AAAA ${local.spoke2_us_vm_dns_prefix}"   = { ttl = 300, records = [local.spoke2_us_vm_main_ipv6] },
-    "AAAA ${local.spoke2_us_ilb4_dns_prefix}" = { ttl = 300, records = [local.spoke2_us_ilb4_ipv6] },
   }
 }
 
 # onprem zone
 
 module "spoke2_dns_peering_to_hub_to_onprem" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
+  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
   project_id  = var.project_id_spoke2
   name        = "${local.spoke2_prefix}to-hub-to-onprem"
   description = "peering to hub for onprem"
@@ -489,16 +514,16 @@ module "spoke2_reverse_zone" {
     }
   }
   recordsets = {
-    "PTR ${local.spoke2_us_ilb4_reverse_suffix}" = { ttl = 300, records = ["${local.spoke2_eu_ilb4_fqdn}."] },
-    "PTR ${local.spoke2_us_ilb7_reverse_suffix}" = { ttl = 300, records = ["${local.spoke2_eu_ilb7_fqdn}."] },
+    "PTR ${local.spoke2_us_ilb_reverse_suffix}" = { ttl = 300, records = ["${local.spoke2_eu_ilb_fqdn}."] },
+    "PTR ${local.spoke2_us_alb_reverse_suffix}" = { ttl = 300, records = ["${local.spoke2_eu_alb_fqdn}."] },
   }
 }
 
 ####################################################
-# vm - us
+# vm
 ####################################################
 
-# instance
+# test
 
 module "spoke2_eu_vm" {
   source     = "../../modules/compute-vm"
@@ -524,10 +549,6 @@ module "spoke2_eu_vm" {
   }
 }
 
-####################################################
-# ilb4 - us
-####################################################
-
 # instance
 
 module "spoke2_us_vm" {
@@ -551,157 +572,5 @@ module "spoke2_us_vm" {
   }
   metadata = {
     user-data = module.vm_cloud_init.cloud_config
-  }
-}
-
-# ilb4
-
-module "spoke2_us_ilb4" {
-  source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-int?ref=v33.0.0"
-  project_id    = var.project_id_spoke2
-  region        = local.spoke2_us_region
-  name          = "${local.spoke2_prefix}us-ilb4"
-  service_label = "${local.spoke2_prefix}us-ilb4"
-
-  vpc_config = {
-    network    = module.spoke2_vpc.self_link
-    subnetwork = module.spoke2_vpc.subnet_self_links["${local.spoke2_us_region}/us-main"]
-  }
-  group_configs = {
-    main = {
-      zone        = "${local.spoke2_us_region}-b"
-      instances   = [module.spoke2_us_vm.self_link, ]
-      named_ports = { (local.svc_web.name) = local.svc_web.port }
-    }
-  }
-  forwarding_rules_config = {
-    fr-ipv4 = {
-      address    = local.spoke2_us_ilb4_addr
-      protocol   = "L3_DEFAULT"
-      ip_version = "IPV4"
-    }
-    fr-ipv6 = {
-      protocol   = "L3_DEFAULT"
-      ip_version = "IPV6"
-    }
-  }
-  backends = [{
-    failover = false
-    group    = module.spoke2_us_ilb4.groups.main.self_link
-  }]
-  health_check_config = {
-    enable_logging = true
-    http = {
-      host               = local.uhc_config.host
-      port               = local.svc_web.port
-      port_specification = "USE_FIXED_PORT"
-      request_path       = "/${local.uhc_config.request_path}"
-      response           = local.uhc_config.response
-    }
-  }
-}
-
-####################################################
-# ilb7: spoke2-us
-####################################################
-
-# instance
-
-module "spoke2_us_vm7" {
-  source     = "../../modules/compute-vm"
-  project_id = var.project_id_spoke2
-  name       = "${local.spoke2_prefix}us-vm7"
-  zone       = "${local.spoke2_us_region}-b"
-  tags       = [local.tag_ssh, local.tag_gfe]
-  tag_bindings_firewall = {
-    (local.spoke2_vpc_tags_gfe.parent) = local.spoke2_vpc_tags_gfe.id
-  }
-  network_interfaces = [{
-    stack_type = local.enable_ipv6 ? "IPV4_IPV6" : "IPV4_ONLY"
-    network    = module.spoke2_vpc.self_link
-    subnetwork = module.spoke2_vpc.subnet_self_links["${local.spoke2_us_region}/us-main"]
-  }]
-  service_account = {
-    email  = module.spoke2_sa.email
-    scopes = ["cloud-platform"]
-  }
-  metadata = {
-    user-data = module.vm_cloud_init.cloud_config
-  }
-}
-
-# ilb7
-
-module "spoke2_us_ilb7" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-app-int?ref=v34.1.0"
-  project_id = var.project_id_spoke2
-  name       = "${local.spoke2_prefix}us-ilb7"
-  region     = local.spoke2_us_region
-  address    = local.spoke2_us_ilb7_addr
-
-  vpc_config = {
-    network    = module.spoke2_vpc.self_link
-    subnetwork = module.spoke2_vpc.subnet_self_links["${local.spoke2_us_region}/us-main"]
-  }
-
-  urlmap_config = {
-    default_service = "default"
-    host_rules = [
-      { path_matcher = "main", hosts = [local.spoke2_us_ilb7_fqdn, ] },
-      { path_matcher = "psc-neg", hosts = [local.spoke2_us_psc_https_ctrl_run_dns, ] }
-    ]
-    path_matchers = {
-      main    = { default_service = "default" }
-      psc-neg = { default_service = "psc-neg" }
-    }
-  }
-  backend_service_configs = {
-    default = {
-      port_name     = local.svc_web.name
-      health_checks = ["custom-http"]
-      backends = [
-        {
-          group          = "main"
-          balancing_mode = "RATE"
-          max_rate       = { per_instance = 100, capacity_scaler = 1.0 }
-        },
-      ]
-    }
-    psc-neg = {
-      health_checks = []
-      backends = [
-        {
-          group          = "psc-neg"
-          balancing_mode = "UTILIZATION"
-          max_rate       = { capacity_scaler = 1.0 }
-        }
-      ]
-    }
-  }
-  group_configs = {
-    main = {
-      zone        = "${local.spoke2_us_region}-b"
-      instances   = [module.spoke2_us_vm7.self_link, ]
-      named_ports = { (local.svc_web.name) = local.svc_web.port }
-    }
-  }
-  neg_configs = {
-    psc-neg = {
-      psc = {
-        region         = local.spoke2_us_region
-        target_service = local.spoke2_us_psc_https_ctrl_run_dns
-      }
-    }
-  }
-  health_check_configs = {
-    custom-http = {
-      enable_logging = true
-      http = {
-        host               = local.uhc_config.host
-        port_specification = "USE_SERVING_PORT"
-        request_path       = "/${local.uhc_config.request_path}"
-        response           = local.uhc_config.response
-      }
-    }
   }
 }

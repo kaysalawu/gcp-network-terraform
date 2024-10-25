@@ -22,7 +22,7 @@ locals {
 #---------------------------------
 
 module "hub_vpc" {
-  # source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc?ref=v33.0.0"
+  # source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc?ref=v34.1.0"
   source     = "../../modules/net-vpc"
   project_id = var.project_id_hub
   name       = "${local.hub_prefix}vpc"
@@ -113,7 +113,7 @@ resource "google_compute_address" "hub_us_main_addresses" {
 #---------------------------------
 
 module "hub_nat_eu" {
-  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v33.0.0"
+  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
   project_id     = var.project_id_hub
   region         = local.hub_eu_region
   name           = "${local.hub_prefix}eu-nat"
@@ -126,7 +126,7 @@ module "hub_nat_eu" {
 }
 
 module "hub_nat_us" {
-  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v33.0.0"
+  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
   project_id     = var.project_id_hub
   region         = local.hub_us_region
   name           = "${local.hub_prefix}us-nat"
@@ -144,7 +144,7 @@ module "hub_nat_us" {
 # policy
 
 module "hub_vpc_fw_policy" {
-  source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v33.0.0"
+  # source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v34.1.0"
   name      = "${local.hub_prefix}vpc-fw-policy"
   parent_id = var.project_id_hub
   region    = "global"
@@ -381,7 +381,7 @@ locals {
 # policy
 
 module "hub_dns_response_policy" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns-response-policy?ref=v33.0.0"
+  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns-response-policy?ref=v34.1.0"
   project_id = var.project_id_hub
   name       = "${local.hub_prefix}drp"
   rules      = local.hub_dns_rp_rules
@@ -396,7 +396,7 @@ module "hub_dns_response_policy" {
 # psc zone
 
 module "hub_dns_psc" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
+  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
   project_id  = var.project_id_hub
   name        = "${local.hub_prefix}psc"
   description = "psc"
@@ -417,7 +417,7 @@ module "hub_dns_psc" {
 # onprem zone
 
 module "hub_dns_forward_to_onprem" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
+  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
   project_id  = var.project_id_hub
   name        = "${local.hub_prefix}to-onprem"
   description = "local data"
@@ -436,7 +436,7 @@ module "hub_dns_forward_to_onprem" {
 # local zone
 
 module "hub_dns_private_zone" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
+  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
   project_id  = var.project_id_hub
   name        = "${local.hub_prefix}private"
   description = "local data"
@@ -632,7 +632,7 @@ module "hub_us_vm" {
 # ilb4
 
 module "hub_us_ilb4" {
-  source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-int?ref=v33.0.0"
+  source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-int?ref=v34.1.0"
   project_id    = var.project_id_hub
   region        = local.hub_us_region
   name          = "${local.hub_prefix}us-ilb4"
