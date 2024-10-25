@@ -1,4 +1,8 @@
 
+locals {
+  spoke1_eu_ilb_ipv6 = split("/", module.spoke1_eu_ilb.forwarding_rule_addresses["fr-ipv6"])[0]
+}
+
 ####################################################
 # internal passthrough lb: eu
 ####################################################
@@ -99,6 +103,9 @@ module "spoke1_eu_nlb" {
   region     = local.spoke1_eu_region
   name       = "${local.spoke1_prefix}eu-nlb"
 
+  address = local.spoke1_eu_nlb_addr
+  # allow_global_access = true
+
   vpc_config = {
     network    = module.spoke1_vpc.self_link
     subnetwork = module.spoke1_vpc.subnet_self_links["${local.spoke1_eu_region}/eu-main"]
@@ -124,6 +131,10 @@ module "spoke1_eu_nlb" {
       request_path       = "/${local.uhc_config.request_path}"
       response           = local.uhc_config.response
     }
+  }
+  service_attachment = {
+    nat_subnets          = [module.spoke1_vpc.subnets_psc["${local.spoke1_eu_region}/eu-psc-nlb-nat"].self_link]
+    automatic_connection = true
   }
 }
 
@@ -233,5 +244,24 @@ module "spoke1_eu_alb" {
   service_attachment = {
     nat_subnets          = [module.spoke1_vpc.subnets_psc["${local.spoke1_eu_region}/eu-psc-alb-nat"].self_link]
     automatic_connection = true
+  }
+}
+
+####################################################
+# dns recordsets
+####################################################
+
+module "spoke1_dns_private_zone_records" {
+  source      = "../../modules/dns-record"
+  project_id  = var.project_id_spoke1
+  name        = "${local.spoke1_prefix}private"
+  description = "spoke1 network attached"
+
+  recordsets = {
+    "A ${local.spoke1_eu_ilb_dns_prefix}" = { ttl = 300, records = [local.spoke1_eu_ilb_addr] },
+    "A ${local.spoke1_eu_nlb_dns_prefix}" = { ttl = 300, records = [local.spoke1_eu_nlb_addr] },
+    "A ${local.spoke1_eu_alb_dns_prefix}" = { ttl = 300, records = [local.spoke1_eu_alb_addr] },
+
+    "AAAA ${local.spoke1_eu_ilb_dns_prefix}" = { ttl = 300, records = [local.spoke1_eu_ilb_ipv6] },
   }
 }

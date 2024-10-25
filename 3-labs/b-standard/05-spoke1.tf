@@ -1,7 +1,6 @@
 
 locals {
   spoke1_eu_vm_main_ipv6 = module.spoke1_eu_vm.internal_ipv6
-  spoke1_eu_ilb_ipv6     = split("/", module.spoke1_eu_ilb.forwarding_rule_addresses["fr-ipv6"])[0]
 }
 
 ####################################################
@@ -95,13 +94,8 @@ module "spoke1_dns_private_zone" {
     }
   }
   recordsets = {
-    "A ${local.spoke1_eu_vm_dns_prefix}"  = { ttl = 300, records = [local.spoke1_eu_vm_addr] },
-    "A ${local.spoke1_eu_ilb_dns_prefix}" = { ttl = 300, records = [local.spoke1_eu_ilb_addr] },
-    "A ${local.spoke1_eu_nlb_dns_prefix}" = { ttl = 300, records = [local.spoke1_eu_nlb_addr] },
-    "A ${local.spoke1_eu_alb_dns_prefix}" = { ttl = 300, records = [local.spoke1_eu_alb_addr] },
-
-    "AAAA ${local.spoke1_eu_vm_dns_prefix}"  = { ttl = 300, records = [local.spoke1_eu_vm_main_ipv6] },
-    "AAAA ${local.spoke1_eu_ilb_dns_prefix}" = { ttl = 300, records = [local.spoke1_eu_ilb_ipv6] },
+    "A ${local.spoke1_eu_vm_dns_prefix}"    = { ttl = 300, records = [local.spoke1_eu_vm_addr] },
+    "AAAA ${local.spoke1_eu_vm_dns_prefix}" = { ttl = 300, records = [local.spoke1_eu_vm_main_ipv6] },
   }
 }
 

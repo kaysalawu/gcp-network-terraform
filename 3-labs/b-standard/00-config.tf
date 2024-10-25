@@ -211,20 +211,18 @@ locals {
   hub_eu_psa_range1       = "10.1.120.0/22"
   hub_eu_psa_range2       = "10.1.124.0/22"
 
-  hub_eu_main_default_gw      = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 1)
-  hub_eu_vm_addr              = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 9)
-  hub_eu_router_addr          = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 10)
-  hub_eu_ncc_cr_addr0         = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 20)
-  hub_eu_ncc_cr_addr1         = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 30)
-  hub_eu_ns_addr              = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 40)
-  hub_eu_nva_vm_addr          = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 50)
-  hub_eu_nva_ilb_addr         = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 60)
-  hub_eu_ilb_addr             = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 70)
-  hub_eu_alb_addr             = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 80)
-  hub_eu_hybrid_hc_proxy_addr = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 90)
-  hub_eu_ids_server_addr      = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 91)
-  hub_eu_ids_attack_addr      = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 92)
-  hub_eu_router_lo_addr       = "11.11.11.11"
+  hub_eu_main_default_gw = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 1)
+  hub_eu_vm_addr         = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 9)
+  hub_eu_router_addr     = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 10)
+  hub_eu_ncc_cr_addr0    = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 20)
+  hub_eu_ncc_cr_addr1    = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 30)
+  hub_eu_ns_addr         = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 40)
+  hub_eu_nva_vm_addr     = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 50)
+  hub_eu_nva_ilb_addr    = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 60)
+  hub_eu_ilb_addr        = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 70)
+  hub_eu_nlb_addr        = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 80)
+  hub_eu_alb_addr        = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 90)
+  hub_eu_router_lo_addr  = "11.11.11.11"
 
   hub_eu_main_addresses = {
     "${local.hub_prefix}eu-ncc-cr-addr0" = { ipv4 = local.hub_eu_ncc_cr_addr0 }
@@ -262,6 +260,7 @@ locals {
   hub_us_nva_ilb_addr    = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 60)
   hub_us_ilb_addr        = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 70)
   hub_us_alb_addr        = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 80)
+  hub_us_nlb_addr        = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 90)
   hub_us_router_lo_addr  = "22.22.22.22"
 
   # psc/api
@@ -296,16 +295,20 @@ locals {
 
   hub_eu_vm_dns_prefix  = "vm.eu"
   hub_eu_ilb_dns_prefix = "ilb.eu"
+  hub_eu_nlb_dns_prefix = "nlb.eu"
   hub_eu_alb_dns_prefix = "alb.eu"
   hub_eu_vm_fqdn        = "${local.hub_eu_vm_dns_prefix}.${local.hub_dns_zone}"
   hub_eu_ilb_fqdn       = "${local.hub_eu_ilb_dns_prefix}.${local.hub_dns_zone}"
+  hub_eu_nlb_fqdn       = "${local.hub_eu_nlb_dns_prefix}.${local.hub_dns_zone}"
   hub_eu_alb_fqdn       = "${local.hub_eu_alb_dns_prefix}.${local.hub_dns_zone}"
 
   hub_us_vm_dns_prefix  = "vm.us"
   hub_us_ilb_dns_prefix = "ilb.us"
+  hub_us_nlb_dns_prefix = "nlb.us"
   hub_us_alb_dns_prefix = "alb.us"
   hub_us_vm_fqdn        = "${local.hub_us_vm_dns_prefix}.${local.hub_dns_zone}"
   hub_us_ilb_fqdn       = "${local.hub_us_ilb_dns_prefix}.${local.hub_dns_zone}"
+  hub_us_nlb_fqdn       = "${local.hub_us_nlb_dns_prefix}.${local.hub_dns_zone}"
   hub_us_alb_fqdn       = "${local.hub_us_alb_dns_prefix}.${local.hub_dns_zone}"
 
   # td

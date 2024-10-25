@@ -1,4 +1,11 @@
 
+locals {
+  hub_eu_alb_main_ipv6 = module.hub_eu_alb_vm.internal_ipv6
+  hub_us_alb_main_ipv6 = module.hub_us_alb_vm.internal_ipv6
+  hub_eu_ilb_ipv6      = split("/", module.hub_eu_ilb.forwarding_rule_addresses["fr-ipv6"])[0]
+  hub_us_ilb_ipv6      = split("/", module.hub_us_ilb.forwarding_rule_addresses["fr-ipv6"])[0]
+}
+
 ####################################################
 # internal passthrough lb: eu
 ####################################################
@@ -65,32 +72,6 @@ module "hub_eu_ilb" {
 ####################################################
 # internal passthrough lb: hub-us
 ####################################################
-
-# instance
-
-module "hub_us_vm" {
-  source     = "../../modules/compute-vm"
-  project_id = var.project_id_hub
-  name       = "${local.hub_prefix}us-vm"
-  zone       = "${local.hub_us_region}-b"
-  tags       = [local.tag_ssh, local.tag_gfe]
-  tag_bindings_firewall = {
-    (local.hub_vpc_tags_gfe.parent) = local.hub_vpc_tags_gfe.id
-  }
-  network_interfaces = [{
-    stack_type = local.enable_ipv6 ? "IPV4_IPV6" : "IPV4_ONLY"
-    network    = module.hub_vpc.self_link
-    subnetwork = module.hub_vpc.subnet_self_links["${local.hub_us_region}/us-main"]
-    addresses  = { internal = local.hub_us_vm_addr }
-  }]
-  service_account = {
-    email  = module.hub_sa.email
-    scopes = ["cloud-platform"]
-  }
-  metadata = {
-    user-data = module.vm_cloud_init.cloud_config
-  }
-}
 
 # ilb
 
@@ -358,5 +339,79 @@ module "hub_us_alb" {
         response           = local.uhc_config.response
       }
     }
+  }
+}
+
+####################################################
+# dns recordsets
+####################################################
+
+
+module "hub_dns_private_zone_records" {
+  source      = "../../modules/dns-record"
+  project_id  = var.project_id_hub
+  name        = "${local.hub_prefix}private"
+  description = "local data"
+  recordsets = {
+    "A ${local.hub_eu_ilb_dns_prefix}" = { ttl = 300, records = [local.hub_eu_ilb_addr, ] },
+    "A ${local.hub_eu_alb_dns_prefix}" = { ttl = 300, records = [local.hub_eu_alb_addr, ] },
+    "A ${local.hub_us_ilb_dns_prefix}" = { ttl = 300, records = [local.hub_us_ilb_addr, ] },
+    "A ${local.hub_us_alb_dns_prefix}" = { ttl = 300, records = [local.hub_us_alb_addr, ] },
+
+    "AAAA ${local.hub_eu_ilb_dns_prefix}" = { ttl = 300, records = [local.hub_eu_ilb_ipv6, ] },
+    "AAAA ${local.hub_us_ilb_dns_prefix}" = { ttl = 300, records = [local.hub_us_ilb_ipv6, ] },
+
+    "A ${local.hub_geo_ilb_prefix}" = {
+      geo_routing = [
+        { location = local.hub_eu_region,
+          health_checked_targets = [{
+            load_balancer_type = "regionalL4ilb"
+            ip_address         = module.hub_eu_ilb.forwarding_rule_addresses["fr-ipv4"]
+            port               = local.svc_web.port
+            ip_protocol        = "tcp"
+            network_url        = module.hub_vpc.self_link
+            project            = var.project_id_hub
+            region             = local.hub_eu_region
+          }]
+        },
+        { location = local.hub_us_region,
+          health_checked_targets = [{
+            load_balancer_type = "regionalL4ilb"
+            ip_address         = module.hub_us_ilb.forwarding_rule_addresses["fr-ipv4"]
+            port               = local.svc_web.port
+            ip_protocol        = "tcp"
+            network_url        = module.hub_vpc.self_link
+            project            = var.project_id_hub
+            region             = local.hub_us_region
+          }]
+        }
+      ]
+    }
+    # "AAAA ${local.hub_geo_ilb_prefix}" = {
+    #   geo_routing = [
+    #     { location = local.hub_eu_region,
+    #       health_checked_targets = [{
+    #         load_balancer_type = "regionalL4ilb"
+    #         ip_address         = local.hub_eu_ilb_ipv6
+    #         port               = local.svc_web.port
+    #         ip_protocol        = "tcp"
+    #         network_url        = module.hub_vpc.self_link
+    #         project            = var.project_id_hub
+    #         region             = local.hub_eu_region
+    #       }]
+    #     },
+    #     { location = local.hub_us_region,
+    #       health_checked_targets = [{
+    #         load_balancer_type = "regionalL4ilb"
+    #         ip_address         = local.hub_us_ilb_ipv6
+    #         port               = local.svc_web.port
+    #         ip_protocol        = "tcp"
+    #         network_url        = module.hub_vpc.self_link
+    #         project            = var.project_id_hub
+    #         region             = local.hub_us_region
+    #       }]
+    #     }
+    #   ]
+    # }
   }
 }

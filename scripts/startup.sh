@@ -126,8 +126,10 @@ echo -e "\n=============================="
 echo -e " ping dns ipv6 ..."
 echo "=============================="
 %{ for target in TARGETS ~}
+%{~ if try(target.ipv6, true) ~}
 %{~ if try(target.ping, false) ~}
 echo "${target.host} - $(timeout 3 dig AAAA +short ${target.host} | tail -n1) -$(timeout 3 ping -6 -qc2 -W1 ${target.host} 2>&1 | awk -F'/' 'END{ print (/^rtt/? "OK "$5" ms":"NA") }')"
+%{ endif ~}
 %{ endif ~}
 %{ endfor ~}
 EOF
@@ -140,8 +142,10 @@ echo -e "\n=============================="
 echo -e " curl dns ipv6 ..."
 echo "=============================="
 %{ for target in TARGETS ~}
+%{~ if try(target.ipv6, true) ~}
 %{~ if try(target.curl, true) ~}
 echo  "$(timeout 3 curl -6 -kL --max-time 3.0 -H 'Cache-Control: no-cache' -w "%%{http_code} (%%{time_total}s) - %%{remote_ip}" -s -o /dev/null ${target.host}) - ${target.host}"
+%{ endif ~}
 %{ endif ~}
 %{ endfor ~}
 EOF
@@ -154,10 +158,12 @@ echo -e "\n=============================="
 echo -e " trace ipv6 ..."
 echo "=============================="
 %{ for target in TARGETS ~}
+%{~ if try(target.ipv6, true) ~}
 %{~ if try(target.ping, false) ~}
 echo -e "\n${target.name}"
 echo -e "-------------------------------------"
 timeout 9 tracepath -6 ${target.host}
+%{ endif ~}
 %{ endif ~}
 %{ endfor ~}
 EOF
