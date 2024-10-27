@@ -33,15 +33,15 @@ module "hub_vpc" {
     enable_ula_internal = true
   }
 
-  psa_configs = [{
-    ranges = {
-      "hub-eu-psa-range1" = local.hub_eu_psa_range1
-      "hub-eu-psa-range2" = local.hub_eu_psa_range2
-    }
-    export_routes  = true
-    import_routes  = true
-    peered_domains = ["gcp.example.com."]
-  }]
+  # psa_configs = [{
+  #   ranges = {
+  #     "hub-eu-psa-range1" = local.hub_eu_psa_range1
+  #     "hub-eu-psa-range2" = local.hub_eu_psa_range2
+  #   }
+  #   export_routes  = true
+  #   import_routes  = true
+  #   peered_domains = ["gcp.example.com."]
+  # }]
 }
 
 ####################################################

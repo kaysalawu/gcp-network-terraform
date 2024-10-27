@@ -187,8 +187,8 @@ locals {
     eu-psc-ilb-nat6 = { region = local.hub_eu_region, ip_cidr_range = "10.1.15.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
     eu-psc-nlb-nat  = { region = local.hub_eu_region, ip_cidr_range = "10.1.16.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
     eu-psc-nlb-nat6 = { region = local.hub_eu_region, ip_cidr_range = "10.1.17.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
-    eu-psc-ilb-nat  = { region = local.hub_eu_region, ip_cidr_range = "10.1.18.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
-    eu-psc-ilb-nat6 = { region = local.hub_eu_region, ip_cidr_range = "10.1.19.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    eu-psc-alb-nat  = { region = local.hub_eu_region, ip_cidr_range = "10.1.18.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    eu-psc-alb-nat6 = { region = local.hub_eu_region, ip_cidr_range = "10.1.19.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
   }
   hub_subnets_us = {
     us-main         = { region = local.hub_us_region, ip_cidr_range = "10.1.21.0/24", ipv6 = {}, enable_private_access = true }
@@ -198,8 +198,8 @@ locals {
     us-psc-ilb-nat6 = { region = local.hub_us_region, ip_cidr_range = "10.1.25.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
     us-psc-nlb-nat  = { region = local.hub_us_region, ip_cidr_range = "10.1.26.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
     us-psc-nlb-nat6 = { region = local.hub_us_region, ip_cidr_range = "10.1.27.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
-    us-psc-ilb-nat  = { region = local.hub_us_region, ip_cidr_range = "10.1.28.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
-    us-psc-ilb-nat6 = { region = local.hub_us_region, ip_cidr_range = "10.1.29.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    us-psc-alb-nat  = { region = local.hub_us_region, ip_cidr_range = "10.1.28.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    us-psc-alb-nat6 = { region = local.hub_us_region, ip_cidr_range = "10.1.29.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
   }
 
   # external

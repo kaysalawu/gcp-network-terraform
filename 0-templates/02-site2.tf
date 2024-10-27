@@ -6,11 +6,13 @@ locals {
   site2_vm_main_ipv6  = module.site2_vm.internal_ipv6
 }
 
+####################################################
 # network
-#---------------------------------
+####################################################
 
 module "site2_vpc" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc?ref=v34.1.0"
+  # source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc?ref=v34.1.0"
+  source     = "../../modules/net-vpc"
   project_id = var.project_id_onprem
   name       = "${local.site2_prefix}vpc"
   subnets    = local.site2_subnets_list
@@ -20,8 +22,9 @@ module "site2_vpc" {
   }
 }
 
+####################################################
 # nat
-#---------------------------------
+####################################################
 
 module "site2_nat" {
   source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
@@ -42,8 +45,9 @@ module "site2_nat" {
   }
 }
 
+####################################################
 # firewall
-#---------------------------------
+####################################################
 
 # policy
 
@@ -158,8 +162,9 @@ module "site2_vpc_firewall" {
   }
 }
 
+####################################################
 # custom dns
-#---------------------------------
+####################################################
 
 # unbound startup
 
@@ -194,8 +199,8 @@ locals {
       ]
     },
     # authoritative hosts
-    { hosts = [local.hub_eu_psc_https_ctrl_run_dns], class = "IN", ttl = "3600", type = "A", rdata = local.hub_eu_ilb7_addr },
-    { hosts = [local.hub_us_psc_https_ctrl_run_dns], class = "IN", ttl = "3600", type = "A", rdata = local.hub_us_ilb7_addr },
+    { hosts = [local.hub_eu_psc_https_ctrl_run_dns], class = "IN", ttl = "3600", type = "A", rdata = local.hub_eu_alb_addr },
+    { hosts = [local.hub_us_psc_https_ctrl_run_dns], class = "IN", ttl = "3600", type = "A", rdata = local.hub_us_alb_addr },
   ]
   onprem_forward_zones_site2 = [
     { zone = "${local.cloud_domain}.", targets = [local.hub_us_ns_addr, ] },
@@ -228,8 +233,9 @@ module "site2_dns" {
   metadata_startup_script = local.site2_unbound_startup
 }
 
+####################################################
 # cloud dns
-#---------------------------------
+####################################################
 
 resource "time_sleep" "site2_dns_forward_to_dns_wait_120s" {
   create_duration = "120s"
@@ -251,8 +257,9 @@ module "site2_dns_forward_to_dns" {
   depends_on = [time_sleep.site2_dns_forward_to_dns_wait_120s]
 }
 
+####################################################
 # workload
-#---------------------------------
+####################################################
 
 # app
 

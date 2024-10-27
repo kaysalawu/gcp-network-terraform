@@ -342,8 +342,9 @@ resource "google_compute_address" "spoke2_eu_psc_spoke1_eu_ilb_fr_ipv6" {
 
 module "spoke2_dns_private_zone_records" {
   source      = "../../modules/dns-record"
+  depends_on  = [module.spoke2_dns_private_zone, ]
   project_id  = var.project_id_spoke2
-  name        = "${local.spoke2_prefix}private"
+  name        = module.spoke2_dns_private_zone.name
   description = "spoke2 network attached"
 
   recordsets = {

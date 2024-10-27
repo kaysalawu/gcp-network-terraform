@@ -36,15 +36,15 @@ module "spoke1_vpc" {
     var.project_id_spoke1
   ]
 
-  psa_configs = [{
-    ranges = {
-      "spoke1-eu-psa-range1" = local.spoke1_eu_psa_range1
-      "spoke1-eu-psa-range2" = local.spoke1_eu_psa_range2
-    }
-    export_routes  = true
-    import_routes  = true
-    peered_domains = ["gcp.example.com."]
-  }]
+  # psa_configs = [{
+  #   ranges = {
+  #     "spoke1-eu-psa-range1" = local.spoke1_eu_psa_range1
+  #     "spoke1-eu-psa-range2" = local.spoke1_eu_psa_range2
+  #   }
+  #   export_routes  = true
+  #   import_routes  = true
+  #   peered_domains = ["gcp.example.com."]
+  # }]
 }
 
 ####################################################

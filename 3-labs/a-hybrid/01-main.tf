@@ -36,8 +36,9 @@ resource "google_artifact_registry_repository" "us_repo" {
   format        = "DOCKER"
 }
 
+####################################################
 # vm startup scripts
-#----------------------------
+####################################################
 
 locals {
   init_dir = "/var/lib/gcp"
@@ -47,25 +48,27 @@ locals {
     health_check_response = local.uhc_config.response
   }
   vm_script_targets_region1 = [
-    { name = "site1-vm      ", host = local.site1_vm_fqdn, ipv4 = local.site1_vm_addr, probe = true },
-    { name = "hub-eu-vm     ", host = local.hub_eu_vm_fqdn, ipv4 = local.hub_eu_vm_addr, probe = true },
-    { name = "hub-eu-ilb4   ", host = local.hub_eu_ilb4_fqdn, ipv4 = local.hub_eu_ilb4_addr, probe = true },
-    { name = "hub-eu-ilb7   ", host = local.hub_eu_ilb7_fqdn, ipv4 = local.hub_eu_ilb7_addr, probe = true },
+    { name = "site1-vm      ", host = local.site1_vm_fqdn, ipv4 = local.site1_vm_addr, probe = true, ping = true },
+    { name = "hub-eu-vm     ", host = local.hub_eu_vm_fqdn, ipv4 = local.hub_eu_vm_addr, probe = true, ping = true },
+    { name = "hub-eu-ilb   ", host = local.hub_eu_ilb_fqdn, ipv4 = local.hub_eu_ilb_addr, },
+    { name = "hub-eu-nlb   ", host = local.hub_eu_nlb_fqdn, ipv4 = local.hub_eu_nlb_addr, ipv6 = false },
+    { name = "hub-eu-alb   ", host = local.hub_eu_alb_fqdn, ipv4 = local.hub_eu_alb_addr, ipv6 = false },
   ]
   vm_script_targets_region2 = [
-    { name = "site2-vm      ", host = local.site2_vm_fqdn, ipv4 = local.site2_vm_addr, probe = true },
-    { name = "hub-us-vm     ", host = local.hub_us_vm_fqdn, ipv4 = local.hub_us_vm_addr, probe = true },
-    { name = "hub-us-ilb4   ", host = local.hub_us_ilb4_fqdn, ipv4 = local.hub_us_ilb4_addr, probe = true },
-    { name = "hub-us-ilb7   ", host = local.hub_us_ilb7_fqdn, ipv4 = local.hub_us_ilb7_addr, probe = true },
+    { name = "site2-vm      ", host = local.site2_vm_fqdn, ipv4 = local.site2_vm_addr, probe = true, ping = true },
+    { name = "hub-us-vm     ", host = local.hub_us_vm_fqdn, ipv4 = local.hub_us_vm_addr, probe = true, ping = true },
+    { name = "hub-us-ilb   ", host = local.hub_us_ilb_fqdn, ipv4 = local.hub_us_ilb_addr },
+    { name = "hub-us-nlb   ", host = local.hub_us_nlb_fqdn, ipv4 = local.hub_us_nlb_addr, ipv6 = false },
+    { name = "hub-us-alb   ", host = local.hub_us_alb_fqdn, ipv4 = local.hub_us_alb_addr, ipv6 = false },
   ]
   vm_script_targets_misc = [
-    { name = "hub-geo-ilb4", host = local.hub_geo_ilb4_fqdn, probe = false },
-    { name = "internet", host = "icanhazip.com", ipv4 = "icanhazip.com", ipv6 = "icanhazip.com", probe = true },
-    { name = "www", host = "www.googleapis.com", ipv4 = "www.googleapis.com", ipv6 = "www.googleapis.com", path = "/generate_204", probe = true, ping = false },
-    { name = "storage", host = "storage.googleapis.com", ipv4 = "storage.googleapis.com", ipv6 = "storage.googleapis.com", path = "/generate_204", probe = true, ping = false },
-    { name = "hub-eu-psc-https", host = local.hub_eu_psc_https_ctrl_run_dns, path = "/generate_204", probe = false, ping = false },
-    { name = "hub-us-psc-https", host = local.hub_us_psc_https_ctrl_run_dns, path = "/generate_204", probe = false, ping = false },
-    { name = "hub-eu-run", host = local.hub_eu_run_httpbin_host, probe = true, path = "/generate_204", ping = false },
+    { name = "hub-geo-ilb", host = local.hub_geo_ilb_fqdn },
+    { name = "internet", host = "icanhazip.com", ipv4 = "icanhazip.com", probe = true },
+    { name = "www", host = "www.googleapis.com", ipv4 = "www.googleapis.com", path = "/generate_204", probe = true },
+    { name = "storage", host = "storage.googleapis.com", ipv4 = "storage.googleapis.com", path = "/generate_204", probe = true },
+    { name = "hub-eu-psc-https", host = local.hub_eu_psc_https_ctrl_run_dns, path = "/generate_204" },
+    { name = "hub-us-psc-https", host = local.hub_us_psc_https_ctrl_run_dns, path = "/generate_204" },
+    { name = "hub-eu-run", host = local.hub_eu_run_httpbin_host, probe = true, path = "/generate_204" },
   ]
   vm_script_targets = concat(
     local.vm_script_targets_region1,

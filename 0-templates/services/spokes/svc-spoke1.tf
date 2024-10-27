@@ -253,8 +253,9 @@ module "spoke1_eu_alb" {
 
 module "spoke1_dns_private_zone_records" {
   source      = "../../modules/dns-record"
+  depends_on  = [module.spoke1_dns_private_zone, ]
   project_id  = var.project_id_spoke1
-  name        = "${local.spoke1_prefix}private"
+  name        = module.spoke1_dns_private_zone.name
   description = "spoke1 network attached"
 
   recordsets = {

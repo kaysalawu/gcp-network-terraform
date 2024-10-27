@@ -33,15 +33,15 @@ module "spoke2_vpc" {
     enable_ula_internal = true
   }
 
-  psa_configs = [{
-    ranges = {
-      "spoke2-us-psa-range1" = local.spoke2_us_psa_range1
-      "spoke2-us-psa-range2" = local.spoke2_us_psa_range2
-    }
-    export_routes  = true
-    import_routes  = true
-    peered_domains = ["gcp.example.com."]
-  }]
+  # psa_configs = [{
+  #   ranges = {
+  #     "spoke2-us-psa-range1" = local.spoke2_us_psa_range1
+  #     "spoke2-us-psa-range2" = local.spoke2_us_psa_range2
+  #   }
+  #   export_routes  = true
+  #   import_routes  = true
+  #   peered_domains = ["gcp.example.com."]
+  # }]
 }
 
 ####################################################
