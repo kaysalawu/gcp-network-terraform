@@ -2,3 +2,4 @@
 ../../0-templates/02-site1.tf
 ../../0-templates/02-site2.tf
 ../../0-templates/03-hub.tf
+../../0-templates/services/hub/svc-hub.tf

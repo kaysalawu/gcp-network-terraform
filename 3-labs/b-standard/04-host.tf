@@ -8,13 +8,17 @@ locals {
   spoke1_vpc_tags_dns = google_tags_tag_value.spoke1_vpc_tags["${local.spoke1_prefix}vpc-dns"]
   spoke1_vpc_tags_gfe = google_tags_tag_value.spoke1_vpc_tags["${local.spoke1_prefix}vpc-gfe"]
   spoke1_vpc_tags_nva = google_tags_tag_value.spoke1_vpc_tags["${local.spoke1_prefix}vpc-nva"]
+
+  spoke1_vpc_ipv6_cidr = module.spoke1_vpc.internal_ipv6_range
 }
 
+####################################################
 # network
-#---------------------------------
+####################################################
 
 module "spoke1_vpc" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc?ref=v33.0.0"
+  # source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc?ref=v34.1.0"
+  source     = "../../modules/net-vpc"
   project_id = var.project_id_host
   name       = "${local.spoke1_prefix}vpc"
 
@@ -23,24 +27,29 @@ module "spoke1_vpc" {
   subnets_proxy_only  = local.spoke1_subnets_proxy_only_list
   subnets_psc         = local.spoke1_subnets_psc_list
 
+  ipv6_config = {
+    enable_ula_internal = true
+  }
+
   shared_vpc_host = true
   shared_vpc_service_projects = [
     var.project_id_spoke1
   ]
 
-  psa_configs = [{
-    ranges = {
-      "spoke1-eu-psa-range1" = local.spoke1_eu_psa_range1
-      "spoke1-eu-psa-range2" = local.spoke1_eu_psa_range2
-    }
-    export_routes  = true
-    import_routes  = true
-    peered_domains = ["gcp.example.com."]
-  }]
+  # psa_configs = [{
+  #   ranges = {
+  #     "spoke1-eu-psa-range1" = local.spoke1_eu_psa_range1
+  #     "spoke1-eu-psa-range2" = local.spoke1_eu_psa_range2
+  #   }
+  #   export_routes  = true
+  #   import_routes  = true
+  #   peered_domains = ["gcp.example.com."]
+  # }]
 }
 
+####################################################
 # secure tags
-#---------------------------------
+####################################################
 
 # keys
 
@@ -64,8 +73,9 @@ resource "google_tags_tag_value" "spoke1_vpc_tags" {
   description = each.value.description
 }
 
+####################################################
 # addresses
-#---------------------------------
+####################################################
 
 resource "google_compute_address" "spoke1_eu_main_addresses" {
   for_each     = local.spoke1_eu_main_addresses
@@ -87,9 +97,9 @@ resource "google_compute_address" "spoke1_us_main_addresses" {
   region       = local.spoke1_us_region
 }
 
-
+####################################################
 # service networking connection
-#---------------------------------
+####################################################
 
 # resource "google_service_networking_connection" "spoke1_eu_psa_ranges" {
 #   provider = google-beta
@@ -102,11 +112,12 @@ resource "google_compute_address" "spoke1_us_main_addresses" {
 #   ]
 # }
 
+####################################################
 # nat
-#---------------------------------
+####################################################
 
 module "spoke1_nat_eu" {
-  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v33.0.0"
+  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
   project_id     = var.project_id_host
   region         = local.spoke1_eu_region
   name           = "${local.spoke1_prefix}eu-nat"
@@ -119,7 +130,7 @@ module "spoke1_nat_eu" {
 }
 
 module "spoke1_nat_us" {
-  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v33.0.0"
+  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
   project_id     = var.project_id_host
   region         = local.spoke1_us_region
   name           = "${local.spoke1_prefix}us-nat"
@@ -131,13 +142,14 @@ module "spoke1_nat_us" {
   }
 }
 
+####################################################
 # firewall
-#---------------------------------
+####################################################
 
 # policy
 
 module "spoke1_vpc_fw_policy" {
-  source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v33.0.0"
+  source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v34.1.0"
   name      = "${local.spoke1_prefix}vpc-fw-policy"
   parent_id = var.project_id_host
   region    = "global"
@@ -145,6 +157,7 @@ module "spoke1_vpc_fw_policy" {
     spoke1-vpc = module.spoke1_vpc.self_link
   }
   egress_rules = {
+    # ipv4
     smtp = {
       priority = 900
       match = {
@@ -152,8 +165,17 @@ module "spoke1_vpc_fw_policy" {
         layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
       }
     }
+    # ipv6
+    smtp-6 = {
+      priority = 901
+      match = {
+        destination_ranges = ["0::/0"]
+        layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
+      }
+    }
   }
   ingress_rules = {
+    # ipv4
     internal = {
       priority = 1000
       match = {
@@ -205,11 +227,48 @@ module "spoke1_vpc_fw_policy" {
         layer4_configs = [{ protocol = "all", ports = [] }]
       }
     }
+    # ipv6
+    internal-6 = {
+      priority = 1001
+      match = {
+        source_ranges  = local.netblocks_ipv6.internal
+        layer4_configs = [{ protocol = "all" }]
+      }
+    }
+    ssh-6 = {
+      priority       = 1201
+      target_tags    = [local.spoke1_vpc_tags_nva.id, ]
+      enable_logging = true
+      match = {
+        source_ranges  = ["0::/0", ]
+        layer4_configs = [{ protocol = "tcp", ports = ["22"] }]
+      }
+    }
+    vpn-6 = {
+      priority    = 1401
+      target_tags = [local.spoke1_vpc_tags_nva.id, ]
+      match = {
+        source_ranges = ["0::/0", ]
+        layer4_configs = [
+          { protocol = "udp", ports = ["500", "4500", ] },
+          { protocol = "esp", ports = [] }
+        ]
+      }
+    }
+    gfe-6 = {
+      priority    = 1501
+      target_tags = [local.spoke1_vpc_tags_gfe.id, ]
+      match = {
+        source_ranges  = local.netblocks_ipv6.gfe
+        layer4_configs = [{ protocol = "all", ports = [] }]
+      }
+    }
   }
 }
 
+####################################################
 # project constraints
-#---------------------------------
+####################################################
 
 resource "google_project_organization_policy" "spoke1_subnets_for_spoke1_only" {
   project    = var.project_id_spoke1
@@ -221,8 +280,8 @@ resource "google_project_organization_policy" "spoke1_subnets_for_spoke1_only" {
         module.spoke1_vpc.subnet_ids["${local.spoke1_eu_region}/eu-gke"],
         module.spoke1_vpc.subnet_ids["${local.spoke1_us_region}/us-main"],
         module.spoke1_vpc.subnet_ids["${local.spoke1_us_region}/us-gke"],
-        module.spoke1_vpc.subnets_psc["${local.spoke1_eu_region}/eu-psc-nat"].id,
-        module.spoke1_vpc.subnets_psc["${local.spoke1_us_region}/us-psc-nat"].id,
+        module.spoke1_vpc.subnets_psc["${local.spoke1_eu_region}/eu-psc-ilb-nat"].id,
+        module.spoke1_vpc.subnets_psc["${local.spoke1_us_region}/us-psc-ilb-nat"].id,
         module.spoke1_vpc.subnets_proxy_only["${local.spoke1_eu_region}/eu-reg-proxy"].id,
         module.spoke1_vpc.subnets_proxy_only["${local.spoke1_us_region}/us-reg-proxy"].id,
       ]
@@ -231,8 +290,9 @@ resource "google_project_organization_policy" "spoke1_subnets_for_spoke1_only" {
   }
 }
 
-# psc/api
-#---------------------------------
+####################################################
+# psc api
+####################################################
 
 # address
 

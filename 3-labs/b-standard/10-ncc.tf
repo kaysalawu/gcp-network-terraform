@@ -1,6 +1,7 @@
 
+####################################################
 # hub
-#---------------------------------
+####################################################
 
 resource "google_network_connectivity_hub" "ncc_hub" {
   provider    = google-beta
@@ -12,8 +13,9 @@ resource "google_network_connectivity_hub" "ncc_hub" {
   }
 }
 
+####################################################
 # spoke1 (site1 vpn)
-#---------------------------------
+####################################################
 
 resource "google_network_connectivity_spoke" "ncc_spoke1" {
   provider    = google-beta
@@ -31,8 +33,9 @@ resource "google_network_connectivity_spoke" "ncc_spoke1" {
   }
 }
 
+####################################################
 # spoke2 (site2 vpn)
-#---------------------------------
+####################################################
 
 resource "google_network_connectivity_spoke" "ncc_spoke2" {
   provider    = google-beta

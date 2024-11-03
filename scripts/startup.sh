@@ -22,9 +22,11 @@ docker compose version
 # ping-ipv4
 
 cat <<'EOF' >/usr/local/bin/ping-ipv4
-echo -e "\n ping ipv4 ...\n"
+echo -e "\n=============================="
+echo -e " ping ipv4 ..."
+echo "=============================="
 %{ for target in TARGETS ~}
-%{~ if try(target.ping, true) ~}
+%{~ if try(target.ping, false) ~}
 %{~ if try(target.ipv4, "") != "" ~}
 echo "${target.name} - ${target.ipv4} -$(timeout 3 ping -4 -qc2 -W1 ${target.ipv4} 2>&1 | awk -F'/' 'END{ print (/^rtt/? "OK "$5" ms":"NA") }')"
 %{ endif ~}
@@ -36,9 +38,11 @@ chmod a+x /usr/local/bin/ping-ipv4
 # ping-dns4
 
 cat <<'EOF' >/usr/local/bin/ping-dns4
-echo -e "\n ping dns ipv4 ...\n"
+echo -e "\n=============================="
+echo -e " ping dns ipv4 ..."
+echo "=============================="
 %{ for target in TARGETS ~}
-%{~ if try(target.ping, true) ~}
+%{~ if try(target.ping, false) ~}
 echo "${target.host} - $(timeout 3 dig +short ${target.host} | tail -n1) -$(timeout 3 ping -4 -qc2 -W1 ${target.host} 2>&1 | awk -F'/' 'END{ print (/^rtt/? "OK "$5" ms":"NA") }')"
 %{ endif ~}
 %{ endfor ~}
@@ -48,7 +52,9 @@ chmod a+x /usr/local/bin/ping-dns4
 # curl-ipv4
 
 cat <<'EOF' >/usr/local/bin/curl-ipv4
-echo -e "\n curl ipv4 ...\n"
+echo -e "\n=============================="
+echo -e " curl ipv4 ..."
+echo "=============================="
 %{ for target in TARGETS ~}
 %{~ if try(target.curl, true) ~}
 %{~ if try(target.ipv4, "") != "" ~}
@@ -62,7 +68,9 @@ chmod a+x /usr/local/bin/curl-ipv4
 # curl-dns4
 
 cat <<'EOF' >/usr/local/bin/curl-dns4
-echo -e "\n curl dns ipv4 ...\n"
+echo -e "\n=============================="
+echo -e " curl dns ipv4 ..."
+echo "=============================="
 %{ for target in TARGETS ~}
 %{~ if try(target.curl, true) ~}
 echo  "$(timeout 3 curl -4 -kL --max-time 3.0 -H 'Cache-Control: no-cache' -w "%%{http_code} (%%{time_total}s) - %%{remote_ip}" -s -o /dev/null ${target.host}) - ${target.host}"
@@ -74,9 +82,11 @@ chmod a+x /usr/local/bin/curl-dns4
 # trace-ipv4
 
 cat <<'EOF' >/usr/local/bin/trace-ipv4
-echo -e "\n trace ipv4 ...\n"
+echo -e "\n=============================="
+echo -e " trace ipv4 ..."
+echo "=============================="
 %{ for target in TARGETS ~}
-%{~ if try(target.ping, true) ~}
+%{~ if try(target.ping, false) ~}
 %{~ if try(target.ipv4, "") != "" ~}
 echo -e "\n${target.name}"
 echo -e "-------------------------------------"
@@ -90,7 +100,9 @@ chmod a+x /usr/local/bin/trace-ipv4
 # ptr-ipv4
 
 cat <<'EOF' >/usr/local/bin/ptr-ipv4
-echo -e "\n PTR ipv4 ...\n"
+echo -e "\n=============================="
+echo -e " PTR ipv4 ..."
+echo "=============================="
 %{ for target in TARGETS ~}
 %{~ if try(target.ptr, false) ~}
 %{~ if try(target.ipv4, "") != "" ~}
@@ -110,10 +122,14 @@ chmod a+x /usr/local/bin/ptr-ipv4
 # ping-dns6
 
 cat <<'EOF' >/usr/local/bin/ping-dns6
-echo -e "\n ping dns ipv6 ...\n"
+echo -e "\n=============================="
+echo -e " ping dns ipv6 ..."
+echo "=============================="
 %{ for target in TARGETS ~}
-%{~ if try(target.ping, true) ~}
+%{~ if try(target.ipv6, true) ~}
+%{~ if try(target.ping, false) ~}
 echo "${target.host} - $(timeout 3 dig AAAA +short ${target.host} | tail -n1) -$(timeout 3 ping -6 -qc2 -W1 ${target.host} 2>&1 | awk -F'/' 'END{ print (/^rtt/? "OK "$5" ms":"NA") }')"
+%{ endif ~}
 %{ endif ~}
 %{ endfor ~}
 EOF
@@ -122,10 +138,14 @@ chmod a+x /usr/local/bin/ping-dns6
 # curl-dns6
 
 cat <<'EOF' >/usr/local/bin/curl-dns6
-echo -e "\n curl dns ipv6 ...\n"
+echo -e "\n=============================="
+echo -e " curl dns ipv6 ..."
+echo "=============================="
 %{ for target in TARGETS ~}
+%{~ if try(target.ipv6, true) ~}
 %{~ if try(target.curl, true) ~}
 echo  "$(timeout 3 curl -6 -kL --max-time 3.0 -H 'Cache-Control: no-cache' -w "%%{http_code} (%%{time_total}s) - %%{remote_ip}" -s -o /dev/null ${target.host}) - ${target.host}"
+%{ endif ~}
 %{ endif ~}
 %{ endfor ~}
 EOF
@@ -134,12 +154,16 @@ chmod a+x /usr/local/bin/curl-dns6
 # trace-dns6
 
 cat <<'EOF' >/usr/local/bin/trace-dns6
-echo -e "\n trace ipv6 ...\n"
+echo -e "\n=============================="
+echo -e " trace ipv6 ..."
+echo "=============================="
 %{ for target in TARGETS ~}
-%{~ if try(target.ping, true) ~}
+%{~ if try(target.ipv6, true) ~}
+%{~ if try(target.ping, false) ~}
 echo -e "\n${target.name}"
 echo -e "-------------------------------------"
 timeout 9 tracepath -6 ${target.host}
+%{ endif ~}
 %{ endif ~}
 %{ endfor ~}
 EOF
@@ -152,7 +176,9 @@ chmod a+x /usr/local/bin/trace-dns6
 # dns-info
 
 cat <<'EOF' >/usr/local/bin/dns-info
-echo -e "\n resolvectl ...\n"
+echo -e "\n=============================="
+echo -e " resolvectl ..."
+echo "=============================="
 resolvectl status
 EOF
 chmod a+x /usr/local/bin/dns-info

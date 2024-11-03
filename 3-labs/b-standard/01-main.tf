@@ -17,7 +17,7 @@ locals {
   spoke1_eu_run_httpbin_host = module.spoke1_eu_run_httpbin.service.uri
   spoke2_us_run_httpbin_host = module.spoke2_us_run_httpbin.service.uri
 
-  enable_ipv6 = false
+  enable_ipv6 = true
 }
 
 ####################################################
@@ -40,8 +40,9 @@ resource "google_artifact_registry_repository" "us_repo" {
   format        = "DOCKER"
 }
 
+####################################################
 # vm startup scripts
-#----------------------------
+####################################################
 
 locals {
   init_dir = "/var/lib/gcp"
@@ -51,34 +52,40 @@ locals {
     health_check_response = local.uhc_config.response
   }
   vm_script_targets_region1 = [
-    { name = "site1-vm      ", host = local.site1_vm_fqdn, ipv4 = local.site1_vm_addr, ipv6 = local.site1_vm_addr_v6, probe = true },
-    { name = "hub-eu-vm     ", host = local.hub_eu_vm_fqdn, ipv4 = local.hub_eu_vm_addr, ipv6 = local.hub_eu_vm_addr_v6, probe = true },
-    { name = "spoke1-eu-vm  ", host = local.spoke1_eu_vm_fqdn, ipv4 = local.spoke1_eu_vm_addr, ipv6 = local.spoke1_eu_vm_addr_v6, probe = true },
-    { name = "spoke2-eu-vm  ", host = local.spoke2_eu_vm_fqdn, ipv4 = local.spoke2_eu_vm_addr, ipv6 = local.spoke2_eu_vm_addr_v6, probe = false },
-    { name = "hub-eu-ilb4   ", host = local.hub_eu_ilb4_fqdn, ipv4 = local.hub_eu_ilb4_addr, ipv6 = local.hub_eu_ilb4_addr_v6, probe = true },
-    { name = "hub-eu-ilb7   ", host = local.hub_eu_ilb7_fqdn, ipv4 = local.hub_eu_ilb7_addr, ipv6 = local.hub_eu_ilb7_addr_v6, probe = true },
-    { name = "spoke1-eu-ilb4", host = local.spoke1_eu_ilb4_fqdn, ipv4 = local.spoke1_eu_ilb4_addr, ipv6 = local.spoke1_eu_ilb4_addr_v6, probe = true, ptr = true },
-    { name = "spoke1-eu-ilb7", host = local.spoke1_eu_ilb7_fqdn, ipv4 = local.spoke1_eu_ilb7_addr, ipv6 = local.spoke1_eu_ilb7_addr_v6, probe = true, ptr = true },
+    { name = "site1-vm      ", host = local.site1_vm_fqdn, ipv4 = local.site1_vm_addr, probe = true, ping = true },
+    { name = "hub-eu-vm     ", host = local.hub_eu_vm_fqdn, ipv4 = local.hub_eu_vm_addr, probe = true, ping = true },
+    { name = "spoke1-eu-vm  ", host = local.spoke1_eu_vm_fqdn, ipv4 = local.spoke1_eu_vm_addr, probe = true, ping = true },
+    { name = "hub-eu-ilb   ", host = local.hub_eu_ilb_fqdn, ipv4 = local.hub_eu_ilb_addr, curl = false },
+    { name = "hub-eu-nlb   ", host = local.hub_eu_nlb_fqdn, ipv4 = local.hub_eu_nlb_addr, curl = false, ipv6 = false },
+    { name = "hub-eu-alb   ", host = local.hub_eu_alb_fqdn, ipv4 = local.hub_eu_alb_addr, curl = false, ipv6 = false },
+    { name = "spoke1-eu-ilb", host = local.spoke1_eu_ilb_fqdn, ipv4 = local.spoke1_eu_ilb_addr, ptr = true, ping = true },
+    { name = "spoke1-eu-nlb", host = local.spoke1_eu_nlb_fqdn, ipv4 = local.spoke1_eu_nlb_addr, ptr = true, ipv6 = false },
+    { name = "spoke1-eu-alb", host = local.spoke1_eu_alb_fqdn, ipv4 = local.spoke1_eu_alb_addr, ptr = true, ipv6 = false },
+    { name = "spoke1-eu-psc-ilb", host = local.spoke2_eu_ep_spoke1_eu_psc_ilb_fqdn, ipv4 = local.spoke2_eu_ep_spoke1_eu_psc_ilb_addr },
+    { name = "spoke1-eu-psc-nlb", host = local.spoke2_eu_ep_spoke1_eu_psc_nlb_fqdn, ipv4 = local.spoke2_eu_ep_spoke1_eu_psc_nlb_addr, ipv6 = false },
+    { name = "spoke1-eu-psc-alb", host = local.spoke2_eu_ep_spoke1_eu_psc_alb_fqdn, ipv4 = local.spoke2_eu_ep_spoke1_eu_psc_alb_addr, ipv6 = false },
   ]
   vm_script_targets_region2 = [
-    { name = "site2-vm      ", host = local.site2_vm_fqdn, ipv4 = local.site2_vm_addr, ipv6 = local.site2_vm_addr_v6, probe = true },
-    { name = "hub-us-vm     ", host = local.hub_us_vm_fqdn, ipv4 = local.hub_us_vm_addr, ipv6 = local.hub_us_vm_addr_v6, probe = true },
-    { name = "spoke2-us-vm  ", host = local.spoke2_us_vm_fqdn, ipv4 = local.spoke2_us_vm_addr, ipv6 = local.spoke2_us_vm_addr_v6, probe = true },
-    { name = "hub-us-ilb4   ", host = local.hub_us_ilb4_fqdn, ipv4 = local.hub_us_ilb4_addr, ipv6 = local.hub_us_ilb4_addr_v6, probe = true },
-    { name = "hub-us-ilb7   ", host = local.hub_us_ilb7_fqdn, ipv4 = local.hub_us_ilb7_addr, ipv6 = local.hub_us_ilb7_addr_v6, probe = true },
-    { name = "spoke2-us-ilb4", host = local.spoke2_us_ilb4_fqdn, ipv4 = local.spoke2_us_ilb4_addr, ipv6 = local.spoke2_us_ilb4_addr_v6, probe = true, ptr = true },
-    { name = "spoke2-us-ilb7", host = local.spoke2_us_ilb7_fqdn, ipv4 = local.spoke2_us_ilb7_addr, ipv6 = local.spoke2_us_ilb7_addr_v6, probe = true, ptr = true },
+    { name = "site2-vm      ", host = local.site2_vm_fqdn, ipv4 = local.site2_vm_addr, probe = true, ping = true },
+    { name = "hub-us-vm     ", host = local.hub_us_vm_fqdn, ipv4 = local.hub_us_vm_addr, probe = true, ping = true },
+    { name = "spoke2-us-vm  ", host = local.spoke2_us_vm_fqdn, ipv4 = local.spoke2_us_vm_addr, probe = true, ping = true },
+    { name = "hub-us-ilb   ", host = local.hub_us_ilb_fqdn, ipv4 = local.hub_us_ilb_addr, curl = false },
+    { name = "hub-us-nlb   ", host = local.hub_us_nlb_fqdn, ipv4 = local.hub_us_nlb_addr, curl = false, ipv6 = false },
+    { name = "hub-us-alb   ", host = local.hub_us_alb_fqdn, ipv4 = local.hub_us_alb_addr, curl = false, ipv6 = false },
+    { name = "spoke2-us-ilb", host = local.spoke2_us_ilb_fqdn, ipv4 = local.spoke2_us_ilb_addr, ptr = true, ping = true },
+    { name = "spoke2-us-nlb", host = local.spoke2_us_nlb_fqdn, ipv4 = local.spoke2_us_nlb_addr, ptr = true, ipv6 = false },
+    { name = "spoke2-us-alb", host = local.spoke2_us_alb_fqdn, ipv4 = local.spoke2_us_alb_addr, ptr = true, ipv6 = false },
   ]
   vm_script_targets_misc = [
-    { name = "hub-geo-ilb4", host = local.hub_geo_ilb4_fqdn, probe = false },
-    { name = "internet", host = "icanhazip.com", ipv4 = "icanhazip.com", ipv6 = "icanhazip.com", probe = true },
-    { name = "www", host = "www.googleapis.com", ipv4 = "www.googleapis.com", ipv6 = "www.googleapis.com", path = "/generate_204", probe = true, ping = false },
-    { name = "storage", host = "storage.googleapis.com", ipv4 = "storage.googleapis.com", ipv6 = "storage.googleapis.com", path = "/generate_204", probe = true, ping = false },
-    { name = "hub-eu-psc-https", host = local.hub_eu_psc_https_ctrl_run_dns, path = "/generate_204", probe = false, ping = false },
-    { name = "hub-us-psc-https", host = local.hub_us_psc_https_ctrl_run_dns, path = "/generate_204", probe = false, ping = false },
-    { name = "hub-eu-run", host = local.hub_eu_run_httpbin_host, probe = true, path = "/generate_204", ping = false },
-    { name = "spoke1-eu-run", host = local.spoke1_eu_run_httpbin_host, probe = true, path = "/generate_204", ping = false },
-    { name = "spoke2-us-run", host = local.spoke2_us_run_httpbin_host, probe = true, path = "/generate_204", ping = false },
+    { name = "hub-geo-ilb", host = local.hub_geo_ilb_fqdn },
+    { name = "internet", host = "icanhazip.com", ipv4 = "icanhazip.com", probe = true },
+    { name = "www", host = "www.googleapis.com", ipv4 = "www.googleapis.com", path = "/generate_204", probe = true },
+    { name = "storage", host = "storage.googleapis.com", ipv4 = "storage.googleapis.com", path = "/generate_204", probe = true },
+    { name = "hub-eu-psc-https", host = local.hub_eu_psc_https_ctrl_run_dns, path = "/generate_204" },
+    { name = "hub-us-psc-https", host = local.hub_us_psc_https_ctrl_run_dns, path = "/generate_204" },
+    { name = "hub-eu-run", host = local.hub_eu_run_httpbin_host, probe = true, path = "/generate_204" },
+    { name = "spoke1-eu-run", host = local.spoke1_eu_run_httpbin_host, probe = true, path = "/generate_204" },
+    { name = "spoke2-us-run", host = local.spoke2_us_run_httpbin_host, probe = true, path = "/generate_204" },
   ]
   vm_script_targets = concat(
     local.vm_script_targets_region1,
@@ -148,9 +155,6 @@ module "vm_cloud_init" {
     local.vm_init_files,
     local.vm_startup_init_files
   )
-  packages = [
-    "docker.io", "docker-compose",
-  ]
   run_commands = [
     ". ${local.init_dir}/init/startup.sh",
     "HOSTNAME=$(hostname) docker compose -f ${local.init_dir}/fastapi/docker-compose-http-80.yml up -d",
@@ -164,9 +168,6 @@ module "probe_vm_cloud_init" {
     local.vm_init_files,
     local.probe_startup_init_files,
   )
-  packages = [
-    "docker.io", "docker-compose",
-  ]
   run_commands = [
     ". ${local.init_dir}/init/startup.sh",
     "HOSTNAME=$(hostname) docker compose -f ${local.init_dir}/fastapi/docker-compose-http-80.yml up -d",
@@ -175,9 +176,8 @@ module "probe_vm_cloud_init" {
 }
 
 module "proxy_vm_cloud_init" {
-  source   = "../../modules/cloud-config-gen"
-  files    = local.proxy_startup_files
-  packages = ["docker.io", "docker-compose", ]
+  source = "../../modules/cloud-config-gen"
+  files  = local.proxy_startup_files
   run_commands = [
     "sysctl -w net.ipv4.ip_forward=1",
     "sysctl -w net.ipv4.conf.eth0.disable_xfrm=1",
@@ -205,6 +205,132 @@ module "proxy_vm_cloud_init" {
 }
 
 ############################################
+# firewall rules
+############################################
+
+locals {
+  firewall_policies = {
+    site_egress_rules = {
+      smtp = {
+        priority = 900
+        match = {
+          destination_ranges = ["0.0.0.0/0"]
+          layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
+        }
+      }
+      all = {
+        priority = 910
+        action   = "allow"
+        match = {
+          destination_ranges = ["0.0.0.0/0"]
+          layer4_configs     = [{ protocol = "all", ports = [] }]
+        }
+      }
+    }
+    site_egress_rules_ipv6 = {
+      smtp = {
+        priority = 901
+        match = {
+          destination_ranges = ["0::/0"]
+          layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
+        }
+      }
+      all = {
+        priority = 911
+        action   = "allow"
+        match = {
+          destination_ranges = ["0::/0"]
+          layer4_configs     = [{ protocol = "all", ports = [] }]
+        }
+      }
+    }
+    site_ingress_rules = {
+      # ipv4
+      internal = {
+        priority = 1000
+        match = {
+          source_ranges  = local.netblocks.internal
+          layer4_configs = [{ protocol = "all" }]
+        }
+      }
+      dns = {
+        priority = 1100
+        match = {
+          source_ranges  = local.netblocks.dns
+          layer4_configs = [{ protocol = "all", ports = [] }]
+        }
+      }
+      ssh = {
+        priority       = 1200
+        enable_logging = true
+        match = {
+          source_ranges  = ["0.0.0.0/0", ]
+          layer4_configs = [{ protocol = "tcp", ports = ["22"] }]
+        }
+      }
+      iap = {
+        priority       = 1300
+        enable_logging = true
+        match = {
+          source_ranges  = local.netblocks.iap
+          layer4_configs = [{ protocol = "all", ports = [] }]
+        }
+      }
+      vpn = {
+        priority = 1400
+        match = {
+          source_ranges = ["0.0.0.0/0", ]
+          layer4_configs = [
+            { protocol = "udp", ports = ["500", "4500", ] },
+            { protocol = "esp", ports = [] }
+          ]
+        }
+      }
+      gfe = {
+        priority = 1500
+        match = {
+          source_ranges  = local.netblocks.gfe
+          layer4_configs = [{ protocol = "all", ports = [] }]
+        }
+      }
+      # ipv6
+      internal-6 = {
+        priority = 1001
+        match = {
+          source_ranges  = local.netblocks_ipv6.internal
+          layer4_configs = [{ protocol = "all" }]
+        }
+      }
+      ssh-6 = {
+        priority       = 1201
+        enable_logging = true
+        match = {
+          source_ranges  = ["0::/0", ]
+          layer4_configs = [{ protocol = "tcp", ports = ["22"] }]
+        }
+      }
+      vpn-6 = {
+        priority = 1401
+        match = {
+          source_ranges = ["0::/0", ]
+          layer4_configs = [
+            { protocol = "udp", ports = ["500", "4500", ] },
+            { protocol = "esp", ports = [] }
+          ]
+        }
+      }
+      gfe-6 = {
+        priority = 1501
+        match = {
+          source_ranges  = local.netblocks_ipv6.gfe
+          layer4_configs = [{ protocol = "all", ports = [] }]
+        }
+      }
+    }
+  }
+}
+
+############################################
 # addresses
 ############################################
 
@@ -222,7 +348,7 @@ resource "google_compute_address" "site1_router" {
 # service account
 
 module "site1_sa" {
-  source       = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v33.0.0"
+  source       = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v34.1.0"
   project_id   = var.project_id_onprem
   name         = trimsuffix("${local.site1_prefix}sa", "-")
   generate_key = false
@@ -248,7 +374,7 @@ resource "google_compute_address" "site2_router" {
 # service account
 
 module "site2_sa" {
-  source       = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v33.0.0"
+  source       = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v34.1.0"
   project_id   = var.project_id_onprem
   name         = trimsuffix("${local.site2_prefix}sa", "-")
   generate_key = false
@@ -317,7 +443,7 @@ resource "google_compute_address" "hub_us_router" {
 # service account
 
 module "hub_sa" {
-  source       = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v33.0.0"
+  source       = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v34.1.0"
   project_id   = var.project_id_hub
   name         = trimsuffix("${local.hub_prefix}sa", "-")
   generate_key = false
@@ -332,7 +458,7 @@ module "hub_sa" {
 # cloud run
 
 module "hub_eu_run_httpbin" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/cloud-run-v2?ref=v33.0.0"
+  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/cloud-run-v2?ref=v34.1.0"
   project_id = var.project_id_hub
   name       = "${local.hub_prefix}us-run-httpbin"
   region     = local.hub_eu_region
@@ -352,7 +478,7 @@ module "hub_eu_run_httpbin" {
 # storage
 
 module "hub_eu_storage_bucket" {
-  source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/gcs?ref=v33.0.0"
+  source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/gcs?ref=v34.1.0"
   project_id    = var.project_id_hub
   prefix        = null
   name          = "${local.hub_prefix}eu-storage-bucket"
@@ -377,7 +503,7 @@ resource "google_storage_bucket_object" "hub_eu_storage_bucket_file" {
 }
 
 module "hub_us_storage_bucket" {
-  source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/gcs?ref=v33.0.0"
+  source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/gcs?ref=v34.1.0"
   project_id    = var.project_id_hub
   prefix        = null
   name          = "${local.hub_prefix}us-storage-bucket"
@@ -437,7 +563,7 @@ locals {
 # service account
 
 module "spoke1_sa" {
-  source       = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v33.0.0"
+  source       = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v34.1.0"
   project_id   = var.project_id_spoke1
   name         = trimsuffix("${local.spoke1_prefix}sa", "-")
   generate_key = false
@@ -452,7 +578,7 @@ module "spoke1_sa" {
 # cloud run
 
 module "spoke1_eu_run_httpbin" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/cloud-run-v2?ref=v33.0.0"
+  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/cloud-run-v2?ref=v34.1.0"
   project_id = var.project_id_spoke1
   name       = "${local.spoke1_prefix}eu-run-httpbin"
   region     = local.spoke1_eu_region
@@ -472,7 +598,7 @@ module "spoke1_eu_run_httpbin" {
 # storage
 
 module "spoke1_eu_storage_bucket" {
-  source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/gcs?ref=v33.0.0"
+  source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/gcs?ref=v34.1.0"
   project_id    = var.project_id_spoke1
   prefix        = null
   name          = "${local.spoke1_prefix}eu-storage-bucket"
@@ -525,7 +651,7 @@ locals {
 # service account
 
 module "spoke2_sa" {
-  source       = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v33.0.0"
+  source       = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v34.1.0"
   project_id   = var.project_id_spoke2
   name         = trimsuffix("${local.spoke2_prefix}sa", "-")
   generate_key = false
@@ -540,7 +666,7 @@ module "spoke2_sa" {
 # cloud run
 
 module "spoke2_us_run_httpbin" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/cloud-run-v2?ref=v33.0.0"
+  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/cloud-run-v2?ref=v34.1.0"
   project_id = var.project_id_spoke2
   name       = "${local.spoke2_prefix}us-run-httpbin"
   region     = local.spoke2_us_region
@@ -560,7 +686,7 @@ module "spoke2_us_run_httpbin" {
 # storage
 
 module "spoke2_us_storage_bucket" {
-  source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/gcs?ref=v33.0.0"
+  source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/gcs?ref=v34.1.0"
   project_id    = var.project_id_spoke2
   prefix        = null
   name          = "${local.spoke2_prefix}us-storage-bucket"

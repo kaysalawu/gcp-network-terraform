@@ -5,11 +5,12 @@ locals {
   site1_vm_main_ipv6  = module.site1_vm.internal_ipv6
 }
 
+####################################################
 # network
-#---------------------------------
+####################################################
 
 module "site1_vpc" {
-  # source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc?ref=v33.0.0"
+  # source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc?ref=v34.1.0"
   source     = "../../modules/net-vpc"
   project_id = var.project_id_onprem
   name       = "${local.site1_prefix}vpc"
@@ -20,11 +21,12 @@ module "site1_vpc" {
   }
 }
 
+####################################################
 # nat
-#---------------------------------
+####################################################
 
 module "site1_nat" {
-  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v33.0.0"
+  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
   project_id     = var.project_id_onprem
   region         = local.site1_region
   name           = "${local.site1_prefix}nat"
@@ -42,13 +44,14 @@ module "site1_nat" {
   }
 }
 
+####################################################
 # firewall
-#---------------------------------
+####################################################
 
 # policy
 
 module "site1_vpc_fw_policy" {
-  source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v33.0.0"
+  source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v34.1.0"
   name      = "${local.site1_prefix}vpc-fw-policy"
   parent_id = var.project_id_onprem
   region    = "global"
@@ -62,7 +65,7 @@ module "site1_vpc_fw_policy" {
 # vpc
 
 module "site1_vpc_firewall" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc-firewall?ref=v33.0.0"
+  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc-firewall?ref=v34.1.0"
   project_id = var.project_id_onprem
   network    = module.site1_vpc.name
 
@@ -158,8 +161,9 @@ module "site1_vpc_firewall" {
   }
 }
 
+####################################################
 # custom dns
-#---------------------------------
+####################################################
 
 # unbound startup
 
@@ -194,8 +198,8 @@ locals {
       ]
     },
     # authoritative hosts
-    { hosts = [local.hub_eu_psc_https_ctrl_run_dns], class = "IN", ttl = "3600", type = "A", rdata = local.hub_eu_ilb7_addr },
-    { hosts = [local.hub_us_psc_https_ctrl_run_dns], class = "IN", ttl = "3600", type = "A", rdata = local.hub_us_ilb7_addr },
+    { hosts = [local.hub_eu_psc_https_ctrl_run_dns], class = "IN", ttl = "3600", type = "A", rdata = local.hub_eu_alb_addr },
+    { hosts = [local.hub_us_psc_https_ctrl_run_dns], class = "IN", ttl = "3600", type = "A", rdata = local.hub_us_alb_addr },
   ]
   onprem_forward_zones_site1 = [
     { zone = "${local.cloud_domain}.", targets = [local.hub_eu_ns_addr, ] },
@@ -228,8 +232,9 @@ module "site1_dns" {
   metadata_startup_script = local.site1_unbound_startup
 }
 
+####################################################
 # cloud dns
-#---------------------------------
+####################################################
 
 resource "time_sleep" "site1_dns_forward_to_dns_wait_120s" {
   create_duration = "120s"
@@ -237,7 +242,7 @@ resource "time_sleep" "site1_dns_forward_to_dns_wait_120s" {
 }
 
 module "site1_dns_forward_to_dns" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v33.0.0"
+  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
   project_id  = var.project_id_onprem
   name        = "${local.site1_prefix}to-dns"
   description = "forward all dns queries to custom resolvers"
@@ -251,8 +256,9 @@ module "site1_dns_forward_to_dns" {
   depends_on = [time_sleep.site1_dns_forward_to_dns_wait_120s]
 }
 
+####################################################
 # workload
-#---------------------------------
+####################################################
 
 # app
 

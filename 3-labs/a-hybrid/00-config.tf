@@ -11,21 +11,21 @@ data "google_netblock_ip_ranges" "iap_forwarders" { range_type = "iap-forwarders
 #=====================================================
 
 locals {
-  supernet                = "10.0.0.0/8"
-  supernet6               = "fd20::/20"
-  cloud_domain            = "g.corp"
-  onprem_domain           = "corp"
-  psk                     = "Password123"
-  tag_router              = "router"
-  tag_gfe                 = "gfe"
-  tag_dns                 = "dns"
-  tag_ssh                 = "ssh"
-  tag_http                = "http-server"
-  tag_https               = "https-server"
-  tag_hub_int_eu_nva_ilb4 = "eu-nva-ilb4"
-  tag_hub_int_us_nva_ilb4 = "us-nva-ilb4"
-  region1                 = "europe-west2"
-  region2                 = "us-west2"
+  supernet               = "10.0.0.0/8"
+  supernet6              = "fd20::/20"
+  cloud_domain           = "g.corp"
+  onprem_domain          = "corp"
+  psk                    = "Password123"
+  tag_router             = "router"
+  tag_gfe                = "gfe"
+  tag_dns                = "dns"
+  tag_ssh                = "ssh"
+  tag_http               = "http-server"
+  tag_https              = "https-server"
+  tag_hub_int_eu_nva_ilb = "eu-nva-ilb"
+  tag_hub_int_us_nva_ilb = "us-nva-ilb"
+  region1                = "europe-west2"
+  region2                = "us-west2"
 
   private_prefixes = [
     "10.0.0.0/8",
@@ -180,18 +180,26 @@ locals {
   hub_subnets_psc_list         = [for k, v in local.hub_subnets : merge({ name = k }, v) if lookup(v, "purpose", null) == "PRIVATE_SERVICE_CONNECT"]
 
   hub_subnets_eu = {
-    eu-main      = { region = local.hub_eu_region, ip_cidr_range = "10.1.11.0/24", ipv6 = {}, enable_private_access = true, flow_logs_config = local.flow_logs_config, }
-    eu-gke       = { region = local.hub_eu_region, ip_cidr_range = "10.1.12.0/24", ipv6 = {}, enable_private_access = true, secondary_ip_ranges = { pods = "10.1.100.0/23", services = "10.1.102.0/24" } }
-    eu-reg-proxy = { region = local.hub_eu_region, ip_cidr_range = "10.1.13.0/24", ipv6 = {}, enable_private_access = false, purpose = "REGIONAL_MANAGED_PROXY", role = "ACTIVE" }
-    eu-psc-nat   = { region = local.hub_eu_region, ip_cidr_range = "10.1.14.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
-    eu-psc-nat6  = { region = local.hub_eu_region, ip_cidr_range = "10.1.15.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    eu-main         = { region = local.hub_eu_region, ip_cidr_range = "10.1.11.0/24", ipv6 = {}, enable_private_access = true, flow_logs_config = local.flow_logs_config, }
+    eu-gke          = { region = local.hub_eu_region, ip_cidr_range = "10.1.12.0/24", ipv6 = {}, enable_private_access = true, secondary_ip_ranges = { pods = "10.1.100.0/23", services = "10.1.102.0/24" } }
+    eu-reg-proxy    = { region = local.hub_eu_region, ip_cidr_range = "10.1.13.0/24", ipv6 = {}, enable_private_access = false, purpose = "REGIONAL_MANAGED_PROXY", role = "ACTIVE" }
+    eu-psc-ilb-nat  = { region = local.hub_eu_region, ip_cidr_range = "10.1.14.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    eu-psc-ilb-nat6 = { region = local.hub_eu_region, ip_cidr_range = "10.1.15.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    eu-psc-nlb-nat  = { region = local.hub_eu_region, ip_cidr_range = "10.1.16.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    eu-psc-nlb-nat6 = { region = local.hub_eu_region, ip_cidr_range = "10.1.17.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    eu-psc-alb-nat  = { region = local.hub_eu_region, ip_cidr_range = "10.1.18.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    eu-psc-alb-nat6 = { region = local.hub_eu_region, ip_cidr_range = "10.1.19.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
   }
   hub_subnets_us = {
-    us-main      = { region = local.hub_us_region, ip_cidr_range = "10.1.21.0/24", ipv6 = {}, enable_private_access = true }
-    us-gke       = { region = local.hub_us_region, ip_cidr_range = "10.1.22.0/24", ipv6 = {}, enable_private_access = true, secondary_ip_ranges = { pods = "10.1.200.0/23", services = "10.1.202.0/24" } }
-    us-reg-proxy = { region = local.hub_us_region, ip_cidr_range = "10.1.23.0/24", ipv6 = {}, enable_private_access = false, purpose = "REGIONAL_MANAGED_PROXY", role = "ACTIVE" }
-    us-psc-nat   = { region = local.hub_us_region, ip_cidr_range = "10.1.24.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
-    us-psc-nat6  = { region = local.hub_us_region, ip_cidr_range = "10.1.25.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    us-main         = { region = local.hub_us_region, ip_cidr_range = "10.1.21.0/24", ipv6 = {}, enable_private_access = true }
+    us-gke          = { region = local.hub_us_region, ip_cidr_range = "10.1.22.0/24", ipv6 = {}, enable_private_access = true, secondary_ip_ranges = { pods = "10.1.200.0/23", services = "10.1.202.0/24" } }
+    us-reg-proxy    = { region = local.hub_us_region, ip_cidr_range = "10.1.23.0/24", ipv6 = {}, enable_private_access = false, purpose = "REGIONAL_MANAGED_PROXY", role = "ACTIVE" }
+    us-psc-ilb-nat  = { region = local.hub_us_region, ip_cidr_range = "10.1.24.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    us-psc-ilb-nat6 = { region = local.hub_us_region, ip_cidr_range = "10.1.25.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    us-psc-nlb-nat  = { region = local.hub_us_region, ip_cidr_range = "10.1.26.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    us-psc-nlb-nat6 = { region = local.hub_us_region, ip_cidr_range = "10.1.27.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    us-psc-alb-nat  = { region = local.hub_us_region, ip_cidr_range = "10.1.28.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    us-psc-alb-nat6 = { region = local.hub_us_region, ip_cidr_range = "10.1.29.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
   }
 
   # external
@@ -203,40 +211,38 @@ locals {
   hub_eu_psa_range1       = "10.1.120.0/22"
   hub_eu_psa_range2       = "10.1.124.0/22"
 
-  hub_eu_main_default_gw      = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 1)
-  hub_eu_vm_addr              = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 9)
-  hub_eu_router_addr          = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 10)
-  hub_eu_ncc_cr_addr0         = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 20)
-  hub_eu_ncc_cr_addr1         = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 30)
-  hub_eu_ns_addr              = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 40)
-  hub_eu_nva_vm_addr          = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 50)
-  hub_eu_nva_ilb4_addr        = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 60)
-  hub_eu_ilb4_addr            = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 70)
-  hub_eu_ilb7_addr            = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 80)
-  hub_eu_hybrid_hc_proxy_addr = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 90)
-  hub_eu_ids_server_addr      = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 91)
-  hub_eu_ids_attack_addr      = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 92)
-  hub_eu_router_lo_addr       = "11.11.11.11"
+  hub_eu_main_default_gw = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 1)
+  hub_eu_vm_addr         = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 9)
+  hub_eu_router_addr     = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 10)
+  hub_eu_ncc_cr_addr0    = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 20)
+  hub_eu_ncc_cr_addr1    = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 30)
+  hub_eu_ns_addr         = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 40)
+  hub_eu_nva_vm_addr     = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 50)
+  hub_eu_nva_ilb_addr    = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 60)
+  hub_eu_ilb_addr        = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 70)
+  hub_eu_nlb_addr        = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 80)
+  hub_eu_alb_addr        = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 90)
+  hub_eu_router_lo_addr  = "11.11.11.11"
 
   hub_eu_main_addresses = {
-    "${local.hub_prefix}eu-ncc-cr-addr0"  = { ipv4 = local.hub_eu_ncc_cr_addr0 }
-    "${local.hub_prefix}eu-ncc-cr-addr1"  = { ipv4 = local.hub_eu_ncc_cr_addr1 }
-    "${local.hub_prefix}eu-router-addr"   = { ipv4 = local.hub_eu_router_addr }
-    "${local.hub_prefix}eu-ns-addr"       = { ipv4 = local.hub_eu_ns_addr }
-    "${local.hub_prefix}eu-nva-vm-addr"   = { ipv4 = local.hub_eu_nva_vm_addr }
-    "${local.hub_prefix}eu-nva-ilb4-addr" = { ipv4 = local.hub_eu_nva_ilb4_addr }
-    "${local.hub_prefix}eu-ilb4-addr"     = { ipv4 = local.hub_eu_ilb4_addr }
-    "${local.hub_prefix}eu-ilb7-addr"     = { ipv4 = local.hub_eu_ilb7_addr }
+    "${local.hub_prefix}eu-ncc-cr-addr0" = { ipv4 = local.hub_eu_ncc_cr_addr0 }
+    "${local.hub_prefix}eu-ncc-cr-addr1" = { ipv4 = local.hub_eu_ncc_cr_addr1 }
+    "${local.hub_prefix}eu-router-addr"  = { ipv4 = local.hub_eu_router_addr }
+    "${local.hub_prefix}eu-ns-addr"      = { ipv4 = local.hub_eu_ns_addr }
+    "${local.hub_prefix}eu-nva-vm-addr"  = { ipv4 = local.hub_eu_nva_vm_addr }
+    "${local.hub_prefix}eu-nva-ilb-addr" = { ipv4 = local.hub_eu_nva_ilb_addr }
+    "${local.hub_prefix}eu-ilb-addr"     = { ipv4 = local.hub_eu_ilb_addr }
+    "${local.hub_prefix}eu-alb-addr"     = { ipv4 = local.hub_eu_alb_addr }
   }
   hub_us_main_addresses = {
-    "${local.hub_prefix}us-ncc-cr-addr0"  = { ipv4 = local.hub_us_ncc_cr_addr0 }
-    "${local.hub_prefix}us-ncc-cr-addr1"  = { ipv4 = local.hub_us_ncc_cr_addr1 }
-    "${local.hub_prefix}us-router-addr"   = { ipv4 = local.hub_us_router_addr }
-    "${local.hub_prefix}us-ns-addr"       = { ipv4 = local.hub_us_ns_addr }
-    "${local.hub_prefix}us-nva-vm-addr"   = { ipv4 = local.hub_us_nva_vm_addr }
-    "${local.hub_prefix}us-nva-ilb4-addr" = { ipv4 = local.hub_us_nva_ilb4_addr }
-    "${local.hub_prefix}us-ilb4-addr"     = { ipv4 = local.hub_us_ilb4_addr }
-    "${local.hub_prefix}us-ilb7-addr"     = { ipv4 = local.hub_us_ilb7_addr }
+    "${local.hub_prefix}us-ncc-cr-addr0" = { ipv4 = local.hub_us_ncc_cr_addr0 }
+    "${local.hub_prefix}us-ncc-cr-addr1" = { ipv4 = local.hub_us_ncc_cr_addr1 }
+    "${local.hub_prefix}us-router-addr"  = { ipv4 = local.hub_us_router_addr }
+    "${local.hub_prefix}us-ns-addr"      = { ipv4 = local.hub_us_ns_addr }
+    "${local.hub_prefix}us-nva-vm-addr"  = { ipv4 = local.hub_us_nva_vm_addr }
+    "${local.hub_prefix}us-nva-ilb-addr" = { ipv4 = local.hub_us_nva_ilb_addr }
+    "${local.hub_prefix}us-ilb-addr"     = { ipv4 = local.hub_us_ilb_addr }
+    "${local.hub_prefix}us-alb-addr"     = { ipv4 = local.hub_us_alb_addr }
   }
 
   hub_us_gke_master_cidr1 = "172.16.11.32/28"
@@ -251,9 +257,10 @@ locals {
   hub_us_ncc_cr_addr1    = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 30)
   hub_us_ns_addr         = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 40)
   hub_us_nva_vm_addr     = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 50)
-  hub_us_nva_ilb4_addr   = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 60)
-  hub_us_ilb4_addr       = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 70)
-  hub_us_ilb7_addr       = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 80)
+  hub_us_nva_ilb_addr    = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 60)
+  hub_us_ilb_addr        = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 70)
+  hub_us_alb_addr        = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 80)
+  hub_us_nlb_addr        = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 90)
   hub_us_router_lo_addr  = "22.22.22.22"
 
   # psc/api
@@ -267,40 +274,51 @@ locals {
   hub_eu_psc_https_ctrl_run_dns = "${local.hub_eu_region}-run.googleapis.com"
   hub_us_psc_https_ctrl_run_dns = "${local.hub_us_region}-run.googleapis.com"
 
-  # psc/ilb consumer
-  hub_eu_psc4_consumer_spoke1_eu_svc_dns = "psc4.consumer.spoke1-eu-svc" # hub consumer endpoint dns for spoke1 producer service
-  hub_us_psc4_consumer_spoke2_us_svc_dns = "psc4.consumer.spoke2-us-svc" # hub consumer endpoint dns for spoke2 producer service
+  # psc endpoints ( to spoke1 published services)
+  hub_eu_ep_spoke1_eu_psc_ilb_prefix = "ep.eu.spoke1-eu-ilb"
+  hub_eu_ep_spoke1_eu_psc_nlb_prefix = "ep.eu.spoke1-eu-nlb"
+  hub_eu_ep_spoke1_eu_psc_alb_prefix = "ep.eu.spoke1-eu-alb"
+  hub_eu_ep_spoke1_eu_psc_ilb_fqdn   = "${local.hub_eu_ep_spoke1_eu_psc_ilb_prefix}.${local.hub_dns_zone}"
+  hub_eu_ep_spoke1_eu_psc_nlb_fqdn   = "${local.hub_eu_ep_spoke1_eu_psc_nlb_prefix}.${local.hub_dns_zone}"
+  hub_eu_ep_spoke1_eu_psc_alb_fqdn   = "${local.hub_eu_ep_spoke1_eu_psc_alb_prefix}.${local.hub_dns_zone}"
 
-  # psc/ilb producer
-  hub_eu_psc4_producer_nat = "192.168.11.0/24"
-  hub_us_psc4_producer_nat = "192.168.12.0/24"
+  # hub_us_ep_spoke1_us_psc_ilb_prefix = "ep.us.spoke1-eu-ilb"
+  # hub_us_ep_spoke1_us_psc_nlb_prefix = "ep.us.spoke1-eu-nlb"
+  # hub_us_ep_spoke1_us_psc_alb_prefix = "ep.us.spoke1-eu-alb"
+  # hub_us_ep_spoke1_us_psc_ilb_fqdn   = "${local.hub_us_ep_spoke1_us_psc_ilb_prefix}.${local.hub_dns_zone}"
+  # hub_us_ep_spoke1_us_psc_nlb_fqdn   = "${local.hub_us_ep_spoke1_us_psc_nlb_prefix}.${local.hub_dns_zone}"
+  # hub_us_ep_spoke1_us_psc_alb_fqdn   = "${local.hub_us_ep_spoke1_us_psc_alb_prefix}.${local.hub_dns_zone}"
 
   # fqdn
-  hub_geo_ilb4_prefix = "ilb4.geo" # geo-dns resolves to regional ilb4 endpoint
-  hub_geo_ilb4_fqdn   = "${local.hub_geo_ilb4_prefix}.${local.hub_dns_zone}"
+  hub_geo_ilb_prefix = "ilb.geo" # geo-dns resolves to regional ilb endpoint
+  hub_geo_ilb_fqdn   = "${local.hub_geo_ilb_prefix}.${local.hub_dns_zone}"
 
-  hub_eu_vm_dns_prefix   = "vm.eu"
-  hub_eu_ilb4_dns_prefix = "ilb4.eu"
-  hub_eu_ilb7_dns_prefix = "ilb7.eu"
-  hub_eu_vm_fqdn         = "${local.hub_eu_vm_dns_prefix}.${local.hub_dns_zone}"
-  hub_eu_ilb4_fqdn       = "${local.hub_eu_ilb4_dns_prefix}.${local.hub_dns_zone}"
-  hub_eu_ilb7_fqdn       = "${local.hub_eu_ilb7_dns_prefix}.${local.hub_dns_zone}"
+  hub_eu_vm_dns_prefix  = "vm.eu"
+  hub_eu_ilb_dns_prefix = "ilb.eu"
+  hub_eu_nlb_dns_prefix = "nlb.eu"
+  hub_eu_alb_dns_prefix = "alb.eu"
+  hub_eu_vm_fqdn        = "${local.hub_eu_vm_dns_prefix}.${local.hub_dns_zone}"
+  hub_eu_ilb_fqdn       = "${local.hub_eu_ilb_dns_prefix}.${local.hub_dns_zone}"
+  hub_eu_nlb_fqdn       = "${local.hub_eu_nlb_dns_prefix}.${local.hub_dns_zone}"
+  hub_eu_alb_fqdn       = "${local.hub_eu_alb_dns_prefix}.${local.hub_dns_zone}"
 
-  hub_us_vm_dns_prefix   = "vm.us"
-  hub_us_ilb4_dns_prefix = "ilb4.us"
-  hub_us_ilb7_dns_prefix = "ilb7.us"
-  hub_us_vm_fqdn         = "${local.hub_us_vm_dns_prefix}.${local.hub_dns_zone}"
-  hub_us_ilb4_fqdn       = "${local.hub_us_ilb4_dns_prefix}.${local.hub_dns_zone}"
-  hub_us_ilb7_fqdn       = "${local.hub_us_ilb7_dns_prefix}.${local.hub_dns_zone}"
+  hub_us_vm_dns_prefix  = "vm.us"
+  hub_us_ilb_dns_prefix = "ilb.us"
+  hub_us_nlb_dns_prefix = "nlb.us"
+  hub_us_alb_dns_prefix = "alb.us"
+  hub_us_vm_fqdn        = "${local.hub_us_vm_dns_prefix}.${local.hub_dns_zone}"
+  hub_us_ilb_fqdn       = "${local.hub_us_ilb_dns_prefix}.${local.hub_dns_zone}"
+  hub_us_nlb_fqdn       = "${local.hub_us_nlb_dns_prefix}.${local.hub_dns_zone}"
+  hub_us_alb_fqdn       = "${local.hub_us_alb_dns_prefix}.${local.hub_dns_zone}"
 
   # td
-  hub_td_range                        = "172.16.0.0/24"
-  hub_td_envoy_cloud_addr             = cidrhost(local.hub_td_range, 2)
-  hub_td_envoy_hybrid_addr            = cidrhost(local.hub_td_range, 3)
-  hub_td_grpc_cloud_svc               = "grpc-cloud"
-  hub_td_envoy_cloud_svc              = "envoy-cloud"
-  hub_td_envoy_hybrid_svc             = "envoy-hybrid"
-  hub_td_envoy_bridge_ilb4_dns_prefix = "ilb4.envoy-bridge" # geo-dns resolves to regional endpoint
+  hub_td_range                       = "172.16.0.0/24"
+  hub_td_envoy_cloud_addr            = cidrhost(local.hub_td_range, 2)
+  hub_td_envoy_hybrid_addr           = cidrhost(local.hub_td_range, 3)
+  hub_td_grpc_cloud_svc              = "grpc-cloud"
+  hub_td_envoy_cloud_svc             = "envoy-cloud"
+  hub_td_envoy_hybrid_svc            = "envoy-hybrid"
+  hub_td_envoy_bridge_ilb_dns_prefix = "ilb.envoy-bridge" # geo-dns resolves to regional endpoint
 }
 
 # spoke1
@@ -323,18 +341,26 @@ locals {
   spoke1_subnets_psc_list         = [for k, v in local.spoke1_subnets : merge({ name = k }, v) if lookup(v, "purpose", null) == "PRIVATE_SERVICE_CONNECT"]
 
   spoke1_subnets_eu = {
-    eu-main      = { region = local.spoke1_eu_region, ip_cidr_range = "10.11.11.0/24", ipv6 = {}, enable_private_access = true, subnet_flow_logs = true }
-    eu-gke       = { region = local.spoke1_eu_region, ip_cidr_range = "10.11.12.0/24", ipv6 = {}, enable_private_access = true, secondary_ip_ranges = { pods = "10.11.100.0/23", services = "10.11.102.0/24" } }
-    eu-reg-proxy = { region = local.spoke1_eu_region, ip_cidr_range = "10.11.13.0/24", ipv6 = {}, enable_private_access = false, purpose = "REGIONAL_MANAGED_PROXY", role = "ACTIVE" }
-    eu-psc-nat   = { region = local.spoke1_eu_region, ip_cidr_range = "10.11.14.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
-    eu-psc-nat6  = { region = local.spoke1_eu_region, ip_cidr_range = "10.11.15.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    eu-main         = { region = local.spoke1_eu_region, ip_cidr_range = "10.11.11.0/24", ipv6 = {}, enable_private_access = true, subnet_flow_logs = true }
+    eu-gke          = { region = local.spoke1_eu_region, ip_cidr_range = "10.11.12.0/24", ipv6 = {}, enable_private_access = true, secondary_ip_ranges = { pods = "10.11.100.0/23", services = "10.11.102.0/24" } }
+    eu-reg-proxy    = { region = local.spoke1_eu_region, ip_cidr_range = "10.11.13.0/24", ipv6 = {}, enable_private_access = false, purpose = "REGIONAL_MANAGED_PROXY", role = "ACTIVE" }
+    eu-psc-ilb-nat  = { region = local.spoke1_eu_region, ip_cidr_range = "10.11.14.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    eu-psc-ilb-nat6 = { region = local.spoke1_eu_region, ip_cidr_range = "10.11.15.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    eu-psc-nlb-nat  = { region = local.spoke1_eu_region, ip_cidr_range = "10.11.16.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    eu-psc-nlb-nat6 = { region = local.spoke1_eu_region, ip_cidr_range = "10.11.17.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    eu-psc-alb-nat  = { region = local.spoke1_eu_region, ip_cidr_range = "10.11.18.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    eu-psc-alb-nat6 = { region = local.spoke1_eu_region, ip_cidr_range = "10.11.19.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
   }
   spoke1_subnets_us = {
-    us-main      = { region = local.spoke1_us_region, ip_cidr_range = "10.11.21.0/24", ipv6 = {}, enable_private_access = true }
-    us-gke       = { region = local.spoke1_us_region, ip_cidr_range = "10.11.22.0/24", ipv6 = {}, enable_private_access = true, secondary_ip_ranges = { pods = "10.11.200.0/23", services = "10.11.202.0/24" } }
-    us-reg-proxy = { region = local.spoke1_us_region, ip_cidr_range = "10.11.23.0/24", ipv6 = {}, enable_private_access = false, purpose = "REGIONAL_MANAGED_PROXY", role = "ACTIVE" }
-    us-psc-nat   = { region = local.spoke1_us_region, ip_cidr_range = "10.11.24.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
-    us-psc-nat6  = { region = local.spoke1_us_region, ip_cidr_range = "10.11.25.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    us-main         = { region = local.spoke1_us_region, ip_cidr_range = "10.11.21.0/24", ipv6 = {}, enable_private_access = true }
+    us-gke          = { region = local.spoke1_us_region, ip_cidr_range = "10.11.22.0/24", ipv6 = {}, enable_private_access = true, secondary_ip_ranges = { pods = "10.11.200.0/23", services = "10.11.202.0/24" } }
+    us-reg-proxy    = { region = local.spoke1_us_region, ip_cidr_range = "10.11.23.0/24", ipv6 = {}, enable_private_access = false, purpose = "REGIONAL_MANAGED_PROXY", role = "ACTIVE" }
+    us-psc-ilb-nat  = { region = local.spoke1_us_region, ip_cidr_range = "10.11.24.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    us-psc-ilb-nat6 = { region = local.spoke1_us_region, ip_cidr_range = "10.11.25.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    us-psc-nlb-nat  = { region = local.spoke1_us_region, ip_cidr_range = "10.11.26.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    us-psc-nlb-nat6 = { region = local.spoke1_us_region, ip_cidr_range = "10.11.27.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    us-psc-alb-nat  = { region = local.spoke1_us_region, ip_cidr_range = "10.11.28.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    us-psc-alb-nat6 = { region = local.spoke1_us_region, ip_cidr_range = "10.11.29.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
   }
 
   spoke1_gke_master_cidr1     = "172.16.11.0/28"
@@ -347,37 +373,42 @@ locals {
 
   spoke1_eu_main_default_gw = cidrhost(local.spoke1_subnets["eu-main"].ip_cidr_range, 1)
   spoke1_eu_vm_addr         = cidrhost(local.spoke1_subnets["eu-main"].ip_cidr_range, 9)
-  spoke1_eu_ilb4_addr       = cidrhost(local.spoke1_subnets["eu-main"].ip_cidr_range, 30)
-  spoke1_eu_ilb7_addr       = cidrhost(local.spoke1_subnets["eu-main"].ip_cidr_range, 40)
+  spoke1_eu_ilb_addr        = cidrhost(local.spoke1_subnets["eu-main"].ip_cidr_range, 30)
+  spoke1_eu_nlb_addr        = cidrhost(local.spoke1_subnets["eu-main"].ip_cidr_range, 40)
+  spoke1_eu_alb_addr        = cidrhost(local.spoke1_subnets["eu-main"].ip_cidr_range, 50)
 
   spoke1_us_main_default_gw = cidrhost(local.spoke1_subnets["us-main"].ip_cidr_range, 1)
   spoke1_us_vm_addr         = cidrhost(local.spoke1_subnets["us-main"].ip_cidr_range, 9)
-  spoke1_us_ilb4_addr       = cidrhost(local.spoke1_subnets["us-main"].ip_cidr_range, 30)
-  spoke1_us_ilb7_addr       = cidrhost(local.spoke1_subnets["us-main"].ip_cidr_range, 40)
+  spoke1_us_ilb_addr        = cidrhost(local.spoke1_subnets["us-main"].ip_cidr_range, 30)
+  spoke1_us_alb_addr        = cidrhost(local.spoke1_subnets["us-main"].ip_cidr_range, 40)
 
   spoke1_eu_main_addresses = {
-    "${local.spoke1_prefix}eu-ilb4-addr" = { ipv4 = local.spoke1_eu_ilb4_addr }
-    "${local.spoke1_prefix}eu-ilb7-addr" = { ipv4 = local.spoke1_eu_ilb7_addr }
+    "${local.spoke1_prefix}eu-ilb-addr" = { ipv4 = local.spoke1_eu_ilb_addr }
+    "${local.spoke1_prefix}eu-alb-addr" = { ipv4 = local.spoke1_eu_alb_addr }
   }
   spoke1_us_main_addresses = {
-    "${local.spoke1_prefix}us-ilb4-addr" = { ipv4 = local.spoke1_us_ilb4_addr }
-    "${local.spoke1_prefix}us-ilb7-addr" = { ipv4 = local.spoke1_us_ilb7_addr }
+    "${local.spoke1_prefix}us-ilb-addr" = { ipv4 = local.spoke1_us_ilb_addr }
+    "${local.spoke1_prefix}us-alb-addr" = { ipv4 = local.spoke1_us_alb_addr }
   }
 
   # fqdn
-  spoke1_eu_vm_dns_prefix   = "vm.eu"
-  spoke1_eu_ilb4_dns_prefix = "ilb4.eu"
-  spoke1_eu_ilb7_dns_prefix = "ilb7.eu"
-  spoke1_eu_vm_fqdn         = "${local.spoke1_eu_vm_dns_prefix}.${local.spoke1_dns_zone}"
-  spoke1_eu_ilb4_fqdn       = "${local.spoke1_eu_ilb4_dns_prefix}.${local.spoke1_dns_zone}"
-  spoke1_eu_ilb7_fqdn       = "${local.spoke1_eu_ilb7_dns_prefix}.${local.spoke1_dns_zone}"
+  spoke1_eu_vm_dns_prefix  = "vm.eu"
+  spoke1_eu_ilb_dns_prefix = "ilb.eu"
+  spoke1_eu_nlb_dns_prefix = "nlb.eu"
+  spoke1_eu_alb_dns_prefix = "alb.eu"
+  spoke1_eu_vm_fqdn        = "${local.spoke1_eu_vm_dns_prefix}.${local.spoke1_dns_zone}"
+  spoke1_eu_ilb_fqdn       = "${local.spoke1_eu_ilb_dns_prefix}.${local.spoke1_dns_zone}"
+  spoke1_eu_nlb_fqdn       = "${local.spoke1_eu_nlb_dns_prefix}.${local.spoke1_dns_zone}"
+  spoke1_eu_alb_fqdn       = "${local.spoke1_eu_alb_dns_prefix}.${local.spoke1_dns_zone}"
 
-  spoke1_us_vm_dns_prefix   = "vm.us"
-  spoke1_us_ilb4_dns_prefix = "ilb4.us"
-  spoke1_us_ilb7_dns_prefix = "ilb7.us"
-  spoke1_us_vm_fqdn         = "${local.spoke1_us_vm_dns_prefix}.${local.spoke1_dns_zone}"
-  spoke1_us_ilb4_fqdn       = "${local.spoke1_us_ilb4_dns_prefix}.${local.spoke1_dns_zone}"
-  spoke1_us_ilb7_fqdn       = "${local.spoke1_us_ilb7_dns_prefix}.${local.spoke1_dns_zone}"
+  spoke1_us_vm_dns_prefix  = "vm.us"
+  spoke1_us_ilb_dns_prefix = "ilb.us"
+  spoke1_us_nlb_dns_prefix = "nlb.us"
+  spoke1_us_alb_dns_prefix = "alb.us"
+  spoke1_us_vm_fqdn        = "${local.spoke1_us_vm_dns_prefix}.${local.spoke1_dns_zone}"
+  spoke1_us_ilb_fqdn       = "${local.spoke1_us_ilb_dns_prefix}.${local.spoke1_dns_zone}"
+  spoke1_us_nlb_fqdn       = "${local.spoke1_us_nlb_dns_prefix}.${local.spoke1_dns_zone}"
+  spoke1_us_alb_fqdn       = "${local.spoke1_us_alb_dns_prefix}.${local.spoke1_dns_zone}"
 
   # psc/api
   spoke1_psc_api_all_fr_name = "${var.prefix}spoke1all"                   # all-apis forwarding rule name
@@ -389,17 +420,14 @@ locals {
   spoke1_eu_psc_https_ctrl_run_dns = "${local.spoke1_eu_region}-run.googleapis.com"
   spoke1_us_psc_https_ctrl_run_dns = "${local.spoke1_us_region}-run.googleapis.com"
 
-  # psc/ilb consumer
-  spoke1_us_psc4_consumer_spoke2_us_svc_dns = "psc4.consumer.spoke2-us-svc" # spoke1 consumer endpoint dns for spoke2 producer service
-
   # reverse dns
-  spoke1_eu_ilb4_reverse_suffix = format("%s.%s.${local.spoke1_reverse_zone}",
-    element(split(".", local.spoke1_eu_ilb4_addr), 3),
-    element(split(".", local.spoke1_eu_ilb4_addr), 2)
+  spoke1_eu_ilb_reverse_suffix = format("%s.%s.${local.spoke1_reverse_zone}",
+    element(split(".", local.spoke1_eu_ilb_addr), 3),
+    element(split(".", local.spoke1_eu_ilb_addr), 2)
   )
-  spoke1_eu_ilb7_reverse_suffix = format("%s.%s.${local.spoke1_reverse_zone}",
-    element(split(".", local.spoke1_eu_ilb7_addr), 3),
-    element(split(".", local.spoke1_eu_ilb7_addr), 2)
+  spoke1_eu_alb_reverse_suffix = format("%s.%s.${local.spoke1_reverse_zone}",
+    element(split(".", local.spoke1_eu_alb_addr), 3),
+    element(split(".", local.spoke1_eu_alb_addr), 2)
   )
   spoke1_reverse_zone = format("%s.%s.in-addr.arpa.",
     element(split(".", local.spoke1_supernet), 1),
@@ -427,18 +455,26 @@ locals {
   spoke2_subnets_psc_list         = [for k, v in local.spoke2_subnets : merge({ name = k }, v) if lookup(v, "purpose", null) == "PRIVATE_SERVICE_CONNECT"]
 
   spoke2_subnets_eu = {
-    eu-main      = { region = local.spoke2_eu_region, ip_cidr_range = "10.22.11.0/24", ipv6 = {}, enable_private_access = true }
-    eu-gke       = { region = local.spoke2_eu_region, ip_cidr_range = "10.22.12.0/24", ipv6 = {}, enable_private_access = true, secondary_ip_ranges = { pods = "10.22.100.0/23", services = "10.22.102.0/24" } }
-    eu-reg-proxy = { region = local.spoke2_eu_region, ip_cidr_range = "10.22.13.0/24", ipv6 = {}, enable_private_access = false, purpose = "REGIONAL_MANAGED_PROXY", role = "ACTIVE" }
-    eu-psc-nat   = { region = local.spoke2_eu_region, ip_cidr_range = "10.22.14.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
-    eu-psc-nat6  = { region = local.spoke2_eu_region, ip_cidr_range = "10.22.15.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    eu-main         = { region = local.spoke2_eu_region, ip_cidr_range = "10.22.11.0/24", ipv6 = {}, enable_private_access = true }
+    eu-gke          = { region = local.spoke2_eu_region, ip_cidr_range = "10.22.12.0/24", ipv6 = {}, enable_private_access = true, secondary_ip_ranges = { pods = "10.22.100.0/23", services = "10.22.102.0/24" } }
+    eu-reg-proxy    = { region = local.spoke2_eu_region, ip_cidr_range = "10.22.13.0/24", ipv6 = {}, enable_private_access = false, purpose = "REGIONAL_MANAGED_PROXY", role = "ACTIVE" }
+    eu-psc-ilb-nat  = { region = local.spoke2_eu_region, ip_cidr_range = "10.22.14.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    eu-psc-ilb-nat6 = { region = local.spoke2_eu_region, ip_cidr_range = "10.22.15.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    eu-psc-nlb-nat  = { region = local.spoke2_eu_region, ip_cidr_range = "10.22.16.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    eu-psc-nlb-nat6 = { region = local.spoke2_eu_region, ip_cidr_range = "10.22.17.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    eu-psc-alb-nat  = { region = local.spoke2_eu_region, ip_cidr_range = "10.22.18.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    eu-psc-alb-nat6 = { region = local.spoke2_eu_region, ip_cidr_range = "10.22.19.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
   }
   spoke2_subnets_us = {
-    us-main      = { region = local.spoke2_us_region, ip_cidr_range = "10.22.21.0/24", ipv6 = {}, enable_private_access = true }
-    us-gke       = { region = local.spoke2_us_region, ip_cidr_range = "10.22.22.0/24", ipv6 = {}, enable_private_access = true, secondary_ip_ranges = { pods = "10.22.200.0/23", services = "10.22.202.0/24" } }
-    us-reg-proxy = { region = local.spoke2_us_region, ip_cidr_range = "10.22.23.0/24", ipv6 = {}, enable_private_access = false, purpose = "REGIONAL_MANAGED_PROXY", role = "ACTIVE" }
-    us-psc-nat   = { region = local.spoke2_us_region, ip_cidr_range = "10.22.24.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
-    us-psc-nat6  = { region = local.spoke2_us_region, ip_cidr_range = "10.22.25.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    us-main         = { region = local.spoke2_us_region, ip_cidr_range = "10.22.21.0/24", ipv6 = {}, enable_private_access = true }
+    us-gke          = { region = local.spoke2_us_region, ip_cidr_range = "10.22.22.0/24", ipv6 = {}, enable_private_access = true, secondary_ip_ranges = { pods = "10.22.200.0/23", services = "10.22.202.0/24" } }
+    us-reg-proxy    = { region = local.spoke2_us_region, ip_cidr_range = "10.22.23.0/24", ipv6 = {}, enable_private_access = false, purpose = "REGIONAL_MANAGED_PROXY", role = "ACTIVE" }
+    us-psc-ilb-nat  = { region = local.spoke2_us_region, ip_cidr_range = "10.22.24.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    us-psc-ilb-nat6 = { region = local.spoke2_us_region, ip_cidr_range = "10.22.25.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    us-psc-nlb-nat  = { region = local.spoke2_us_region, ip_cidr_range = "10.22.26.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    us-psc-nlb-nat6 = { region = local.spoke2_us_region, ip_cidr_range = "10.22.27.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    us-psc-alb-nat  = { region = local.spoke2_us_region, ip_cidr_range = "10.22.28.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
+    us-psc-alb-nat6 = { region = local.spoke2_us_region, ip_cidr_range = "10.22.29.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
   }
 
   spoke2_gke_master_cidr1     = "172.16.22.0/28"
@@ -449,39 +485,51 @@ locals {
   spoke2_eu_psc4_producer_nat = "192.168.201.0/24"
   spoke2_us_psc4_producer_nat = "192.168.202.0/24"
 
-  spoke2_eu_main_default_gw = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 1)
-  spoke2_eu_vm_addr         = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 9)
-  spoke2_eu_ilb4_addr       = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 30)
-  spoke2_eu_ilb7_addr       = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 40)
+  spoke2_eu_main_default_gw           = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 1)
+  spoke2_eu_vm_addr                   = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 9)
+  spoke2_eu_ilb_addr                  = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 30)
+  spoke2_eu_nlb_addr                  = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 40)
+  spoke2_eu_alb_addr                  = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 50)
+  spoke2_eu_ep_spoke1_eu_psc_ilb_addr = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 60)
+  spoke2_eu_ep_spoke1_eu_psc_nlb_addr = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 70)
+  spoke2_eu_ep_spoke1_eu_psc_alb_addr = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 80)
 
-  spoke2_us_main_default_gw = cidrhost(local.spoke2_subnets["us-main"].ip_cidr_range, 1)
-  spoke2_us_vm_addr         = cidrhost(local.spoke2_subnets["us-main"].ip_cidr_range, 9)
-  spoke2_us_ilb4_addr       = cidrhost(local.spoke2_subnets["us-main"].ip_cidr_range, 30)
-  spoke2_us_ilb7_addr       = cidrhost(local.spoke2_subnets["us-main"].ip_cidr_range, 40)
+  spoke2_us_main_default_gw           = cidrhost(local.spoke2_subnets["us-main"].ip_cidr_range, 1)
+  spoke2_us_vm_addr                   = cidrhost(local.spoke2_subnets["us-main"].ip_cidr_range, 9)
+  spoke2_us_ilb_addr                  = cidrhost(local.spoke2_subnets["us-main"].ip_cidr_range, 30)
+  spoke2_us_nlb_addr                  = cidrhost(local.spoke2_subnets["us-main"].ip_cidr_range, 40)
+  spoke2_us_alb_addr                  = cidrhost(local.spoke2_subnets["us-main"].ip_cidr_range, 50)
+  spoke2_us_ep_spoke1_eu_psc_ilb_addr = cidrhost(local.spoke2_subnets["us-main"].ip_cidr_range, 60)
+  spoke2_us_ep_spoke1_eu_psc_nlb_addr = cidrhost(local.spoke2_subnets["us-main"].ip_cidr_range, 70)
+  spoke2_us_ep_spoke1_eu_psc_alb_addr = cidrhost(local.spoke2_subnets["us-main"].ip_cidr_range, 80)
 
   spoke2_eu_main_addresses = {
-    "${local.spoke2_prefix}eu-ilb4-addr" = { ipv4 = local.spoke2_eu_ilb4_addr }
-    "${local.spoke2_prefix}eu-ilb7-addr" = { ipv4 = local.spoke2_eu_ilb7_addr }
+    "${local.spoke2_prefix}eu-ilb-addr" = { ipv4 = local.spoke2_eu_ilb_addr }
+    "${local.spoke2_prefix}eu-alb-addr" = { ipv4 = local.spoke2_eu_alb_addr }
   }
   spoke2_us_main_addresses = {
-    "${local.spoke2_prefix}us-ilb4-addr" = { ipv4 = local.spoke2_us_ilb4_addr }
-    "${local.spoke2_prefix}us-ilb7-addr" = { ipv4 = local.spoke2_us_ilb7_addr }
+    "${local.spoke2_prefix}us-ilb-addr" = { ipv4 = local.spoke2_us_ilb_addr }
+    "${local.spoke2_prefix}us-alb-addr" = { ipv4 = local.spoke2_us_alb_addr }
   }
 
   # fqdn
-  spoke2_eu_vm_dns_prefix   = "vm.eu"
-  spoke2_eu_ilb4_dns_prefix = "ilb4.eu"
-  spoke2_eu_ilb7_dns_prefix = "ilb7.eu"
-  spoke2_eu_vm_fqdn         = "${local.spoke2_eu_vm_dns_prefix}.${local.spoke2_dns_zone}"
-  spoke2_eu_ilb4_fqdn       = "${local.spoke2_eu_ilb4_dns_prefix}.${local.spoke2_dns_zone}"
-  spoke2_eu_ilb7_fqdn       = "${local.spoke2_eu_ilb7_dns_prefix}.${local.spoke2_dns_zone}"
+  spoke2_eu_vm_dns_prefix  = "vm.eu"
+  spoke2_eu_ilb_dns_prefix = "ilb.eu"
+  spoke2_eu_nlb_dns_prefix = "nlb.eu"
+  spoke2_eu_alb_dns_prefix = "alb.eu"
+  spoke2_eu_vm_fqdn        = "${local.spoke2_eu_vm_dns_prefix}.${local.spoke2_dns_zone}"
+  spoke2_eu_ilb_fqdn       = "${local.spoke2_eu_ilb_dns_prefix}.${local.spoke2_dns_zone}"
+  spoke2_eu_nlb_fqdn       = "${local.spoke2_eu_nlb_dns_prefix}.${local.spoke2_dns_zone}"
+  spoke2_eu_alb_fqdn       = "${local.spoke2_eu_alb_dns_prefix}.${local.spoke2_dns_zone}"
 
-  spoke2_us_vm_dns_prefix   = "vm.us"
-  spoke2_us_ilb4_dns_prefix = "ilb4.us"
-  spoke2_us_ilb7_dns_prefix = "ilb7.us"
-  spoke2_us_vm_fqdn         = "${local.spoke2_us_vm_dns_prefix}.${local.spoke2_dns_zone}"
-  spoke2_us_ilb4_fqdn       = "${local.spoke2_us_ilb4_dns_prefix}.${local.spoke2_dns_zone}"
-  spoke2_us_ilb7_fqdn       = "${local.spoke2_us_ilb7_dns_prefix}.${local.spoke2_dns_zone}"
+  spoke2_us_vm_dns_prefix  = "vm.us"
+  spoke2_us_ilb_dns_prefix = "ilb.us"
+  spoke2_us_nlb_dns_prefix = "nlb.us"
+  spoke2_us_alb_dns_prefix = "alb.us"
+  spoke2_us_vm_fqdn        = "${local.spoke2_us_vm_dns_prefix}.${local.spoke2_dns_zone}"
+  spoke2_us_ilb_fqdn       = "${local.spoke2_us_ilb_dns_prefix}.${local.spoke2_dns_zone}"
+  spoke2_us_nlb_fqdn       = "${local.spoke2_us_nlb_dns_prefix}.${local.spoke2_dns_zone}"
+  spoke2_us_alb_fqdn       = "${local.spoke2_us_alb_dns_prefix}.${local.spoke2_dns_zone}"
 
   # psc/api
   spoke2_psc_api_all_fr_name = "${var.prefix}spoke2all"                   # all-apis forwarding rule name
@@ -493,17 +541,22 @@ locals {
   spoke2_eu_psc_https_ctrl_run_dns = "${local.spoke2_eu_region}-run.googleapis.com"
   spoke2_us_psc_https_ctrl_run_dns = "${local.spoke2_us_region}-run.googleapis.com"
 
-  # psc/ilb consumer
-  spoke2_eu_psc4_consumer_spoke1_eu_svc_dns = "psc4.consumer.spoke1-eu-svc" # spoke2 consumer endpoint dns for spoke1 producer service
+  # psc endpoints --> spoke1
+  spoke2_eu_ep_spoke1_eu_psc_ilb_prefix = "ep.eu.spoke1-eu-ilb"
+  spoke2_eu_ep_spoke1_eu_psc_nlb_prefix = "ep.eu.spoke1-eu-nlb"
+  spoke2_eu_ep_spoke1_eu_psc_alb_prefix = "ep.eu.spoke1-eu-alb"
+  spoke2_eu_ep_spoke1_eu_psc_ilb_fqdn   = "${local.spoke2_eu_ep_spoke1_eu_psc_ilb_prefix}.${local.spoke2_dns_zone}"
+  spoke2_eu_ep_spoke1_eu_psc_nlb_fqdn   = "${local.spoke2_eu_ep_spoke1_eu_psc_nlb_prefix}.${local.spoke2_dns_zone}"
+  spoke2_eu_ep_spoke1_eu_psc_alb_fqdn   = "${local.spoke2_eu_ep_spoke1_eu_psc_alb_prefix}.${local.spoke2_dns_zone}"
 
   # reverse dns
-  spoke2_us_ilb4_reverse_suffix = format("%s.%s.${local.spoke2_reverse_zone}",
-    element(split(".", local.spoke2_us_ilb4_addr), 3),
-    element(split(".", local.spoke2_us_ilb4_addr), 2)
+  spoke2_us_ilb_reverse_suffix = format("%s.%s.${local.spoke2_reverse_zone}",
+    element(split(".", local.spoke2_us_ilb_addr), 3),
+    element(split(".", local.spoke2_us_ilb_addr), 2)
   )
-  spoke2_us_ilb7_reverse_suffix = format("%s.%s.${local.spoke2_reverse_zone}",
-    element(split(".", local.spoke2_us_ilb7_addr), 3),
-    element(split(".", local.spoke2_us_ilb7_addr), 2)
+  spoke2_us_alb_reverse_suffix = format("%s.%s.${local.spoke2_reverse_zone}",
+    element(split(".", local.spoke2_us_alb_addr), 3),
+    element(split(".", local.spoke2_us_alb_addr), 2)
   )
   spoke2_reverse_zone = format("%s.%s.in-addr.arpa.",
     element(split(".", local.spoke2_supernet), 1),
