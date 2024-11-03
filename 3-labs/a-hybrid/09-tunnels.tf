@@ -14,8 +14,9 @@ locals {
   }
 }
 
+####################################################
 # routers
-#------------------------------
+####################################################
 
 # site1
 
@@ -71,8 +72,9 @@ resource "google_compute_router" "hub_us_vpn_cr" {
   }
 }
 
+####################################################
 # vpn gateways
-#------------------------------
+####################################################
 
 # onprem
 
@@ -110,8 +112,9 @@ resource "google_compute_ha_vpn_gateway" "hub_us_gw" {
   stack_type = local.enable_ipv6 ? "IPV4_IPV6" : "IPV4_ONLY"
 }
 
+####################################################
 # hub / site1
-#------------------------------
+####################################################
 
 # hub
 
@@ -251,8 +254,9 @@ module "vpn_site1_to_hub_eu" {
   }
 }
 
+####################################################
 # hub / site2
-#------------------------------
+####################################################
 
 # hub
 
@@ -351,7 +355,10 @@ module "vpn_site2_to_hub_us" {
         custom_advertise = {
           route_priority = 100
           all_subnets    = false
-          ip_ranges      = local.advertised_prefixes.site2_to_hub
+          ip_ranges = merge(
+            local.advertised_prefixes.site2_to_hub,
+            local.advertised_prefixes_ipv6.site2_to_hub
+          )
         }
       }
       bgp_session_range     = "${cidrhost(local.bgp_range3, 1)}/30"
@@ -370,7 +377,10 @@ module "vpn_site2_to_hub_us" {
         custom_advertise = {
           route_priority = 100
           all_subnets    = false
-          ip_ranges      = local.advertised_prefixes.site2_to_hub
+          ip_ranges = merge(
+            local.advertised_prefixes.site2_to_hub,
+            local.advertised_prefixes_ipv6.site2_to_hub
+          )
         }
       }
       bgp_session_range     = "${cidrhost(local.bgp_range4, 1)}/30"
