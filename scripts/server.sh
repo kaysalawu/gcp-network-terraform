@@ -7,6 +7,8 @@ export DEBIAN_FRONTEND=noninteractive
 apt update
 apt install -y python3-pip python3-dev python3-venv unzip jq tcpdump dnsutils net-tools nmap apache2-utils iperf3
 apt install -y python3-flask python3-requests
+
+# cloud-init install for docker did not work so installing manually here
 apt install -y ca-certificates curl gnupg lsb-release
 mkdir -p /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg

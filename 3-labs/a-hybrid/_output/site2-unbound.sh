@@ -38,6 +38,8 @@ server:
         # local data records
         local-data: "vm.site1.corp 300 IN A 10.10.1.9"
         local-data: "vm.site2.corp 300 IN A 10.20.1.9"
+        local-data: "vm.site1.corp 300 IN AAAA fd20:b90:1e4a:4000:0:0:0:0"
+        local-data: "vm.site2.corp 300 IN AAAA fd20:f6f:e922:8000:0:0:0:0"
 
         # hosts redirected to PSC
         local-zone: storage.googleapis.com redirect
@@ -53,7 +55,7 @@ server:
         local-data: "europe-west2-aiplatform.googleapis.com 3600 IN A 10.1.0.1"
         local-data: "us-west2-aiplatform.googleapis.com 3600 IN A 10.1.0.1"
         local-data: "run.app 3600 IN A 10.1.0.1"
-        local-data: "europe-west2-run.googleapis.com 3600 IN A 10.1.11.80"
+        local-data: "europe-west2-run.googleapis.com 3600 IN A 10.1.11.90"
         local-data: "us-west2-run.googleapis.com 3600 IN A 10.1.21.80"
 
 forward-zone:
@@ -62,6 +64,14 @@ forward-zone:
 
 forward-zone:
         name: "ahuball.p.googleapis.com"
+        forward-addr: 10.1.21.40
+
+forward-zone:
+        name: "11.10.in-addr.arpa."
+        forward-addr: 10.1.21.40
+
+forward-zone:
+        name: "22.10.in-addr.arpa."
         forward-addr: 10.1.21.40
 
 forward-zone:
