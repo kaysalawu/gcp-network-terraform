@@ -1,9 +1,9 @@
 services:
-  nginx-443:
-    container_name: nginx-443
-    hostname: -DCK-nginx-443
+  nginx-8080:
+    container_name: nginx-8080
+    hostname: -DCK-nginx-8080
     build:
-      context: ./nginx/nginx-443
+      context: ./nginx/nginx-8080
       dockerfile: Dockerfile
     environment:
       HOST_HOSTNAME: $${HOSTNAME}
@@ -13,11 +13,11 @@ services:
       - /etc/ssl/app/key.pem:/etc/ssl/app/key.pem
       - /etc/nginx/nginx.conf:/etc/nginx/nginx.conf
     restart: always
-  nginx-443-ipv6:
-    container_name: nginx-443-ipv6
-    hostname: -DCK-nginx-443-ipv6
+  nginx-8080-ipv6:
+    container_name: nginx-8080-ipv6
+    hostname: -DCK-nginx-8080-ipv6
     build:
-      context: ./nginx/nginx-443
+      context: ./nginx/nginx-8080
       dockerfile: Dockerfile
     environment:
       HOST_HOSTNAME: $${HOSTNAME}
@@ -27,9 +27,9 @@ services:
       - /etc/ssl/app/key.pem:/etc/ssl/app/key.pem
       - /etc/nginx/nginx.conf:/etc/nginx/nginx.conf
     restart: always
-  nginx-443-http-80:
-    container_name: nginx-443-http-80
-    hostname: -DCK-nginx-443-http-80
+  nginx-8080-http-80:
+    container_name: nginx-8080-http-80
+    hostname: -DCK-nginx-8080-http-80
     build:
       context: ./app/app
       dockerfile: Dockerfile
@@ -38,9 +38,9 @@ services:
     network_mode: host
     command: uvicorn main:app --host '0.0.0.0' --port 80
     restart: always
-  nginx-443-http-80-ipv6:
-    container_name: nginx-443-http-80-ipv6
-    hostname: -DCK-nginx-443-http-80-ipv6
+  nginx-8080-http-80-ipv6:
+    container_name: nginx-8080-http-80-ipv6
+    hostname: -DCK-nginx-8080-http-80-ipv6
     build:
       context: ./app/app
       dockerfile: Dockerfile

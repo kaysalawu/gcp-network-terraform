@@ -91,7 +91,7 @@ module "site1_vpc_firewall" {
       destination_ranges = ["::/0", ]
       rules              = [{ protocol = "tcp", ports = [25, ] }]
     }
-    "${local.site1_prefix}allow-egress-all" = {
+    "${local.site1_prefix}allow-egress-all-ipv6" = {
       priority           = 1001
       deny               = false
       description        = "allow egress"

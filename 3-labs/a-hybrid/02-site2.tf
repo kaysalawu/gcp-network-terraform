@@ -92,7 +92,7 @@ module "site2_vpc_firewall" {
       destination_ranges = ["::/0", ]
       rules              = [{ protocol = "tcp", ports = [25, ] }]
     }
-    "${local.site2_prefix}allow-egress-all" = {
+    "${local.site2_prefix}allow-egress-all-ipv6" = {
       priority           = 1001
       deny               = false
       description        = "allow egress"
@@ -151,13 +151,6 @@ module "site2_vpc_firewall" {
       targets        = [local.tag_router]
       rules          = [{ protocol = "tcp", ports = [22] }]
       enable_logging = {}
-    }
-    "${local.site2_prefix}allow-ingress-dns-proxy" = {
-      priority      = 1400
-      description   = "allow dns egress proxy"
-      source_ranges = local.netblocks.dns
-      targets       = [local.tag_dns]
-      rules         = [{ protocol = "all", ports = [] }]
     }
   }
 }
