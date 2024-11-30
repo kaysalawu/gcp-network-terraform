@@ -1,5 +1,4 @@
 
-
 locals {
   site2_vpc_ipv6_cidr = module.site2_vpc.internal_ipv6_range
   site2_dns_main_ipv6 = module.site2_dns.internal_ipv6

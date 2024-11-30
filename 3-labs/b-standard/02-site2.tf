@@ -1,5 +1,4 @@
 
-
 locals {
   site2_vpc_ipv6_cidr = module.site2_vpc.internal_ipv6_range
   site2_dns_main_ipv6 = module.site2_dns.internal_ipv6
@@ -151,13 +150,6 @@ module "site2_vpc_firewall" {
       targets        = [local.tag_router]
       rules          = [{ protocol = "tcp", ports = [22] }]
       enable_logging = {}
-    }
-    "${local.site2_prefix}allow-ingress-dns-proxy" = {
-      priority      = 1400
-      description   = "allow dns egress proxy"
-      source_ranges = local.netblocks.dns
-      targets       = [local.tag_dns]
-      rules         = [{ protocol = "all", ports = [] }]
     }
   }
 }
