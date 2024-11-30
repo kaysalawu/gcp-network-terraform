@@ -5,4 +5,3 @@
 ../../0-templates/04-host.tf
 ../../0-templates/05-spoke1.tf
 ../../0-templates/05-spoke2.tf
-../../0-templates/services/svc-hub-internal.tf
