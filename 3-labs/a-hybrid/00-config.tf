@@ -11,21 +11,19 @@ data "google_netblock_ip_ranges" "iap_forwarders" { range_type = "iap-forwarders
 #=====================================================
 
 locals {
-  supernet               = "10.0.0.0/8"
-  supernet6              = "fd20::/20"
-  cloud_domain           = "g.corp"
-  onprem_domain          = "corp"
-  psk                    = "Password123"
-  tag_router             = "router"
-  tag_gfe                = "gfe"
-  tag_dns                = "dns"
-  tag_ssh                = "ssh"
-  tag_http               = "http-server"
-  tag_https              = "https-server"
-  tag_hub_int_eu_nva_ilb = "eu-nva-ilb"
-  tag_hub_int_us_nva_ilb = "us-nva-ilb"
-  region1                = "europe-west2"
-  region2                = "us-west2"
+  supernet      = "10.0.0.0/8"
+  supernet6     = "fd20::/20"
+  cloud_domain  = "g.corp"
+  onprem_domain = "corp"
+  psk           = "Password123"
+  tag_router    = "router"
+  tag_gfe       = "gfe"
+  tag_dns       = "dns"
+  tag_ssh       = "ssh"
+  tag_http      = "http-server"
+  tag_https     = "https-server"
+  region1       = "europe-west2"
+  region2       = "us-west2"
 
   private_prefixes = [
     "10.0.0.0/8",
