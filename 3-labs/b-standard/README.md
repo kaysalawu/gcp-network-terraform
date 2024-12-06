@@ -23,7 +23,7 @@ In this lab:
 * Network Connectivity Center (NCC) is used to connect the on-premises sites together via the external Hub VPC.
 * Other networking features such as Cloud DNS, PSC for Google APIs and load balancers are also deployed in this lab.
 
-<img src="./image.png" alt="Simple Hybrid Connectivity" width="550">
+<img src="./image.png" alt="Simple Hybrid Connectivity" width="1000">
 
 ## Prerequisites
 
