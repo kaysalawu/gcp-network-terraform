@@ -1,4 +1,4 @@
-# LAB F: Simple Hybrid Connectivity <!-- omit from toc -->
+# LAB A: Simple Hybrid Connectivity <!-- omit from toc -->
 
 Contents
 - [Overview](#overview)

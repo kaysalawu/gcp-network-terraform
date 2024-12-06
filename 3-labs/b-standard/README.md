@@ -1,4 +1,4 @@
-# LAB F: Simple Hybrid Connectivity <!-- omit from toc -->
+# LAB B: Hybrid Hub and Spoke Connectivity <!-- omit from toc -->
 
 Contents
 - [Overview](#overview)
