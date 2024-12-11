@@ -1,4 +1,4 @@
-# LAB A: Simple Hybrid Connectivity <!-- omit from toc -->
+# LAB B: Hybrid Hub and Spoke Connectivity <!-- omit from toc -->
 
 Contents
 - [Overview](#overview)
@@ -23,7 +23,7 @@ In this lab:
 * Network Connectivity Center (NCC) is used to connect the on-premises sites together via the external Hub VPC.
 * Other networking features such as Cloud DNS, PSC for Google APIs and load balancers are also deployed in this lab.
 
-<img src="./image.png" alt="Simple Hybrid Connectivity" width="550">
+<img src="./image.png" alt="Simple Hybrid Connectivity" width="1000">
 
 ## Prerequisites
 
@@ -167,10 +167,10 @@ admin_cloudtuple_com@f-site1-vm:~$ playz
 
 200 (0.009522s) - 10.10.1.9 - vm.site1.onprem:8080/
 200 (0.303636s) - 10.20.1.9 - vm.site2.onprem:8080/
-200 (0.011211s) - 10.1.11.70 - ilb4.eu.hub.gcp:8080/
-200 (0.292074s) - 10.1.21.70 - ilb4.us.hub.gcp:8080/
-200 (0.034366s) - 10.1.11.80 - ilb7.eu.hub.gcp/
-000 (2.001923s) -  - ilb7.us.hub.gcp/
+200 (0.011211s) - 10.1.11.70 - ilb.eu.hub.gcp:8080/
+200 (0.292074s) - 10.1.21.70 - ilb.us.hub.gcp:8080/
+200 (0.034366s) - 10.1.11.80 - alb.eu.hub.gcp/
+000 (2.001923s) -  - alb.us.hub.gcp/
 
  psc4 ...
 
@@ -205,10 +205,10 @@ admin_cloudtuple_com@f-site1-vm:~$ pingz
 
 vm.site1.onprem - OK 0.026 ms
 vm.site2.onprem - OK 139.202 ms
-ilb4.eu.hub.gcp - NA
-ilb4.us.hub.gcp - NA
-ilb7.eu.hub.gcp - NA
-ilb7.us.hub.gcp - NA
+ilb.eu.hub.gcp - NA
+ilb.us.hub.gcp - NA
+alb.eu.hub.gcp - NA
+alb.us.hub.gcp - NA
 ```
 
 </details>

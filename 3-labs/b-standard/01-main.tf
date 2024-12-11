@@ -61,9 +61,9 @@ locals {
     { name = "spoke1-eu-ilb", host = local.spoke1_eu_ilb_fqdn, ipv4 = local.spoke1_eu_ilb_addr, ptr = true, ping = true },
     { name = "spoke1-eu-nlb", host = local.spoke1_eu_nlb_fqdn, ipv4 = local.spoke1_eu_nlb_addr, ptr = true, ipv6 = false },
     { name = "spoke1-eu-alb", host = local.spoke1_eu_alb_fqdn, ipv4 = local.spoke1_eu_alb_addr, ptr = true, ipv6 = false },
-    { name = "spoke1-eu-psc-ilb", host = local.spoke2_eu_ep_spoke1_eu_psc_ilb_fqdn, ipv4 = local.spoke2_eu_ep_spoke1_eu_psc_ilb_addr },
-    { name = "spoke1-eu-psc-nlb", host = local.spoke2_eu_ep_spoke1_eu_psc_nlb_fqdn, ipv4 = local.spoke2_eu_ep_spoke1_eu_psc_nlb_addr, ipv6 = false },
-    { name = "spoke1-eu-psc-alb", host = local.spoke2_eu_ep_spoke1_eu_psc_alb_fqdn, ipv4 = local.spoke2_eu_ep_spoke1_eu_psc_alb_addr, ipv6 = false },
+    { name = "spoke2-spoke1-eu-psc-ilb", host = local.spoke2_eu_ep_spoke1_eu_psc_ilb_fqdn, ipv4 = local.spoke2_eu_ep_spoke1_eu_psc_ilb_addr },
+    { name = "spoke2-spoke1-eu-psc-nlb", host = local.spoke2_eu_ep_spoke1_eu_psc_nlb_fqdn, ipv4 = local.spoke2_eu_ep_spoke1_eu_psc_nlb_addr, ipv6 = false },
+    { name = "spoke2-spoke1-eu-psc-alb", host = local.spoke2_eu_ep_spoke1_eu_psc_alb_fqdn, ipv4 = local.spoke2_eu_ep_spoke1_eu_psc_alb_addr, ipv6 = false },
   ]
   vm_script_targets_region2 = [
     { name = "site2-vm     ", host = local.site2_vm_fqdn, ipv4 = local.site2_vm_addr, probe = true, ping = true },

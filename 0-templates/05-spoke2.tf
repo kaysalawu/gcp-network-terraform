@@ -421,8 +421,8 @@ module "spoke2_reverse_zone" {
     }
   }
   recordsets = {
-    "PTR ${local.spoke2_us_ilb_reverse_suffix}" = { ttl = 300, records = ["${local.spoke2_eu_ilb_fqdn}."] },
-    "PTR ${local.spoke2_us_alb_reverse_suffix}" = { ttl = 300, records = ["${local.spoke2_eu_alb_fqdn}."] },
+    "PTR ${local.spoke2_us_ilb_reverse_suffix}" = { ttl = 300, records = ["${local.spoke2_us_ilb_fqdn}."] },
+    "PTR ${local.spoke2_us_alb_reverse_suffix}" = { ttl = 300, records = ["${local.spoke2_us_alb_fqdn}."] },
   }
 }
 

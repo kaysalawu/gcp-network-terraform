@@ -508,6 +508,10 @@ module "hub_dns_private_zone_records" {
     "A ${local.hub_us_nlb_dns_prefix}" = { ttl = 300, records = [local.hub_us_nlb_addr, ] },
     "A ${local.hub_us_alb_dns_prefix}" = { ttl = 300, records = [local.hub_us_alb_addr, ] },
 
+    "A ${local.hub_eu_ep_spoke1_eu_psc_ilb_prefix}" = { ttl = 300, records = [local.hub_eu_ep_spoke1_eu_psc_ilb_addr] },
+    "A ${local.hub_eu_ep_spoke1_eu_psc_nlb_prefix}" = { ttl = 300, records = [local.hub_eu_ep_spoke1_eu_psc_nlb_addr] },
+    "A ${local.hub_eu_ep_spoke1_eu_psc_alb_prefix}" = { ttl = 300, records = [local.hub_eu_ep_spoke1_eu_psc_alb_addr] },
+
     "AAAA ${local.hub_eu_ilb_dns_prefix}" = { ttl = 300, records = [local.hub_eu_ilb_ipv6, ] },
     "AAAA ${local.hub_us_ilb_dns_prefix}" = { ttl = 300, records = [local.hub_us_ilb_ipv6, ] },
 

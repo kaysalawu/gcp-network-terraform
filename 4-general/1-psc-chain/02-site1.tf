@@ -1,10 +1,4 @@
 
-locals {
-  site1_vpc_ipv6_cidr = module.site1_vpc.internal_ipv6_range
-  site1_dns_main_ipv6 = module.site1_dns.internal_ipv6
-  site1_vm_main_ipv6  = module.site1_vm.internal_ipv6
-}
-
 ####################################################
 # network
 ####################################################
@@ -155,98 +149,31 @@ module "site1_vpc_firewall" {
 }
 
 ####################################################
-# custom dns
-####################################################
-
-# unbound startup
-
-locals {
-  site1_unbound_startup = templatefile("../../scripts/unbound/unbound.sh", local.site1_dns_vars)
-  site1_dns_vars = {
-    ONPREM_LOCAL_RECORDS = local.onprem_local_records_site1
-    REDIRECTED_HOSTS     = local.onprem_redirected_hosts_site1
-    FORWARD_ZONES        = local.onprem_forward_zones_site1
-    TARGETS              = local.vm_script_targets
-    ACCESS_CONTROL_PREFIXES = concat(
-      local.netblocks.internal,
-      ["127.0.0.0/8", "35.199.192.0/19", "fd00::/8", ]
-    )
-  }
-  onprem_local_records_site1 = [
-    { name = local.site1_vm_fqdn, rdata = local.site1_vm_addr, ttl = "300", type = "A" },
-    { name = local.site2_vm_fqdn, rdata = local.site2_vm_addr, ttl = "300", type = "A" },
-    { name = lower(local.site1_vm_fqdn), rdata = local.site1_vm_main_ipv6, ttl = "300", type = "AAAA" },
-    { name = lower(local.site2_vm_fqdn), rdata = local.site2_vm_main_ipv6, ttl = "300", type = "AAAA" },
-  ]
-  # hosts redirected to psc endpoint
-  onprem_redirected_hosts_site1 = [
-    {
-      class = "IN", ttl = "3600", type = "A", rdata = local.hub_psc_api_all_fr_addr
-      hosts = [
-        "storage.googleapis.com",
-        "bigquery.googleapis.com",
-        "${local.hub_eu_region}-aiplatform.googleapis.com",
-        "${local.hub_us_region}-aiplatform.googleapis.com",
-        "run.app",
-      ]
-    },
-    # authoritative hosts
-    { hosts = [local.hub_eu_psc_https_ctrl_run_dns], class = "IN", ttl = "3600", type = "A", rdata = local.hub_eu_alb_addr },
-    { hosts = [local.hub_us_psc_https_ctrl_run_dns], class = "IN", ttl = "3600", type = "A", rdata = local.hub_us_alb_addr },
-  ]
-  onprem_forward_zones_site1 = [
-    { zone = "${local.cloud_domain}.", targets = [local.hub_eu_ns_addr, ] },
-    { zone = "${local.hub_psc_api_fr_name}.p.googleapis.com", targets = [local.hub_eu_ns_addr, ] },
-    { zone = local.spoke1_reverse_zone, targets = [local.hub_eu_ns_addr, ] },
-    { zone = local.spoke2_reverse_zone, targets = [local.hub_eu_ns_addr, ] },
-    { zone = ".", targets = ["8.8.8.8", "8.8.4.4"] },
-  ]
-}
-
-# unbound instance
-
-module "site1_dns" {
-  source     = "../../modules/compute-vm"
-  project_id = var.project_id_onprem
-  name       = "${local.site1_prefix}dns"
-  zone       = "${local.site1_region}-b"
-  tags       = [local.tag_dns, local.tag_ssh]
-
-  network_interfaces = [{
-    stack_type = local.enable_ipv6 ? "IPV4_IPV6" : "IPV4_ONLY"
-    network    = module.site1_vpc.self_link
-    subnetwork = module.site1_vpc.subnet_self_links["${local.site1_region}/main"]
-    addresses  = { internal = local.site1_ns_addr }
-  }]
-  service_account = {
-    email  = module.site1_sa.email
-    scopes = ["cloud-platform"]
-  }
-  metadata_startup_script = local.site1_unbound_startup
-}
-
-####################################################
 # cloud dns
 ####################################################
 
-resource "time_sleep" "site1_dns_forward_to_dns_wait_120s" {
-  create_duration = "120s"
-  depends_on      = [module.site1_dns, ]
-}
+# local zone
 
-module "site1_dns_forward_to_dns" {
+module "site1_dns_private_zone" {
   source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
   project_id  = var.project_id_onprem
-  name        = "${local.site1_prefix}to-dns"
-  description = "forward all dns queries to custom resolvers"
+  name        = "${local.site1_prefix}private"
+  description = "site1 network attached"
   zone_config = {
-    domain = "."
-    forwarding = {
-      client_networks = [module.site1_vpc.self_link, ]
-      forwarders      = { (local.site1_ns_addr) = "private" }
+    domain = "${local.site1_domain}.${local.onprem_domain}."
+    private = {
+      client_networks = [
+        module.site1_vpc.self_link,
+        module.hub_vpc.self_link,
+        module.site1_vpc.self_link,
+      ]
     }
   }
-  depends_on = [time_sleep.site1_dns_forward_to_dns_wait_120s]
+  recordsets = {
+    "A ${local.site1_ep_hub_eu_psc_ilb_prefix}" = { ttl = 300, records = [local.site1_ep_hub_eu_psc_ilb_addr] },
+    "A ${local.site1_ep_hub_eu_psc_nlb_prefix}" = { ttl = 300, records = [local.site1_ep_hub_eu_psc_nlb_addr] },
+    "A ${local.site1_ep_hub_eu_psc_alb_prefix}" = { ttl = 300, records = [local.site1_ep_hub_eu_psc_alb_addr] },
+  }
 }
 
 ####################################################
@@ -284,7 +211,6 @@ module "site1_vm" {
 
 locals {
   site1_files = {
-    "output/site1-unbound.sh" = local.site1_unbound_startup
   }
 }
 

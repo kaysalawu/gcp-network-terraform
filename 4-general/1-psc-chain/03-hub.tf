@@ -11,7 +11,6 @@ locals {
 
   hub_vpc_ipv6_cidr   = module.hub_vpc.internal_ipv6_range
   hub_eu_vm_main_ipv6 = module.hub_eu_vm.internal_ipv6
-  hub_us_vm_main_ipv6 = module.hub_us_vm.internal_ipv6
 }
 
 ####################################################
@@ -84,16 +83,6 @@ resource "google_compute_address" "hub_eu_main_addresses" {
   region       = local.hub_eu_region
 }
 
-resource "google_compute_address" "hub_us_main_addresses" {
-  for_each     = local.hub_us_main_addresses
-  project      = var.project_id_hub
-  name         = each.key
-  subnetwork   = module.hub_vpc.subnet_ids["${local.hub_us_region}/us-main"]
-  address_type = "INTERNAL"
-  address      = each.value.ipv4
-  region       = local.hub_us_region
-}
-
 ####################################################
 # service networking connection
 ####################################################
@@ -118,19 +107,6 @@ module "hub_nat_eu" {
   project_id     = var.project_id_hub
   region         = local.hub_eu_region
   name           = "${local.hub_prefix}eu-nat"
-  router_network = module.hub_vpc.self_link
-  router_create  = true
-
-  config_source_subnetworks = {
-    primary_ranges_only = true
-  }
-}
-
-module "hub_nat_us" {
-  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
-  project_id     = var.project_id_hub
-  region         = local.hub_us_region
-  name           = "${local.hub_prefix}us-nat"
   router_network = module.hub_vpc.self_link
   router_create  = true
 
@@ -388,32 +364,6 @@ module "hub_eu_dns" {
   metadata_startup_script = local.hub_unbound_config
 }
 
-# us
-
-module "hub_us_dns" {
-  source     = "../../modules/compute-vm"
-  project_id = var.project_id_hub
-  name       = "${local.hub_prefix}us-dns"
-  zone       = "${local.hub_us_region}-b"
-  tags       = [local.tag_dns, local.tag_ssh]
-  tag_bindings_firewall = {
-    (local.hub_vpc_tags_dns.parent) = local.hub_vpc_tags_dns.id
-  }
-  network_interfaces = [{
-    stack_type = local.enable_ipv6 ? "IPV4_IPV6" : "IPV4_ONLY"
-    network    = module.hub_vpc.self_link
-    subnetwork = module.hub_vpc.subnet_self_links["${local.hub_us_region}/us-main"]
-    addresses = {
-      internal = local.hub_us_ns_addr
-    }
-  }]
-  service_account = {
-    email  = module.hub_sa.email
-    scopes = ["cloud-platform"]
-  }
-  metadata_startup_script = local.hub_unbound_config
-}
-
 ####################################################
 # psc/api
 ####################################################
@@ -463,7 +413,6 @@ resource "time_sleep" "hub_dns_forward_to_dns_wait" {
   create_duration = "120s"
   depends_on = [
     module.hub_eu_dns,
-    module.hub_us_dns,
   ]
 }
 
@@ -472,7 +421,6 @@ resource "time_sleep" "hub_dns_forward_to_dns_wait" {
 locals {
   hub_dns_rp_rules = {
     drp-rule-eu-psc-https-ctrl = { dns_name = "${local.hub_eu_psc_https_ctrl_run_dns}.", local_data = { A = { rrdatas = [local.hub_eu_alb_addr] } } }
-    drp-rule-us-psc-https-ctrl = { dns_name = "${local.hub_us_psc_https_ctrl_run_dns}.", local_data = { A = { rrdatas = [local.hub_us_alb_addr] } } }
     drp-rule-runapp            = { dns_name = "*.run.app.", local_data = { A = { rrdatas = [local.hub_psc_api_fr_addr] } } }
     drp-rule-gcr               = { dns_name = "*.gcr.io.", local_data = { A = { rrdatas = [local.hub_psc_api_fr_addr] } } }
     drp-rule-apis              = { dns_name = "*.googleapis.com.", local_data = { A = { rrdatas = [local.hub_psc_api_fr_addr] } } }
@@ -532,7 +480,6 @@ module "hub_dns_forward_to_onprem" {
       client_networks = [module.hub_vpc.self_link, ]
       forwarders = {
         (local.hub_eu_ns_addr) = "private"
-        (local.hub_us_ns_addr) = "private"
       }
     }
   }
@@ -552,10 +499,12 @@ module "hub_dns_private_zone" {
     }
   }
   recordsets = {
+    "A ${local.hub_eu_ep_spoke1_eu_psc_ilb_prefix}" = { ttl = 300, records = [local.hub_eu_ep_spoke1_eu_psc_ilb_addr] },
+    "A ${local.hub_eu_ep_spoke1_eu_psc_nlb_prefix}" = { ttl = 300, records = [local.hub_eu_ep_spoke1_eu_psc_nlb_addr] },
+    "A ${local.hub_eu_ep_spoke1_eu_psc_alb_prefix}" = { ttl = 300, records = [local.hub_eu_ep_spoke1_eu_psc_alb_addr] },
+
     "A ${local.hub_eu_vm_dns_prefix}"    = { ttl = 300, records = [local.hub_eu_vm_addr, ] },
-    "A ${local.hub_us_vm_dns_prefix}"    = { ttl = 300, records = [local.hub_us_vm_addr, ] },
     "AAAA ${local.hub_eu_vm_dns_prefix}" = { ttl = 300, records = [local.hub_eu_vm_main_ipv6, ] },
-    "AAAA ${local.hub_us_vm_dns_prefix}" = { ttl = 300, records = [local.hub_us_vm_main_ipv6, ] },
   }
 }
 
@@ -580,30 +529,6 @@ module "hub_eu_vm" {
     network    = module.hub_vpc.self_link
     subnetwork = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
     addresses  = { internal = local.hub_eu_vm_addr }
-  }]
-  service_account = {
-    email  = module.hub_sa.email
-    scopes = ["cloud-platform"]
-  }
-  metadata = {
-    user-data = module.vm_cloud_init.cloud_config
-  }
-}
-
-module "hub_us_vm" {
-  source     = "../../modules/compute-vm"
-  project_id = var.project_id_hub
-  name       = "${local.hub_prefix}us-vm"
-  zone       = "${local.hub_us_region}-b"
-  tags       = [local.tag_ssh, local.tag_gfe]
-  tag_bindings_firewall = {
-    (local.hub_vpc_tags_gfe.parent) = local.hub_vpc_tags_gfe.id
-  }
-  network_interfaces = [{
-    stack_type = local.enable_ipv6 ? "IPV4_IPV6" : "IPV4_ONLY"
-    network    = module.hub_vpc.self_link
-    subnetwork = module.hub_vpc.subnet_self_links["${local.hub_us_region}/us-main"]
-    addresses  = { internal = local.hub_us_vm_addr }
   }]
   service_account = {
     email  = module.hub_sa.email
