@@ -52,44 +52,22 @@ locals {
     health_check_response = local.uhc_config.response
   }
   vm_script_targets_region1 = [
-    { name = "site1-vm     ", host = local.site1_vm_fqdn, ipv4 = local.site1_vm_addr, probe = true, ping = true },
-    { name = "hub-eu-vm    ", host = local.hub_eu_vm_fqdn, ipv4 = local.hub_eu_vm_addr, probe = true, ping = true },
-    { name = "spoke1-eu-vm ", host = local.spoke1_eu_vm_fqdn, ipv4 = local.spoke1_eu_vm_addr, probe = true, ping = true },
-    { name = "hub-eu-ilb   ", host = local.hub_eu_ilb_fqdn, ipv4 = local.hub_eu_ilb_addr, curl = false },
-    { name = "hub-eu-nlb   ", host = local.hub_eu_nlb_fqdn, ipv4 = local.hub_eu_nlb_addr, curl = false, ipv6 = false },
-    { name = "hub-eu-alb   ", host = local.hub_eu_alb_fqdn, ipv4 = local.hub_eu_alb_addr, curl = false, ipv6 = false },
-    { name = "spoke1-eu-ilb", host = local.spoke1_eu_ilb_fqdn, ipv4 = local.spoke1_eu_ilb_addr, ptr = true, ping = true },
-    { name = "spoke1-eu-nlb", host = local.spoke1_eu_nlb_fqdn, ipv4 = local.spoke1_eu_nlb_addr, ptr = true, ipv6 = false },
-    { name = "spoke1-eu-alb", host = local.spoke1_eu_alb_fqdn, ipv4 = local.spoke1_eu_alb_addr, ptr = true, ipv6 = false },
-    { name = "spoke2-spoke1-eu-psc-ilb", host = local.spoke2_eu_ep_spoke1_eu_psc_ilb_fqdn, ipv4 = local.spoke2_eu_ep_spoke1_eu_psc_ilb_addr },
-    { name = "spoke2-spoke1-eu-psc-nlb", host = local.spoke2_eu_ep_spoke1_eu_psc_nlb_fqdn, ipv4 = local.spoke2_eu_ep_spoke1_eu_psc_nlb_addr, ipv6 = false },
-    { name = "spoke2-spoke1-eu-psc-alb", host = local.spoke2_eu_ep_spoke1_eu_psc_alb_fqdn, ipv4 = local.spoke2_eu_ep_spoke1_eu_psc_alb_addr, ipv6 = false },
+    { name = "hub-spoke1-eu-psc-ilb", host = local.hub_eu_ep_spoke1_eu_psc_ilb_fqdn, ipv4 = local.hub_eu_ep_spoke1_eu_psc_ilb_addr },
+    { name = "hub-spoke1-eu-psc-nlb", host = local.hub_eu_ep_spoke1_eu_psc_nlb_fqdn, ipv4 = local.hub_eu_ep_spoke1_eu_psc_nlb_addr, ipv6 = false },
+    { name = "hub-spoke1-eu-psc-alb", host = local.hub_eu_ep_spoke1_eu_psc_alb_fqdn, ipv4 = local.hub_eu_ep_spoke1_eu_psc_alb_addr, ipv6 = false },
+    { name = "site1-hub-eu-psc-ilb", host = local.site1_ep_hub_eu_psc_ilb_fqdn, ipv4 = local.site1_ep_hub_eu_psc_ilb_addr },
+    { name = "site1-hub-eu-psc-nlb", host = local.site1_ep_hub_eu_psc_nlb_fqdn, ipv4 = local.site1_ep_hub_eu_psc_nlb_addr, ipv6 = false },
+    { name = "site1-hub-eu-psc-alb", host = local.site1_ep_hub_eu_psc_alb_fqdn, ipv4 = local.site1_ep_hub_eu_psc_alb_addr, ipv6 = false },
   ]
   vm_script_targets_region2 = [
-    { name = "site2-vm     ", host = local.site2_vm_fqdn, ipv4 = local.site2_vm_addr, probe = true, ping = true },
-    { name = "hub-us-vm    ", host = local.hub_us_vm_fqdn, ipv4 = local.hub_us_vm_addr, probe = true, ping = true },
-    { name = "spoke2-us-vm ", host = local.spoke2_us_vm_fqdn, ipv4 = local.spoke2_us_vm_addr, probe = true, ping = true },
-    { name = "hub-us-ilb   ", host = local.hub_us_ilb_fqdn, ipv4 = local.hub_us_ilb_addr, curl = false },
-    { name = "hub-us-nlb   ", host = local.hub_us_nlb_fqdn, ipv4 = local.hub_us_nlb_addr, curl = false, ipv6 = false },
-    { name = "hub-us-alb   ", host = local.hub_us_alb_fqdn, ipv4 = local.hub_us_alb_addr, curl = false, ipv6 = false },
-    { name = "spoke2-us-ilb", host = local.spoke2_us_ilb_fqdn, ipv4 = local.spoke2_us_ilb_addr, ptr = true, ping = true },
-    { name = "spoke2-us-nlb", host = local.spoke2_us_nlb_fqdn, ipv4 = local.spoke2_us_nlb_addr, ptr = true, ipv6 = false },
-    { name = "spoke2-us-alb", host = local.spoke2_us_alb_fqdn, ipv4 = local.spoke2_us_alb_addr, ptr = true, ipv6 = false },
   ]
   vm_script_targets_misc = [
-    { name = "hub-geo-ilb", host = local.hub_geo_ilb_fqdn },
     { name = "internet", host = "icanhazip.com", probe = true },
-    { name = "www", host = "www.googleapis.com", path = "/generate_204", probe = true },
-    { name = "storage", host = "storage.googleapis.com", path = "/generate_204", probe = true },
-    { name = "hub-eu-psc-https", host = local.hub_eu_psc_https_ctrl_run_dns, path = "/generate_204" },
-    { name = "hub-us-psc-https", host = local.hub_us_psc_https_ctrl_run_dns, path = "/generate_204" },
-    { name = "hub-eu-run", host = local.hub_eu_run_httpbin_host, probe = true, path = "/generate_204" },
-    { name = "spoke1-eu-run", host = local.spoke1_eu_run_httpbin_host, probe = true, path = "/generate_204" },
-    { name = "spoke2-us-run", host = local.spoke2_us_run_httpbin_host, probe = true, path = "/generate_204" },
   ]
   vm_script_targets = concat(
     local.vm_script_targets_region1,
     local.vm_script_targets_region2,
+
     local.vm_script_targets_misc,
   )
   vm_startup = templatefile("../../scripts/server.sh", {

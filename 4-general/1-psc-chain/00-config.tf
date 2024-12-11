@@ -111,14 +111,25 @@ locals {
   site1_subnets = {
     main = { region = local.site1_region, ip_cidr_range = "10.10.1.0/24", ipv6 = {} }
   }
-  site1_gw_addr        = cidrhost(local.site1_subnets["main"].ip_cidr_range, 1)
-  site1_router_addr    = cidrhost(local.site1_subnets["main"].ip_cidr_range, 2)
-  site1_ns_addr        = cidrhost(local.site1_subnets["main"].ip_cidr_range, 5)
-  site1_vm_addr        = cidrhost(local.site1_subnets["main"].ip_cidr_range, 9)
-  site1_router_lo_addr = "1.1.1.1"
+  site1_gw_addr                = cidrhost(local.site1_subnets["main"].ip_cidr_range, 1)
+  site1_router_addr            = cidrhost(local.site1_subnets["main"].ip_cidr_range, 2)
+  site1_ns_addr                = cidrhost(local.site1_subnets["main"].ip_cidr_range, 5)
+  site1_vm_addr                = cidrhost(local.site1_subnets["main"].ip_cidr_range, 9)
+  site1_ep_hub_eu_psc_ilb_addr = cidrhost(local.site1_subnets["main"].ip_cidr_range, 66)
+  site1_ep_hub_eu_psc_nlb_addr = cidrhost(local.site1_subnets["main"].ip_cidr_range, 77)
+  site1_ep_hub_eu_psc_alb_addr = cidrhost(local.site1_subnets["main"].ip_cidr_range, 88)
+  site1_router_lo_addr         = "1.1.1.1"
 
   site1_vm_dns_prefix = "vm"
   site1_vm_fqdn       = "${local.site1_vm_dns_prefix}.${local.site1_dns_zone}"
+
+  # psc endpoints --> hub1
+  site1_ep_hub_eu_psc_ilb_prefix = "ep.eu.hub-eu-ilb"
+  site1_ep_hub_eu_psc_nlb_prefix = "ep.eu.hub-eu-nlb"
+  site1_ep_hub_eu_psc_alb_prefix = "ep.eu.hub-eu-alb"
+  site1_ep_hub_eu_psc_ilb_fqdn   = "${local.site1_ep_hub_eu_psc_ilb_prefix}.${local.site1_dns_zone}"
+  site1_ep_hub_eu_psc_nlb_fqdn   = "${local.site1_ep_hub_eu_psc_nlb_prefix}.${local.site1_dns_zone}"
+  site1_ep_hub_eu_psc_alb_fqdn   = "${local.site1_ep_hub_eu_psc_alb_prefix}.${local.site1_dns_zone}"
 }
 
 # site2
@@ -209,18 +220,21 @@ locals {
   hub_eu_psa_range1       = "10.1.120.0/22"
   hub_eu_psa_range2       = "10.1.124.0/22"
 
-  hub_eu_main_default_gw = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 1)
-  hub_eu_vm_addr         = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 9)
-  hub_eu_router_addr     = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 10)
-  hub_eu_ncc_cr_addr0    = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 20)
-  hub_eu_ncc_cr_addr1    = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 30)
-  hub_eu_ns_addr         = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 40)
-  hub_eu_nva_vm_addr     = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 50)
-  hub_eu_nva_ilb_addr    = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 60)
-  hub_eu_ilb_addr        = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 70)
-  hub_eu_nlb_addr        = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 80)
-  hub_eu_alb_addr        = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 90)
-  hub_eu_router_lo_addr  = "11.11.11.11"
+  hub_eu_main_default_gw           = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 1)
+  hub_eu_vm_addr                   = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 9)
+  hub_eu_router_addr               = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 10)
+  hub_eu_ncc_cr_addr0              = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 20)
+  hub_eu_ncc_cr_addr1              = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 30)
+  hub_eu_ns_addr                   = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 40)
+  hub_eu_nva_vm_addr               = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 50)
+  hub_eu_nva_ilb_addr              = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 60)
+  hub_eu_ilb_addr                  = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 70)
+  hub_eu_nlb_addr                  = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 80)
+  hub_eu_alb_addr                  = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 90)
+  hub_eu_ep_spoke1_eu_psc_ilb_addr = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 66)
+  hub_eu_ep_spoke1_eu_psc_nlb_addr = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 77)
+  hub_eu_ep_spoke1_eu_psc_alb_addr = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 88)
+  hub_eu_router_lo_addr            = "11.11.11.11"
 
   hub_eu_main_addresses = {
     "${local.hub_prefix}eu-ncc-cr-addr0" = { ipv4 = local.hub_eu_ncc_cr_addr0 }
@@ -488,18 +502,18 @@ locals {
   spoke2_eu_ilb_addr                  = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 30)
   spoke2_eu_nlb_addr                  = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 40)
   spoke2_eu_alb_addr                  = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 50)
-  spoke2_eu_ep_spoke1_eu_psc_ilb_addr = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 60)
-  spoke2_eu_ep_spoke1_eu_psc_nlb_addr = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 70)
-  spoke2_eu_ep_spoke1_eu_psc_alb_addr = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 80)
+  spoke2_eu_ep_spoke1_eu_psc_ilb_addr = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 66)
+  spoke2_eu_ep_spoke1_eu_psc_nlb_addr = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 77)
+  spoke2_eu_ep_spoke1_eu_psc_alb_addr = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 88)
 
   spoke2_us_main_default_gw           = cidrhost(local.spoke2_subnets["us-main"].ip_cidr_range, 1)
   spoke2_us_vm_addr                   = cidrhost(local.spoke2_subnets["us-main"].ip_cidr_range, 9)
   spoke2_us_ilb_addr                  = cidrhost(local.spoke2_subnets["us-main"].ip_cidr_range, 30)
   spoke2_us_nlb_addr                  = cidrhost(local.spoke2_subnets["us-main"].ip_cidr_range, 40)
   spoke2_us_alb_addr                  = cidrhost(local.spoke2_subnets["us-main"].ip_cidr_range, 50)
-  spoke2_us_ep_spoke1_eu_psc_ilb_addr = cidrhost(local.spoke2_subnets["us-main"].ip_cidr_range, 60)
-  spoke2_us_ep_spoke1_eu_psc_nlb_addr = cidrhost(local.spoke2_subnets["us-main"].ip_cidr_range, 70)
-  spoke2_us_ep_spoke1_eu_psc_alb_addr = cidrhost(local.spoke2_subnets["us-main"].ip_cidr_range, 80)
+  spoke2_us_ep_spoke1_eu_psc_ilb_addr = cidrhost(local.spoke2_subnets["us-main"].ip_cidr_range, 66)
+  spoke2_us_ep_spoke1_eu_psc_nlb_addr = cidrhost(local.spoke2_subnets["us-main"].ip_cidr_range, 77)
+  spoke2_us_ep_spoke1_eu_psc_alb_addr = cidrhost(local.spoke2_subnets["us-main"].ip_cidr_range, 88)
 
   spoke2_eu_main_addresses = {
     "${local.spoke2_prefix}eu-ilb-addr" = { ipv4 = local.spoke2_eu_ilb_addr }
