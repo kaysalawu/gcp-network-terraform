@@ -58,5 +58,5 @@ spec:
       serviceAccountName: ping-operator-sa
       containers:
         - name: ping-operator
-          image: europe-west2-docker.pkg.dev/prj-p-core-rest-svc-auto-911f/ping-operator-repo/ping-operator:latest
+          image: europe-west2-docker.pkg.dev/team-aura-networking/ping-operator-repo/ping-operator:latest
           imagePullPolicy: Always

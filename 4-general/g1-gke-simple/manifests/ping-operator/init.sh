@@ -1,10 +1,13 @@
 #!bin/bash
 
-PROJECT=team-aura-networking
+PROJECT_ID=team-aura-networking
 LOCATION=europe-west2
 CLUSTER_NAME=g1-hub-cluster
+DOCKERFILE_PATH=app/python
 
-gcloud container clusters get-credentials $CLUSTER_NAME --region "$LOCATION-b" --project=$PROJECT
+CURRENT_DIR=$(pwd)
+
+gcloud container clusters get-credentials $CLUSTER_NAME --region "$LOCATION-b" --project=$PROJECT_ID
 
 # Step 1: Create the PingResource Custom Resource Definition (CRD)
 #---------------------------------------
@@ -12,14 +15,16 @@ gcloud container clusters get-credentials $CLUSTER_NAME --region "$LOCATION-b" -
 
 # Step 2: Apply the CRD to the Cluster
 #---------------------------------------
+kubectl create namespace
 kubectl apply -f pingresource-crd.yaml
 kubectl get crd
 
 # Step 3: Test locally
 #---------------------------------------
-python3 -m venv ping-operator-env
+cd $DOCKERFILE_PATH
+sudo python3 -m venv ping-operator-env
 source ping-operator-env/bin/activate
-pip install kopf kubernetes
+pip install kopf kubernetes --user
 # create ping_operator-local.py
 kopf run ping_operator-local.py
 
@@ -61,27 +66,35 @@ kubectl get pingresource test-ping -o yaml
 #---------------------------------------
 
 gcloud artifacts repositories create ping-operator-repo \
---project=$project \
+--project=$PROJECT_ID \
 --repository-format=docker \
---location=$location \
+--location=$LOCATION \
 --description="Repository for Ping Operator"
 
 gcloud auth configure-docker europe-west2-docker.pkg.dev
+
+cd $DOCKERFILE_PATH
 docker build -t ping-operator:latest .
-docker tag ping-operator:latest europe-west2-docker.pkg.dev/prj-p-core-rest-svc-auto-911f/ping-operator-repo/ping-operator:latest
-docker push europe-west2-docker.pkg.dev/prj-p-core-rest-svc-auto-911f/ping-operator-repo/ping-operator:latest
+docker tag ping-operator:latest europe-west2-docker.pkg.dev/$PROJECT_ID/ping-operator-repo/ping-operator:latest
+docker push europe-west2-docker.pkg.dev/$PROJECT_ID/ping-operator-repo/ping-operator:latest
+
+cd $CURRENT_DIR
 kubectl apply -f ping-operator-deployment.yaml
 kubectl apply -f pingresource-sample.yaml
-
+kubectl get pingresource test-ping -o wide
+kubectl get pingresource test-ping -o yaml
 
 # Create client API
 #---------------------------------------
 
+cd $DOCKERFILE_PATH
+source ping-operator-env/bin/activate
+sudo su
 pip install fastapi kubernetes uvicorn
 # create ping_api.py
 uvicorn ping_api:app --reload --host 0.0.0.0 --port 8000
 # in another terminal
-curl -X POST "http://127.0.0.1:8000/api/create_ping" -H "Content-Type: application/json" -d '{"name": "test-ping", "message": "Hello from FastAPI"}'
+curl -X POST "http://127.0.0.1:8000/api/create_ping" -H "Content-Type: application/json" -d '{"name": "test-ping2", "message": "Hello from FastAPI"}'
 
 # {"status":"success","name":"test-ping"}ping-operator$
 ping-operator$ kubectl get pingresource
