@@ -10,10 +10,7 @@ locals {
   httpbin_port = 80
 
   hub_psc_api_secure = false
-
-  hub_eu_run_httpbin_host = module.hub_eu_run_httpbin.service.uri
-
-  enable_ipv6 = true
+  enable_ipv6        = true
 }
 
 ####################################################
@@ -66,7 +63,6 @@ locals {
     { name = "storage", host = "storage.googleapis.com", path = "/generate_204", probe = true },
     { name = "hub-eu-psc-https", host = local.hub_eu_psc_https_ctrl_run_dns, path = "/generate_204" },
     { name = "hub-us-psc-https", host = local.hub_us_psc_https_ctrl_run_dns, path = "/generate_204" },
-    { name = "hub-eu-run", host = local.hub_eu_run_httpbin_host, probe = true, path = "/generate_204" },
   ]
   vm_script_targets = concat(
     local.vm_script_targets_region1,
@@ -145,49 +141,38 @@ module "probe_vm_cloud_init" {
   ]
 }
 
-module "proxy_vm_cloud_init" {
-  source = "../../modules/cloud-config-gen"
-  files  = local.proxy_startup_files
-  run_commands = [
-    "sysctl -w net.ipv4.ip_forward=1",
-    "sysctl -w net.ipv4.conf.eth0.disable_xfrm=1",
-    "sysctl -w net.ipv4.conf.eth0.disable_policy=1",
-    "echo 'net.ipv4.ip_forward=1' >> /etc/sysctl.conf",
-    "sysctl -w net.ipv6.conf.all.forwarding=1",
-    "echo 'net.ipv6.conf.all.forwarding=1' >> /etc/sysctl.conf",
-    "sysctl -p",
-    "echo iptables-persistent iptables-persistent/autosave_v4 boolean false | debconf-set-selections",
-    "echo iptables-persistent iptables-persistent/autosave_v6 boolean false | debconf-set-selections",
-    "apt-get -y install iptables-persistent",
-    "iptables -P FORWARD ACCEPT",
-    "iptables -P INPUT ACCEPT",
-    "iptables -P OUTPUT ACCEPT",
-    "iptables -t nat -A POSTROUTING -d 10.0.0.0/8 -j ACCEPT",
-    "iptables -t nat -A POSTROUTING -d 172.16.0.0/12 -j ACCEPT",
-    "iptables -t nat -A POSTROUTING -d 192.168.0.0/16 -j ACCEPT",
-    "iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE",
-    ". ${local.init_dir}/init/startup.sh",
-    ". ${local.init_dir}/unbound/setup-unbound.sh",
-    ". ${local.init_dir}/squid/setup-squid.sh",
-    "docker compose -f ${local.init_dir}/unbound/docker-compose.yml up -d",
-    "docker compose -f ${local.init_dir}/squid/docker-compose.yml up -d",
-  ]
-}
-
 ############################################
 # hub
 ############################################
 
+locals {
+  hub_psc_api_fr_name = (
+    local.hub_psc_api_secure ?
+    local.hub_psc_api_sec_fr_name :
+    local.hub_psc_api_all_fr_name
+  )
+  hub_psc_api_fr_addr = (
+    local.hub_psc_api_secure ?
+    local.hub_psc_api_sec_fr_addr :
+    local.hub_psc_api_all_fr_addr
+  )
+  hub_psc_api_fr_target = (
+    local.hub_psc_api_secure ?
+    "vpc-sc" :
+    "all-apis"
+  )
+}
+
+
 # service account
 
 module "hub_sa" {
-  source       = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v36.0.1"
+  source       = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v34.1.0"
   project_id   = var.project_id_hub
   name         = trimsuffix("${local.hub_prefix}sa", "-")
   generate_key = false
   iam_project_roles = {
-    (var.project_id_onprem) = ["roles/owner", ]
-    (var.project_id_hub)    = ["roles/owner", ]
+    (var.project_id_hub) = ["roles/owner", ]
   }
 }
 
