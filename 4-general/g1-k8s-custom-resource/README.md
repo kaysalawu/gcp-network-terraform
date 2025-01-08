@@ -56,7 +56,7 @@ PROJECT_ID=<your-project-id>
 LOCATION=europe-west2
 CLUSTER_NAME=g1-hub-cluster
 APP_PATH=artifacts/ping/app
-MANIFESTS_PATH=artifacts/ping/manifests
+MANIFESTS_PATH=artifacts/ping/manifests/kustomize/base
 DOCKERFILE_PING_OPERATOR_PATH=Dockerfile-ping-operator
 DOCKERFILE_CONTROL_PLANE_PATH=Dockerfile-control-plane
 ```
@@ -67,12 +67,22 @@ DOCKERFILE_CONTROL_PLANE_PATH=Dockerfile-control-plane
 gcloud container clusters get-credentials $CLUSTER_NAME --region "$LOCATION-b" --project=$PROJECT_ID
 ```
 
+3\. Create the python virtual environment
+
+```sh
+cd $APP_PATH
+python3 -m venv ping-venv
+source ping-venv/bin/activate
+pip install kopf fastapi kubernetes uvicorn
+pip freeze > requirements.txt
+```
+
 ## (Optional) Testing the Operator (locally)
 
 1\. Create the PingResource Custom Resource Definition (CRD)
 
 ```sh
-cd $MANIFESTS_PATH
+cd ../manifests/kustomize/base
 kubectl apply -f pingresource-crd.yaml
 ```
 
@@ -85,19 +95,16 @@ kubectl get crd pingresources.example.com
 Sample Output:
 
 ```sh
-manifests$ kubectl get crd pingresources.example.com
+(ping-venv) base$ kubectl get crd pingresources.example.com
 NAME                        CREATED AT
-pingresources.example.com   2025-01-08T04:45:49Z
+pingresources.example.com   2025-01-08T06:56:17Z
+(ping-venv) base$
 ```
 
 3\. Run the operator locally
 
 ```sh
-cd ../app/python
-python3 -m venv ping-venv
-source ping-venv/bin/activate
-pip install kopf fastapi kubernetes uvicorn
-pip freeze > requirements.txt
+cd ../../../app/operator/
 kopf run ping_operator-local.py
 ```
 
@@ -106,21 +113,21 @@ kopf run ping_operator-local.py
 <summary>Sample output</summary>
 
 ```sh
-(ping-venv) python$ kopf run ping_operator-local.py
-/home/salawu/GCP/gcp-network-terraform/4-general/g1-k8s-custom-resource/artifacts/ping/app/python/ping-venv/lib/python3.11/site-packages/kopf/_core/reactor/running.py:179: FutureWarning: Absence of either namespaces or cluster-wide flag will become an error soon. For now, switching to the cluster-wide mode for backward compatibility.
+(ping-venv) operator$ kopf run ping_operator-local.py
+/home/salawu/GCP/gcp-network-terraform/4-general/g1-k8s-custom-resource/artifacts/ping/app/ping-venv/lib/python3.11/site-packages/kopf/_core/reactor/running.py:179: FutureWarning: Absence of either namespaces or cluster-wide flag will become an error soon. For now, switching to the cluster-wide mode for backward compatibility.
   warnings.warn("Absence of either namespaces or cluster-wide flag will become an error soon."
-[2025-01-08 04:50:10,259] kopf._core.engines.a [INFO    ] Initial authentication has been initiated.
-[2025-01-08 04:50:10,284] kopf.activities.auth [INFO    ] Activity 'login_via_client' succeeded.
-[2025-01-08 04:50:10,285] kopf._core.engines.a [INFO    ] Initial authentication has finished.
+[2025-01-08 07:05:26,490] kopf._core.engines.a [INFO    ] Initial authentication has been initiated.
+[2025-01-08 07:05:26,515] kopf.activities.auth [INFO    ] Activity 'login_via_client' succeeded.
+[2025-01-08 07:05:26,515] kopf._core.engines.a [INFO    ] Initial authentication has finished.
 ```
 
 </details>
 <p>
 
-4\. In a new terminal, create a PingResource custom resource
+4\. In a new terminal in the same directory, create a PingResource custom resource
 
 ```sh
-kubectl apply -f ../../manifests/pingresource-sample.yaml
+kubectl apply -f ../../manifests/kustomize/base/pingresource-sample.yaml
 ```
 
 5\. Confirm the custom resource is created
@@ -134,7 +141,7 @@ kubectl get pingresource test-ping -o yaml
 <summary>Sample output</summary>
 
 ```sh
-python$ kubectl get pingresource test-ping -o yaml
+operator$ kubectl get pingresource test-ping -o yaml
 apiVersion: example.com/v1
 kind: PingResource
 metadata:
@@ -143,14 +150,14 @@ metadata:
       {"spec":{"message":"Ping"}}
     kubectl.kubernetes.io/last-applied-configuration: |
       {"apiVersion":"example.com/v1","kind":"PingResource","metadata":{"annotations":{},"name":"test-ping","namespace":"default"},"spec":{"message":"Ping"}}
-  creationTimestamp: "2025-01-08T04:54:09Z"
+  creationTimestamp: "2025-01-08T07:06:19Z"
   finalizers:
   - kopf.zalando.org/KopfFinalizerMarker
   generation: 2
   name: test-ping
   namespace: default
-  resourceVersion: "30462"
-  uid: a9656969-cf6f-4b3d-b4bb-d672c3b717d3
+  resourceVersion: "122393"
+  uid: 18a5fe69-5e64-45a0-ae1c-dbb7e64f19fd
 spec:
   message: Ping
 status:
@@ -162,13 +169,14 @@ status:
 
 We can see that the message is `ping` and the response is `ping - pong` which is the expected output.
 
-😎 For the fun of it, let's create an almost useless control plane that watches the custom resource and prints a message when the custom resource is created or deleted.
+😎 For the fun of it, let's create an almost useless control plane that watches the custom resource and prints a message when a custom resource is created or deleted.
 
 
 6\. In the current (second) terminal, run the control plane locally
 
 ```sh
-source ping-venv/bin/activate
+cd ../control-plane/
+source ../ping-venv/bin/activate
 python -m uvicorn control_plane-local:app --reload --host 0.0.0.0 --port 9000
 ```
 
@@ -177,14 +185,15 @@ python -m uvicorn control_plane-local:app --reload --host 0.0.0.0 --port 9000
 <summary>Sample output</summary>
 
 ```sh
-(ping-venv) python$ python -m uvicorn control_plane-local:app --reload --host 0.0.0.0 --port 9000
-INFO:     Will watch for changes in these directories: ['/home/salawu/GCP/gcp-network-terraform/4-general/g1-k8s-custom-resource/artifacts/ping/app/python']
+(ping-venv) control-plane$ python -m uvicorn control_plane-local:app --reload --host 0.0.0.0 --port 9000
+INFO:     Will watch for changes in these directories: ['/home/salawu/GCP/gcp-network-terraform/4-general/g1-k8s-custom-resource/artifacts/ping/app/control-plane']
 INFO:     Uvicorn running on http://0.0.0.0:9000 (Press CTRL+C to quit)
-INFO:     Started reloader process [28660] using statreload
-INFO:     Started server process [28662]
-INFO:     Waiting for application startup.
+INFO:     Started reloader process [73643] using statreload
 Started monitoring PingResource events...
+INFO:     Started server process [73645]
+INFO:     Waiting for application startup.
 INFO:     Application startup complete.
+Resource test-ping added.
 ```
 
 </details>
@@ -207,7 +216,8 @@ In step 4, we created the custom resource using **kubectl**. We will now create 
 8\. In a new (fourth) terminal, run the API server
 
 ```sh
-source ping-venv/bin/activate
+cd ../api-server/
+source ../ping-venv/bin/activate
 python -m uvicorn ping_api:app --reload --host 0.0.0.0 --port 8000
 ```
 
@@ -216,11 +226,11 @@ python -m uvicorn ping_api:app --reload --host 0.0.0.0 --port 8000
 <summary>Sample output</summary>
 
 ```sh
-(ping-venv) python$ python -m uvicorn ping_api:app --reload --host 0.0.0.0 --port 8000
-INFO:     Will watch for changes in these directories: ['/home/salawu/GCP/gcp-network-terraform/4-general/g1-k8s-custom-resource/artifacts/ping/app/python']
+(ping-venv) api-server$ python -m uvicorn ping_api:app --reload --host 0.0.0.0 --port 8000
+INFO:     Will watch for changes in these directories: ['/home/salawu/GCP/gcp-network-terraform/4-general/g1-k8s-custom-resource/artifacts/ping/app/api-server']
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     Started reloader process [34894] using statreload
-INFO:     Started server process [34905]
+INFO:     Started reloader process [74140] using statreload
+INFO:     Started server process [74142]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 ```
@@ -309,7 +319,7 @@ INFO:     Application startup complete.
 10\.   Navigate to the `artifacts/ping/manifests` directory and delete the `test-ping` custom resource
 
   ```sh
-  cd ../../manifests/
+  cd ../../manifests/kustomize/base/
   kubectl delete -f pingresource-sample.yaml
   kubectl delete -f pingresource-crd.yaml
   ```
