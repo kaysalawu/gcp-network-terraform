@@ -32,6 +32,7 @@ backend.tf
 *.cer
 *.pfx
 *.log
+*-venv*/
 
 # Skaffold
 bin/
@@ -54,4 +55,4 @@ _run.*
 _dev.*
 _delete.*
 _env.txt
-
+__pycache__

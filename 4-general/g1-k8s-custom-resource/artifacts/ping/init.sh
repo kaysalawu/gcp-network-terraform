@@ -23,14 +23,14 @@ kubectl get crd
 # Step 3: Test locally
 #---------------------------------------
 cd $APP_PATH
-sudo python3 -m venv ping-operator-env
-source ping-operator-env/bin/activate
+sudo python3 -m venv ping-venv
+source ping-venv/bin/activate
 pip install kopf fastapi kubernetes uvicorn
 # create ping_operator-local.py
 kopf run ping_operator-local.py
 
-# (ping-operator-env) ping-operator$ kopf run ping_operator-local.py
-# /home/salawu/CLOUDTUPLE/platforms/neo4j-gcp-v2/ping-operator/ping-operator-env/lib/python3.11/site-packages/kopf/_core/reactor/running.py:179: FutureWarning: Absence of either namespaces or cluster-wide flag will become an error soon. For now, switching to the cluster-wide mode for backward compatibility.
+# (ping-venv) ping-operator$ kopf run ping_operator-local.py
+# /home/salawu/CLOUDTUPLE/platforms/neo4j-gcp-v2/ping-operator/ping-venv/lib/python3.11/site-packages/kopf/_core/reactor/running.py:179: FutureWarning: Absence of either namespaces or cluster-wide flag will become an error soon. For now, switching to the cluster-wide mode for backward compatibility.
 #   warnings.warn("Absence of either namespaces or cluster-wide flag will become an error soon."
 # [2024-11-07 12:39:57,029] kopf._core.engines.a [INFO    ] Initial authentication has been initiated.
 # [2024-11-07 12:39:57,054] kopf.activities.auth [INFO    ] Activity 'login_via_client' succeeded.
@@ -67,10 +67,10 @@ kubectl get pingresource test-ping -o yaml
 # Step 4: Deploy to GKE
 #---------------------------------------
 gcloud artifacts repositories create ping-repo \
---project=$PROJECT_ID \
---repository-format=docker \
---location=$LOCATION \
---description="Repository for Ping"
+    --project=$PROJECT_ID \
+    --repository-format=docker \
+    --location=$LOCATION \
+    --description="Repository for Ping"
 
 gcloud auth configure-docker europe-west2-docker.pkg.dev
 
@@ -91,20 +91,20 @@ kubectl get pingresource test-ping -o yaml
 # Step 5: Create control plane API and test locally
 #----------------------------------------------------
 cd $APP_PATH
-source ping-operator-env/bin/activate
+source ping-venv/bin/activate
 # create control_plane_with_api.py
-uvicorn control_plane-local:app --reload --host 0.0.0.0 --port 9000
+python -m uvicorn control_plane-local:app --reload --host 0.0.0.0 --port 9000
 # in another terminal
 curl -X GET "http://127.0.0.1:9000/resources" -H "Content-Type: application/json"
 # {"resources":{}}python$
 
 # Step 6: Create client API and test locally
 #-----------------------------------------------
-source ping-operator-env/bin/activate
+source ping-venv/bin/activate
 sudo su
 
 # create ping_api.py
-uvicorn ping_api:app --reload --host 0.0.0.0 --port 8000
+python -m uvicorn ping_api:app --reload --host 0.0.0.0 --port 8000
 
 # in another terminal
 curl -X POST "http://127.0.0.1:8000/api/create_ping" -H "Content-Type: application/json" -d '{"name": "test-ping1", "message": "Hello from FastAPI"}'
@@ -127,16 +127,15 @@ curl -X GET "http://127.0.0.1:9000/resources" -H "Content-Type: application/json
 # {"status":"success","message":"Resource test-ping3 deleted"}python$
 # {"resources":{"test-ping1":"created","test-ping2":"created"}}python$
 
-
 curl -X DELETE "http://127.0.0.1:8000/api/delete_ping/test-ping2"
 curl -X GET "http://127.0.0.1:9000/resources" -H "Content-Type: application/json"
 # {"status":"success","message":"Resource test-ping2 deleted"}python$
 # {"resources":{"test-ping1":"created"}}python$
 
 ping-operator$ kubectl get pingresource
-NAME        AGE
-test-ping1   37s
-test-ping2   68s
+NAME AGE
+test-ping1 37s
+test-ping2 68s
 ping-operator$
 
 # Step 7: delete all resources
@@ -150,6 +149,6 @@ kubectl delete -f pingresource-sample.yaml
 kubectl delete -f pingresource-crd.yaml
 
 gcloud artifacts repositories delete ping-repo \
---project=$PROJECT_ID \
---location=$LOCATION \
---quiet
+    --project=$PROJECT_ID \
+    --location=$LOCATION \
+    --quiet
