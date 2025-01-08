@@ -6,7 +6,8 @@ Contents
 - [Prerequisites](#prerequisites)
 - [Deploy the Lab](#deploy-the-lab)
 - [Troubleshooting](#troubleshooting)
-- [Testing the Operator (Locally)](#testing-the-operator-locally)
+- [Initial Setup](#initial-setup)
+- [(Optional) Testing the Operator (locally)](#optional-testing-the-operator-locally)
 - [Testing the Operator (GKE)](#testing-the-operator-gke)
 
 
@@ -45,10 +46,33 @@ cd gcp-network-terraform/4-general/g1-k8s-custom-resource
 See the [troubleshooting](../../troubleshooting/README.md) section for tips on how to resolve common issues that may occur during the deployment of the lab.
 
 
-## Testing the Operator (Locally)
+## Initial Setup
 
-1.
+1. Set some environment variables
 
+```sh
+PROJECT_ID=<your-project-id>
+LOCATION=europe-west2
+CLUSTER_NAME=g1-hub-cluster
+APP_PATH=artifacts/ping/app
+MANIFESTS_PATH=artifacts/ping/manifests
+DOCKERFILE_PING_OPERATOR_PATH=Dockerfile-ping-operator
+DOCKERFILE_CONTROL_PLANE_PATH=Dockerfile-control-plane
+CURRENT_DIR=$(pwd)
+```
+
+2. Get the GKE cluster credentials
+
+```sh
+gcloud container clusters get-credentials $CLUSTER_NAME --region "$LOCATION-b" --project=$PROJECT_ID
+```
+
+## (Optional) Testing the Operator (locally)
+
+1. Create the PingResource Custom Resource Definition (CRD)
+
+```sh
+cd $APP_PATH
 
 ## Testing the Operator (GKE)
 
