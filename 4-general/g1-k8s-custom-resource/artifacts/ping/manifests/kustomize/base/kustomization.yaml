@@ -1,0 +1,4 @@
+resources:
+  - main/ping-operator-deploy.yaml
+  - main/pingresource-crd.yaml
+  - main/api-server.yaml

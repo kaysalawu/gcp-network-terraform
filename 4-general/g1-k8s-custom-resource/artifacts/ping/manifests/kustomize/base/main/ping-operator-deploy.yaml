@@ -6,7 +6,6 @@ metadata:
   namespace: default
 
 ---
-
 # ClusterRole for Cluster-level Access
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -21,7 +20,6 @@ rules:
     verbs: ["get", "list", "watch"]
 
 ---
-
 # ClusterRoleBinding for Cluster Access
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -37,7 +35,6 @@ subjects:
     namespace: default
 
 ---
-
 # Role for Namespace-level Access
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -53,7 +50,6 @@ rules:
     verbs: ["get", "update", "patch"]
 
 ---
-
 # RoleBinding for Namespace Access
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -70,7 +66,6 @@ subjects:
     namespace: default
 
 ---
-
 # Deployment for the Operator
 apiVersion: apps/v1
 kind: Deployment
@@ -90,5 +85,5 @@ spec:
       serviceAccountName: ping-operator-sa
       containers:
         - name: ping-operator
-          image: europe-west2-docker.pkg.dev/team-aura-networking/ping-repo/ping-operator:latest
+          image: europe-west2-docker.pkg.dev/prj-hub-lab/g1-hub-eu-repo/ping-operator:latest
           imagePullPolicy: Always

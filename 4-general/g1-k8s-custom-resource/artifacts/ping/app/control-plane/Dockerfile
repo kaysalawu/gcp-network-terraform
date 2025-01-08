@@ -4,4 +4,4 @@ RUN pip install fastapi uvicorn kubernetes
 COPY control_plane.py /app/control_plane.py
 WORKDIR /app
 
-CMD ["python", "control_plane.py"]
+CMD ["uvicorn", "control_plane:app", "--host", "0.0.0.0", "--port", "9000"]

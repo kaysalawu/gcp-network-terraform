@@ -226,7 +226,7 @@ python -m uvicorn ping_api:app --reload --host 0.0.0.0 --port 8000
 <summary>Sample output</summary>
 
 ```sh
-(ping-venv) api-server$ python -m uvicorn ping_api:app --reload --host 0.0.0.0 --port 8000
+(ping-venv) api-server$ python -m uvicorn ping_api-local:app --reload --host 0.0.0.0 --port 8000
 INFO:     Will watch for changes in these directories: ['/home/salawu/GCP/gcp-network-terraform/4-general/g1-k8s-custom-resource/artifacts/ping/app/api-server']
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
 INFO:     Started reloader process [74140] using statreload
