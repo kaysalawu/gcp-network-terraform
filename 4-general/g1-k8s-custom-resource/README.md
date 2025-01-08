@@ -56,7 +56,6 @@ PROJECT_ID=<your-project-id>
 LOCATION=europe-west2
 CLUSTER_NAME=g1-hub-cluster
 APP_PATH=artifacts/ping/app
-MANIFESTS_PATH=artifacts/ping/manifests/kustomize/base
 DOCKERFILE_PING_OPERATOR_PATH=Dockerfile-ping-operator
 DOCKERFILE_CONTROL_PLANE_PATH=Dockerfile-control-plane
 ```
@@ -82,7 +81,7 @@ pip freeze > requirements.txt
 1\. Create the PingResource Custom Resource Definition (CRD)
 
 ```sh
-cd ../manifests/kustomize/base
+cd ../manifests/kustomize/base/main
 kubectl apply -f pingresource-crd.yaml
 ```
 
@@ -127,7 +126,7 @@ kopf run ping_operator-local.py
 4\. In a new terminal in the same directory, create a PingResource custom resource
 
 ```sh
-kubectl apply -f ../../manifests/kustomize/base/pingresource-sample.yaml
+kubectl apply -f ../../manifests/kustomize/overlays/ping-resources/pingresource-sample.yaml
 ```
 
 5\. Confirm the custom resource is created
@@ -316,12 +315,11 @@ INFO:     Application startup complete.
 
   We have successfully tested the operator locally.
 
-10\.   Navigate to the `artifacts/ping/manifests` directory and delete the `test-ping` custom resource
+10\.   Delete the CRD and pingresource sample
 
   ```sh
-  cd ../../manifests/kustomize/base/
-  kubectl delete -f pingresource-sample.yaml
-  kubectl delete -f pingresource-crd.yaml
+  kubectl delete -f ../../manifests/kustomize/overlays/ping-resources/pingresource-sample.yaml
+  kubectl delete -f ../../manifests/kustomize/base/main/pingresource-crd.yaml
   ```
 
 11\.   Stop the control plane and API server by pressing `Ctrl+C` in the respective terminals.

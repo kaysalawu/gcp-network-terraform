@@ -44,7 +44,7 @@ metadata:
 rules:
   - apiGroups: ["example.com"]
     resources: ["pingresources"]
-    verbs: ["get", "list", "watch", "update", "patch"]
+    verbs: ["get", "list", "watch", "create", "delete", "update", "patch"]
   - apiGroups: ["example.com"]
     resources: ["pingresources/status"]
     verbs: ["get", "update", "patch"]
@@ -63,6 +63,37 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: ping-operator-sa
+    namespace: default
+
+---
+# Role for Control Plane
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: control-plane-role
+  namespace: default
+rules:
+  - apiGroups: ["example.com"]
+    resources: ["pingresources"]
+    verbs: ["get", "list", "watch", "create", "delete", "update", "patch"]
+  - apiGroups: ["example.com"]
+    resources: ["pingresources/status"]
+    verbs: ["get", "update", "patch"]
+
+---
+# RoleBinding for Control Plane
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: control-plane-rolebinding
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: control-plane-role
+subjects:
+  - kind: ServiceAccount
+    name: default
     namespace: default
 
 ---

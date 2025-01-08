@@ -15,6 +15,15 @@ class PingResourceRequest(BaseModel):
     name: str = None
     message: str = "Ping"
 
+    class Config:
+        allow_population_by_field_name = True
+        schema_extra = {
+            "example": {
+                "name": "test-ping1",
+                "message": "Hello from FastAPI",
+            }
+        }
+
 
 # Endpoint to create a PingResource
 @app.post("/api/create_ping")
