@@ -9,6 +9,7 @@ Contents
 - [Initial Setup](#initial-setup)
 - [(Optional) Testing the Operator (locally)](#optional-testing-the-operator-locally)
 - [Testing the Operator (GKE)](#testing-the-operator-gke)
+- [Cleanup](#cleanup)
 
 
 ## Overview
@@ -326,6 +327,134 @@ INFO:     Application startup complete.
 
 ## Testing the Operator (GKE)
 
+1\. Deploy the operator, control plane and API server using skaffold
+
+```sh
+cd artifacts
+skaffold run
+```
+
+2\. Confirm the operator is running
+
+```sh
+kubectl get pods
+```
+
+Sample output
+
+```sh
+artifacts$ kubectl get pods
+NAME                             READY   STATUS    RESTARTS   AGE
+api-server-5ff4d7b6cb-7ndh8      1/1     Running   0          56s
+control-plane-6b98d95f97-s64rt   1/1     Running   0          56s
+ping-operator-64fcffb9d8-2sdv4   1/1     Running   0          56s
+```
+
+3\. Confirm the CRD is created
+
+```sh
+kubectl get crd pingresources.example.com
+```
+
+Sample output
+
+```sh
+artifacts$ kubectl get crd pingresources.example.com
+NAME                        CREATED AT
+pingresources.example.com   2025-01-08T08:45:51Z
+```
+
+4\. Confirm the load balancer IP addresses
+
+```sh
+kubectl get svc
+```
+
+Sample output
+
+```sh
+artifacts$ kubectl get svc
+NAME                 TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)        AGE
+api-server-elb       LoadBalancer   10.1.102.123   34.142.15.176    80:30889/TCP   76m
+api-server-service   ClusterIP      10.1.102.125   <none>           8080/TCP       99m
+control-plane        ClusterIP      10.1.102.32    <none>           9000/TCP       70m
+control-plane-elb    LoadBalancer   10.1.102.176   35.197.246.167   80:30298/TCP   74m
+kubernetes           ClusterIP      10.1.102.1     <none>           443/TCP        6h26m
+```
+
+5\. Extract the external IP addresses and create `test-ping1` resource
+
+```sh
+API_SERVER_IP=$(kubectl get svc api-server-elb -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+curl -X POST "http://$API_SERVER_IP/api/create_ping" -H "Content-Type: application/json" -d '{"name": "test-ping1", "message": "Hello from FastAPI"}'
+```
+
+Sample output
+
+```json
+{"status":"success","name":"test-ping1"}
+```
+
+6\. Confirm the control plane events
+
+```sh
+CONTROL_PLANE_IP=$(kubectl get svc control-plane-elb -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+curl -X GET "http://$CONTROL_PLANE_IP/resources" -H "Content-Type: application/json"
+```
+
+Sample output
+
+```json
+{"resources":{"test-ping1":"created"}}
+```
+
+7\. Create `test-ping2` resource
+
+```sh
+curl -X POST "http://$API_SERVER_IP/api/create_ping" \
+-H "Content-Type: application/json" \
+-d '{"name": "test-ping2", "message": "Hello from FastAPI"}'
+```
+
+Sample output
+
+```json
+{"status":"success","name":"test-ping2"}
+```
+
+8\. (Optional) Test API server using FastApi web interface
+
+Go to `http://$API_SERVER_IP/docs` in your browser and test the API server.
+
+<img src="images/fastapi-api-server.png" alt="FastAPI Web Interface" width="800"/>
+
+9\. (Optional) Test control plane using FastApi web interface
+
+Go to `http://$CONTROL_PLANE_IP/docs` in your browser and test the control plane.
+
+<img src="images/fastapi-control-plane.png" alt="FastAPI Web Interface" width="800"/>
+
+10\. Delete the resources
+
+```sh
+curl -X DELETE "http://$API_SERVER_IP/api/delete_ping/test-ping1"
+curl -X DELETE "http://$API_SERVER_IP/api/delete_ping/test-ping2"
+skaffold delete
+```
+
+## Cleanup
+
+1\. (Optional) Navigate back to the lab directory (if you are not already there).
+
+```sh
+cd gcp-network-terraform/4-general/g1-k8s-custom-resource
+```
+
+2\. Run terraform destroy.
+
+```sh
+terraform destroy -auto-approve
+```
 
 <!-- BEGIN_TF_DOCS -->
 
