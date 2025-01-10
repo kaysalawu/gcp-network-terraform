@@ -9,9 +9,7 @@ locals {
   hub_vpc_tags_gfe = google_tags_tag_value.hub_vpc_tags["${local.hub_prefix}vpc-gfe"]
   hub_vpc_tags_nva = google_tags_tag_value.hub_vpc_tags["${local.hub_prefix}vpc-nva"]
 
-  hub_vpc_ipv6_cidr   = module.hub_vpc.internal_ipv6_range
-  hub_eu_vm_main_ipv6 = module.hub_eu_vm.internal_ipv6
-  hub_us_vm_main_ipv6 = module.hub_us_vm.internal_ipv6
+  hub_vpc_ipv6_cidr = module.hub_vpc.internal_ipv6_range
 
   hub_ingress_namespace = "default"
   hub_master_authorized_networks = [
@@ -89,31 +87,6 @@ resource "google_compute_address" "hub_eu_main_addresses" {
   address      = each.value.ipv4
   region       = local.hub_eu_region
 }
-
-resource "google_compute_address" "hub_us_main_addresses" {
-  for_each     = local.hub_us_main_addresses
-  project      = var.project_id_hub
-  name         = each.key
-  subnetwork   = module.hub_vpc.subnet_ids["${local.hub_us_region}/us-main"]
-  address_type = "INTERNAL"
-  address      = each.value.ipv4
-  region       = local.hub_us_region
-}
-
-####################################################
-# service networking connection
-####################################################
-
-# vpc-sc config
-
-# resource "google_service_networking_vpc_service_controls" "hub" {
-#   provider   = google-beta
-#   project    = var.project_id_hub
-#   network    = google_compute_network.hub_vpc.name
-#   service    = google_service_networking_connection.hub_eu_psa_ranges.service
-#   enabled    = true
-#   depends_on = [google_compute_network_peering_routes_config.hub_eu_psa_ranges]
-# }
 
 ####################################################
 # nat
@@ -352,64 +325,8 @@ module "hub_dns_private_zone" {
     }
   }
   recordsets = {
-    "A ${local.hub_eu_vm_dns_prefix}"    = { ttl = 300, records = [local.hub_eu_vm_addr, ] },
-    "A ${local.hub_us_vm_dns_prefix}"    = { ttl = 300, records = [local.hub_us_vm_addr, ] },
-    "AAAA ${local.hub_eu_vm_dns_prefix}" = { ttl = 300, records = [local.hub_eu_vm_main_ipv6, ] },
-    "AAAA ${local.hub_us_vm_dns_prefix}" = { ttl = 300, records = [local.hub_us_vm_main_ipv6, ] },
-  }
-}
-
-####################################################
-# workload
-####################################################
-
-# instance
-
-module "hub_eu_vm" {
-  source     = "../../modules/compute-vm"
-  project_id = var.project_id_hub
-  name       = "${local.hub_prefix}eu-vm"
-  zone       = "${local.hub_eu_region}-b"
-  tags       = [local.tag_ssh, local.tag_gfe]
-  tag_bindings_firewall = {
-    (local.hub_vpc_tags_gfe.parent) = local.hub_vpc_tags_gfe.id
-  }
-  network_interfaces = [{
-    stack_type = local.enable_ipv6 ? "IPV4_IPV6" : "IPV4_ONLY"
-    network    = module.hub_vpc.self_link
-    subnetwork = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
-    addresses  = { internal = local.hub_eu_vm_addr }
-  }]
-  service_account = {
-    email  = module.hub_sa.email
-    scopes = ["cloud-platform"]
-  }
-  metadata = {
-    user-data = module.vm_cloud_init.cloud_config
-  }
-}
-
-module "hub_us_vm" {
-  source     = "../../modules/compute-vm"
-  project_id = var.project_id_hub
-  name       = "${local.hub_prefix}us-vm"
-  zone       = "${local.hub_us_region}-b"
-  tags       = [local.tag_ssh, local.tag_gfe]
-  tag_bindings_firewall = {
-    (local.hub_vpc_tags_gfe.parent) = local.hub_vpc_tags_gfe.id
-  }
-  network_interfaces = [{
-    stack_type = local.enable_ipv6 ? "IPV4_IPV6" : "IPV4_ONLY"
-    network    = module.hub_vpc.self_link
-    subnetwork = module.hub_vpc.subnet_self_links["${local.hub_us_region}/us-main"]
-    addresses  = { internal = local.hub_us_vm_addr }
-  }]
-  service_account = {
-    email  = module.hub_sa.email
-    scopes = ["cloud-platform"]
-  }
-  metadata = {
-    user-data = module.vm_cloud_init.cloud_config
+    "A ${local.hub_eu_vm_dns_prefix}" = { ttl = 300, records = [local.hub_eu_vm_addr, ] },
+    "A ${local.hub_us_vm_dns_prefix}" = { ttl = 300, records = [local.hub_us_vm_addr, ] },
   }
 }
 

@@ -163,7 +163,6 @@ locals {
   )
 }
 
-
 # service account
 
 module "hub_sa" {
