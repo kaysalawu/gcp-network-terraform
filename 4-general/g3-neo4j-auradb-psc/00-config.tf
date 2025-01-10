@@ -22,7 +22,7 @@ locals {
   tag_ssh       = "ssh"
   tag_http      = "http-server"
   tag_https     = "https-server"
-  region1       = "europe-west2"
+  region1       = "europe-west1"
   region2       = "us-west2"
 
   private_prefixes = [

@@ -75,20 +75,6 @@ resource "google_tags_tag_value" "hub_vpc_tags" {
 }
 
 ####################################################
-# addresses
-####################################################
-
-resource "google_compute_address" "hub_eu_main_addresses" {
-  for_each     = local.hub_eu_main_addresses
-  project      = var.project_id_hub
-  name         = each.key
-  subnetwork   = module.hub_vpc.subnet_ids["${local.hub_eu_region}/eu-main"]
-  address_type = "INTERNAL"
-  address      = each.value.ipv4
-  region       = local.hub_eu_region
-}
-
-####################################################
 # nat
 ####################################################
 
@@ -97,19 +83,6 @@ module "hub_nat_eu" {
   project_id     = var.project_id_hub
   region         = local.hub_eu_region
   name           = "${local.hub_prefix}eu-nat"
-  router_network = module.hub_vpc.self_link
-  router_create  = true
-
-  config_source_subnetworks = {
-    primary_ranges_only = true
-  }
-}
-
-module "hub_nat_us" {
-  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
-  project_id     = var.project_id_hub
-  region         = local.hub_us_region
-  name           = "${local.hub_prefix}us-nat"
   router_network = module.hub_vpc.self_link
   router_create  = true
 
@@ -267,7 +240,6 @@ resource "google_dns_policy" "hub_dns_policy" {
 locals {
   hub_dns_rp_rules = {
     drp-rule-eu-psc-https-ctrl = { dns_name = "${local.hub_eu_psc_https_ctrl_run_dns}.", local_data = { A = { rrdatas = [local.hub_eu_alb_addr] } } }
-    drp-rule-us-psc-https-ctrl = { dns_name = "${local.hub_us_psc_https_ctrl_run_dns}.", local_data = { A = { rrdatas = [local.hub_us_alb_addr] } } }
     drp-rule-runapp            = { dns_name = "*.run.app.", local_data = { A = { rrdatas = [local.hub_psc_api_fr_addr] } } }
     drp-rule-gcr               = { dns_name = "*.gcr.io.", local_data = { A = { rrdatas = [local.hub_psc_api_fr_addr] } } }
     drp-rule-apis              = { dns_name = "*.googleapis.com.", local_data = { A = { rrdatas = [local.hub_psc_api_fr_addr] } } }
@@ -326,7 +298,6 @@ module "hub_dns_private_zone" {
   }
   recordsets = {
     "A ${local.hub_eu_vm_dns_prefix}" = { ttl = 300, records = [local.hub_eu_vm_addr, ] },
-    "A ${local.hub_us_vm_dns_prefix}" = { ttl = 300, records = [local.hub_us_vm_addr, ] },
   }
 }
 

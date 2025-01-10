@@ -5,7 +5,6 @@ locals {
     "${local.hub_prefix}vpc-gfe" = { value = "gfe", description = "load balancer backends" }
     "${local.hub_prefix}vpc-nva" = { value = "nva", description = "nva appliances" }
   }
-
   hub_vpc_ipv6_cidr   = module.hub_vpc.internal_ipv6_range
   hub_eu_vm_main_ipv6 = module.hub_eu_vm.internal_ipv6
 }
@@ -31,20 +30,6 @@ module "hub_vpc" {
 }
 
 ####################################################
-# addresses
-####################################################
-
-resource "google_compute_address" "hub_eu_main_addresses" {
-  for_each     = local.hub_eu_main_addresses
-  project      = var.project_id_hub
-  name         = each.key
-  subnetwork   = module.hub_vpc.subnet_ids["${local.hub_eu_region}/eu-main"]
-  address_type = "INTERNAL"
-  address      = each.value.ipv4
-  region       = local.hub_eu_region
-}
-
-####################################################
 # nat
 ####################################################
 
@@ -53,19 +38,6 @@ module "hub_nat_eu" {
   project_id     = var.project_id_hub
   region         = local.hub_eu_region
   name           = "${local.hub_prefix}eu-nat"
-  router_network = module.hub_vpc.self_link
-  router_create  = true
-
-  config_source_subnetworks = {
-    primary_ranges_only = true
-  }
-}
-
-module "hub_nat_us" {
-  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
-  project_id     = var.project_id_hub
-  region         = local.hub_us_region
-  name           = "${local.hub_prefix}us-nat"
   router_network = module.hub_vpc.self_link
   router_create  = true
 
@@ -230,6 +202,7 @@ locals {
     drp-rule-bypass-www        = { dns_name = "www.googleapis.com.", behavior = "bypassResponsePolicy" }
     drp-rule-bypass-ouath2     = { dns_name = "oauth2.googleapis.com.", behavior = "bypassResponsePolicy" }
     drp-rule-bypass-psc        = { dns_name = "*.p.googleapis.com.", behavior = "bypassResponsePolicy" }
+    drp-rule-eu-psc-aura       = { dns_name = "*.devsalawu0601.neo4j-dev.io.", local_data = { A = { rrdatas = [local.hub_eu_psc_ep_auradb] } } }
   }
 }
 

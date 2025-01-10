@@ -61,8 +61,6 @@ locals {
     local.vm_script_targets_region2,
     local.vm_script_targets_misc,
   )
-  vm_startup = templatefile("../../scripts/server.sh", {
-  })
   vm_init_vars = {}
   vm_init_files = {
     "${local.init_dir}/neo4j/Dockerfile"       = { owner = "root", permissions = "0744", content = templatefile("./scripts/init/neo4j/Dockerfile", {}) }
@@ -125,8 +123,7 @@ module "hub_sa" {
 
 locals {
   main_files = {
-    "output/server.sh"           = local.vm_startup
-    "output/startup.sh"          = templatefile("../../scripts/startup.sh", local.vm_init_vars)
+    "output/startup.sh"          = templatefile("./scripts/startup.sh", local.vm_init_vars)
     "output/vm-cloud-config.yml" = module.vm_cloud_init.cloud_config
   }
 }
