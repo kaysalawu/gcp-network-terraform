@@ -11,7 +11,7 @@ vars.tfvars
 tfplan
 .tmp
 modulez/*
-.env
+*.env
 
 # Module directory
 
