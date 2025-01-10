@@ -20,23 +20,23 @@ if [[ $PWD == '/' ]]; then
 fi
 
 terraform_docs_dirs=(
-1-org
-2-projects
-3-labs
-4-general
-modules
+    1-org
+    2-projects
+    3-labs
+    4-general
+    modules
 )
 
 main_dirs=(
-3-labs
-4-general
+    3-labs
+    # 4-general
 )
 
 main_dirs_excluded=(
 )
 
 function showUsage() {
-  echo -e "\nUsage: $0 [options]\n\
+    echo -e "\nUsage: $0 [options]\n\
   --diff, -f     : Run diff between local and template blueprints\n\
   --copy, -c     : Copy templates files to local\n\
   --delete, -x   : Delete local files specified in templates\n\
@@ -88,11 +88,11 @@ dir_diff() {
     local all_diffs_ok=true
     local original_dir=$(pwd)
     cd "$1" || exit
-    readarray -t files < templates
+    readarray -t files <templates
     for file in "${files[@]}"; do
         local_file=$(basename "$file")
         if [ -e "$local_file" ]; then
-            diff "$local_file" "$file" > /dev/null 2>&1
+            diff "$local_file" "$file" >/dev/null 2>&1
             diff_exit_status=$?
 
             if [ "$diff_exit_status" -ne 0 ]; then
@@ -110,10 +110,10 @@ dir_diff() {
     fi
 }
 
-copy_files(){
+copy_files() {
     local original_dir=$(pwd)
     cd "$1" || exit
-    readarray -t files < templates
+    readarray -t files <templates
     for file in "${files[@]}"; do
         local_file=$(basename "$file")
         if [ ! -e "$local_file" ]; then
@@ -124,10 +124,10 @@ copy_files(){
     cd "$original_dir" || exit
 }
 
-delete_files(){
+delete_files() {
     local original_dir=$(pwd)
     cd "$1" || exit
-    readarray -t files < templates
+    readarray -t files <templates
     for file in "${files[@]}"; do
         local_file=$(basename "$file")
         if [ -e "$local_file" ]; then
@@ -138,10 +138,10 @@ delete_files(){
     cd "$original_dir" || exit
 }
 
-terraform_validate(){
+terraform_validate() {
     local original_dir=$(pwd)
     cd "$1" || exit
-    terraform init > /dev/null 2>&1
+    terraform init >/dev/null 2>&1
     echo -e "  ${char_pass} terraform init"
     echo -e "  ${char_executing} terraform validate ..."
     if ! terraform validate; then
@@ -151,13 +151,13 @@ terraform_validate(){
     cd "$original_dir" || exit
 }
 
-terraform_plan(){
+terraform_plan() {
     local original_dir=$(pwd)
     cd "$1" || exit
-    terraform init > /dev/null 2>&1
+    terraform init >/dev/null 2>&1
     echo -e "  ${char_pass} terraform init"
     echo -e "  ${char_executing} terraform plan ..."
-    if ! terraform plan > /dev/null 2>&1; then
+    if ! terraform plan >/dev/null 2>&1; then
         echo -e "${color_red}Terraform plan failed${reset}"
         return 1
     fi
@@ -165,13 +165,13 @@ terraform_plan(){
     cd "$original_dir" || exit
 }
 
-terraform_cleanup(){
+terraform_cleanup() {
     local original_dir=$(pwd)
     cd "$1" || exit
-    rm -rf .terraform 2> /dev/null
-    rm .terraform.lock.hcl 2> /dev/null
-    rm terraform.tfstate.backup 2> /dev/null
-    rm terraform.tfstate 2> /dev/null
+    rm -rf .terraform 2>/dev/null
+    rm .terraform.lock.hcl 2>/dev/null
+    rm terraform.tfstate.backup 2>/dev/null
+    rm terraform.tfstate 2>/dev/null
     echo -e "  ${color_green}${char_pass} Cleaned!${reset}"
     cd "$original_dir" || exit
 }
@@ -185,7 +185,7 @@ run_terraform_docs() {
                 for subdir in "$dir"/*/; do
                     if [ -d "$subdir" ] && ! is_excluded "$subdir"; then
                         cd "$subdir" || exit
-                        terraform-docs markdown table . --output-file README.md --output-mode inject --show=requirements,inputs,outputs > /dev/null
+                        terraform-docs markdown table . --output-file README.md --output-mode inject --show=requirements,inputs,outputs >/dev/null
                         echo -e "${char_pass} ${subdir#${original_dir}/}README.md updated!${reset}"
                         cd "$original_dir" || exit
                     fi
@@ -201,31 +201,31 @@ run_terraform_docs() {
 }
 
 case "$1" in
-  "--diff" | "-f")
+"--diff" | "-f")
     echo && run_task_on_dirs dir_diff --no-prompt
     ;;
-  "--copy" | "-c")
+"--copy" | "-c")
     echo && run_task_on_dirs copy_files --no-prompt
     ;;
-  "--delete" | "-x")
+"--delete" | "-x")
     echo && run_task_on_dirs delete_files --prompt
     ;;
-  "--plan" | "-p")
+"--plan" | "-p")
     echo && run_task_on_dirs terraform_plan --no-prompt
     ;;
-  "--validate" | "-v")
+"--validate" | "-v")
     echo && run_task_on_dirs terraform_validate --no-prompt
     ;;
-  "--cleanup" | "-u")
+"--cleanup" | "-u")
     echo && run_task_on_dirs terraform_cleanup --prompt
     ;;
-  "--docs" | "-d")
+"--docs" | "-d")
     echo && run_terraform_docs --prompt
     ;;
-  "--help" | "-h")
+"--help" | "-h")
     showUsage
     ;;
-  *)
+*)
     showUsage
     ;;
 esac

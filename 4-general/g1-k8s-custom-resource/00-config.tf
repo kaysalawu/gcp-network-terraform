@@ -272,7 +272,7 @@ locals {
   hub_eu_psc_https_ctrl_run_dns = "${local.hub_eu_region}-run.googleapis.com"
   hub_us_psc_https_ctrl_run_dns = "${local.hub_us_region}-run.googleapis.com"
 
-  # psc endpoints ( to spoke1 published services)
+  # psc endpoints --> spoke1
   hub_eu_ep_spoke1_eu_psc_ilb_prefix = "ep.eu.spoke1-eu-ilb"
   hub_eu_ep_spoke1_eu_psc_nlb_prefix = "ep.eu.spoke1-eu-nlb"
   hub_eu_ep_spoke1_eu_psc_alb_prefix = "ep.eu.spoke1-eu-alb"
