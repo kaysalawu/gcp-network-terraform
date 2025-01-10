@@ -1,6 +1,0 @@
-bases:
-  - ../../base
-
-resources:
-  - api-server.yaml
-  - control-plane.yaml
