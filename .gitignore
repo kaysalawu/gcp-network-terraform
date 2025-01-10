@@ -10,7 +10,8 @@ vars.tfvars
 #*backend*
 tfplan
 .tmp
-modulez/
+modulez/*
+.env
 
 # Module directory
 
