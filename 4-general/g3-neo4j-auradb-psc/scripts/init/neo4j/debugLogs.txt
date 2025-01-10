@@ -1,0 +1,5 @@
+[DEBUG   ] [Thread 139637479954240] [Task None           ] 2025-01-10 10:20:55,494  [#0000]  _: <POOL> created, routing address IPv4Address(('c603e7b9-devtab1.databases.neo4j-dev.io', 7687))
+[DEBUG   ] [Thread 139637479954240] [Task None           ] 2025-01-10 10:20:55,495  [#0000]  _: <WORKSPACE> resolve home database
+[DEBUG   ] [Thread 139637479954240] [Task None           ] 2025-01-10 10:20:55,495  [#0000]  _: <POOL> attempting to update routing table from IPv4Address(('c603e7b9-devtab1.databases.neo4j-dev.io', 7687))
+[DEBUG   ] [Thread 139637479954240] [Task None           ] 2025-01-10 10:20:55,495  [#0000]  _: <RESOLVE> in: c603e7b9-devtab1.databases.neo4j-dev.io:7687
+[DEBUG   ] [Thread 139637479954240] [Task None           ] 2025-01-10 10:20:55,568  [#0000]  _: <POOL> close
