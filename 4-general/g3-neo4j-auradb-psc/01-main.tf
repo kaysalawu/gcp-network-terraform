@@ -6,7 +6,6 @@ locals {
   eu_ar_host   = "eu-docker.pkg.dev"
   us_ar_host   = "us-docker.pkg.dev"
   eu_repo_name = google_artifact_registry_repository.eu_repo.name
-  us_repo_name = google_artifact_registry_repository.us_repo.name
   httpbin_port = 80
 
   hub_psc_api_secure = false
@@ -23,13 +22,6 @@ resource "google_artifact_registry_repository" "eu_repo" {
   project       = var.project_id_hub
   location      = local.hub_eu_region
   repository_id = "${local.hub_prefix}eu-repo"
-  format        = "DOCKER"
-}
-
-resource "google_artifact_registry_repository" "us_repo" {
-  project       = var.project_id_hub
-  location      = local.hub_us_region
-  repository_id = "${local.hub_prefix}us-repo"
   format        = "DOCKER"
 }
 
@@ -70,48 +62,15 @@ locals {
     local.vm_script_targets_misc,
   )
   vm_startup = templatefile("../../scripts/server.sh", {
-    TARGETS                   = local.vm_script_targets
-    TARGETS_LIGHT_TRAFFIC_GEN = []
-    TARGETS_HEAVY_TRAFFIC_GEN = []
-    ENABLE_TRAFFIC_GEN        = false
   })
-  probe_init_vars = {
-    TARGETS                   = local.vm_script_targets
-    TARGETS_LIGHT_TRAFFIC_GEN = local.vm_script_targets
-    TARGETS_HEAVY_TRAFFIC_GEN = [for target in local.vm_script_targets : target.host if try(target.probe, false)]
-  }
-  vm_init_vars = {
-    TARGETS                   = local.vm_script_targets
-    TARGETS_LIGHT_TRAFFIC_GEN = []
-    TARGETS_HEAVY_TRAFFIC_GEN = []
-  }
-  proxy_init_vars = {
-    ONPREM_LOCAL_RECORDS = []
-    REDIRECTED_HOSTS     = []
-    FORWARD_ZONES        = []
-    TARGETS              = local.vm_script_targets
-    ACCESS_CONTROL_PREFIXES = concat(
-      local.netblocks.internal,
-      ["127.0.0.0/8", "35.199.192.0/19", "fd00::/8", ]
-    )
-  }
-  app_init_vars = {
-    health_check_path     = local.uhc_config.request_path
-    health_check_response = local.uhc_config.response
-  }
+  vm_init_vars = {}
   vm_init_files = {
-    "${local.init_dir}/fastapi/docker-compose-http-80.yml"   = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/fastapi/docker-compose-http-80.yml", {}) }
-    "${local.init_dir}/fastapi/docker-compose-http-8080.yml" = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/fastapi/docker-compose-http-8080.yml", {}) }
-    "${local.init_dir}/fastapi/app/app/Dockerfile"           = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/fastapi/app/app/Dockerfile", {}) }
-    "${local.init_dir}/fastapi/app/app/_app.py"              = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/fastapi/app/app/_app.py", {}) }
-    "${local.init_dir}/fastapi/app/app/main.py"              = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/fastapi/app/app/main.py", {}) }
-    "${local.init_dir}/fastapi/app/app/requirements.txt"     = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/fastapi/app/app/requirements.txt", {}) }
+    "${local.init_dir}/neo4j/Dockerfile"       = { owner = "root", permissions = "0744", content = templatefile("./scripts/init/neo4j/Dockerfile", {}) }
+    "${local.init_dir}/neo4j/client.py"        = { owner = "root", permissions = "0744", content = templatefile("./scripts/init/neo4j/client.py", {}) }
+    "${local.init_dir}/neo4j/requirements.txt" = { owner = "root", permissions = "0744", content = templatefile("./scripts/init/neo4j/requirements.txt", {}) }
   }
   vm_startup_init_files = {
-    "${local.init_dir}/init/startup.sh" = { owner = "root", permissions = "0744", content = templatefile("../../scripts/startup.sh", local.vm_init_vars) }
-  }
-  probe_startup_init_files = {
-    "${local.init_dir}/init/startup.sh" = { owner = "root", permissions = "0744", content = templatefile("../../scripts/startup.sh", local.probe_init_vars) }
+    "${local.init_dir}/init/startup.sh" = { owner = "root", permissions = "0744", content = templatefile("./scripts/startup.sh", local.vm_init_vars) }
   }
 }
 
@@ -123,21 +82,6 @@ module "vm_cloud_init" {
   )
   run_commands = [
     ". ${local.init_dir}/init/startup.sh",
-    "HOSTNAME=$(hostname) docker compose -f ${local.init_dir}/fastapi/docker-compose-http-80.yml up -d",
-    "HOSTNAME=$(hostname) docker compose -f ${local.init_dir}/fastapi/docker-compose-http-8080.yml up -d",
-  ]
-}
-
-module "probe_vm_cloud_init" {
-  source = "../../modules/cloud-config-gen"
-  files = merge(
-    local.vm_init_files,
-    local.probe_startup_init_files,
-  )
-  run_commands = [
-    ". ${local.init_dir}/init/startup.sh",
-    "HOSTNAME=$(hostname) docker compose -f ${local.init_dir}/fastapi/docker-compose-http-80.yml up -d",
-    "HOSTNAME=$(hostname) docker compose -f ${local.init_dir}/fastapi/docker-compose-http-8080.yml up -d",
   ]
 }
 
