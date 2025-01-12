@@ -10,7 +10,8 @@ vars.tfvars
 #*backend*
 tfplan
 .tmp
-modulez/
+modulez/*
+**/*.env
 
 # Module directory
 
@@ -32,12 +33,13 @@ backend.tf
 *.cer
 *.pfx
 *.log
+*-venv*/
 
 # Skaffold
 bin/
 include/
 lib/
-lib64/
+lib64/*
 share/
 pyvenv.cfg
 pkg/
@@ -54,4 +56,4 @@ _run.*
 _dev.*
 _delete.*
 _env.txt
-
+__pycache__

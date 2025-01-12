@@ -297,6 +297,8 @@ module "instance-group" {
 | <a name="output_instance"></a> [instance](#output\_instance) | Instance resource. |
 | <a name="output_internal_ip"></a> [internal\_ip](#output\_internal\_ip) | Instance main interface internal IP address. |
 | <a name="output_internal_ips"></a> [internal\_ips](#output\_internal\_ips) | Instance interfaces internal IP addresses. |
+| <a name="output_internal_ipv6"></a> [internal\_ipv6](#output\_internal\_ipv6) | Instance main interface internal IPv6 address. |
+| <a name="output_internal_ipv6s"></a> [internal\_ipv6s](#output\_internal\_ipv6s) | Instance interfaces internal IP addresses. |
 | <a name="output_self_link"></a> [self\_link](#output\_self\_link) | Instance self links. |
 | <a name="output_service_account"></a> [service\_account](#output\_service\_account) | Service account resource. |
 | <a name="output_service_account_email"></a> [service\_account\_email](#output\_service\_account\_email) | Service account email. |

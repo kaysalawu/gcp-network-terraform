@@ -18,6 +18,9 @@ locals {
   spoke2_us_run_httpbin_host = module.spoke2_us_run_httpbin.service.uri
 
   enable_ipv6 = true
+
+  spoke1_bucket_name = "${local.spoke1_prefix}${var.project_id_spoke1}-bucket"
+  spoke2_bucket_name = "${local.spoke2_prefix}${var.project_id_spoke2}-bucket"
 }
 
 ####################################################

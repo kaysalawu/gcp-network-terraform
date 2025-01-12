@@ -330,3 +330,29 @@ http:
 |---|---|:---:|
 | [id](outputs.tf#L17) | Fully qualified firewall policy id. |  |
 <!-- END TFDOC -->
+
+<!-- BEGIN_TF_DOCS -->
+## Requirements
+
+No requirements.
+
+## Inputs
+
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| <a name="input_attachments"></a> [attachments](#input\_attachments) | Ids of the resources to which this policy will be attached, in descriptive name => self link format. Specify folders or organization for hierarchical policy, VPCs for network policy. | `map(string)` | `{}` | no |
+| <a name="input_description"></a> [description](#input\_description) | Policy description. | `string` | `null` | no |
+| <a name="input_egress_rules"></a> [egress\_rules](#input\_egress\_rules) | List of egress rule definitions, action can be 'allow', 'deny', 'goto\_next' or 'apply\_security\_profile\_group'. The match.layer4configs map is in protocol => optional [ports] format. | <pre>map(object({<br>    priority                = number<br>    action                  = optional(string, "deny")<br>    description             = optional(string)<br>    disabled                = optional(bool, false)<br>    enable_logging          = optional(bool)<br>    security_profile_group  = optional(string)<br>    target_resources        = optional(list(string))<br>    target_service_accounts = optional(list(string))<br>    target_tags             = optional(list(string))<br>    tls_inspect             = optional(bool, null)<br>    match = object({<br>      address_groups       = optional(list(string))<br>      fqdns                = optional(list(string))<br>      region_codes         = optional(list(string))<br>      threat_intelligences = optional(list(string))<br>      destination_ranges   = optional(list(string))<br>      source_ranges        = optional(list(string))<br>      source_tags          = optional(list(string))<br>      layer4_configs = optional(list(object({<br>        protocol = optional(string, "all")<br>        ports    = optional(list(string))<br>      })), [{}])<br>    })<br>  }))</pre> | `{}` | no |
+| <a name="input_factories_config"></a> [factories\_config](#input\_factories\_config) | Paths to folders for the optional factories. | <pre>object({<br>    cidr_file_path          = optional(string)<br>    egress_rules_file_path  = optional(string)<br>    ingress_rules_file_path = optional(string)<br>  })</pre> | `{}` | no |
+| <a name="input_ingress_rules"></a> [ingress\_rules](#input\_ingress\_rules) | List of ingress rule definitions, action can be 'allow', 'deny', 'goto\_next' or 'apply\_security\_profile\_group'. | <pre>map(object({<br>    priority                = number<br>    action                  = optional(string, "allow")<br>    description             = optional(string)<br>    disabled                = optional(bool, false)<br>    enable_logging          = optional(bool)<br>    security_profile_group  = optional(string)<br>    target_resources        = optional(list(string))<br>    target_service_accounts = optional(list(string))<br>    target_tags             = optional(list(string))<br>    tls_inspect             = optional(bool, null)<br>    match = object({<br>      address_groups       = optional(list(string))<br>      fqdns                = optional(list(string))<br>      region_codes         = optional(list(string))<br>      threat_intelligences = optional(list(string))<br>      destination_ranges   = optional(list(string))<br>      source_ranges        = optional(list(string))<br>      source_tags          = optional(list(string))<br>      layer4_configs = optional(list(object({<br>        protocol = optional(string, "all")<br>        ports    = optional(list(string))<br>      })), [{}])<br>    })<br>  }))</pre> | `{}` | no |
+| <a name="input_name"></a> [name](#input\_name) | Policy name. | `string` | n/a | yes |
+| <a name="input_parent_id"></a> [parent\_id](#input\_parent\_id) | Parent node where the policy will be created, `folders/nnn` or `organizations/nnn` for hierarchical policy, project id for a network policy. | `string` | n/a | yes |
+| <a name="input_region"></a> [region](#input\_region) | Policy region. Leave null for hierarchical policy, set to 'global' for a global network policy. | `string` | `null` | no |
+| <a name="input_security_profile_group_ids"></a> [security\_profile\_group\_ids](#input\_security\_profile\_group\_ids) | The optional security groups ids to be referenced in factories. | `map(string)` | `{}` | no |
+
+## Outputs
+
+| Name | Description |
+|------|-------------|
+| <a name="output_id"></a> [id](#output\_id) | Fully qualified firewall policy id. |
+<!-- END_TF_DOCS -->

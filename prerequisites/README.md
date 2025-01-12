@@ -115,6 +115,7 @@ gcloud services enable servicedirectory.googleapis.com
 gcloud services enable cloudbuild.googleapis.com
 gcloud services enable networkmanagement.googleapis.com
 gcloud services enable firewallinsights.googleapis.com
+gcloud services enable container.googleapis.com
 ```
 
 
