@@ -15,7 +15,7 @@ variable "folder_id" {
 }
 
 variable "project_id_hub" {
-  description = "hub project id"
+  description = "project id"
 }
 
 variable "aura_env_name" {
