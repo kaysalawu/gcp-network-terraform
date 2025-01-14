@@ -14,7 +14,6 @@ locals {
 ####################################################
 
 module "hub_vpc" {
-  # source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc?ref=v34.1.0"
   source     = "../../modules/net-vpc"
   project_id = var.project_id_hub
   name       = "${local.hub_prefix}vpc"
@@ -34,7 +33,7 @@ module "hub_vpc" {
 ####################################################
 
 module "hub_nat_eu" {
-  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
+  source         = "../../modules/net-cloudnat"
   project_id     = var.project_id_hub
   region         = local.hub_eu_region
   name           = "${local.hub_prefix}eu-nat"
@@ -57,7 +56,7 @@ module "hub_nat_eu" {
 # vpc
 
 module "hub_vpc_firewall" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc-firewall?ref=v34.1.0"
+  source     = "../../modules/net-vpc-firewall"
   project_id = var.project_id_hub
   network    = module.hub_vpc.name
 
@@ -208,7 +207,7 @@ locals {
 # policy
 
 module "hub_dns_response_policy" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns-response-policy?ref=v34.1.0"
+  source     = "../../modules/dns-response-policy"
   project_id = var.project_id_hub
   name       = "${local.hub_prefix}drp"
   rules      = local.hub_dns_rp_rules
@@ -224,7 +223,7 @@ module "hub_dns_response_policy" {
 # psc zone
 
 module "hub_dns_psc" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
+  source      = "../../modules/dns"
   project_id  = var.project_id_hub
   name        = "${local.hub_prefix}psc"
   description = "psc"
@@ -242,7 +241,7 @@ module "hub_dns_psc" {
 # local zone
 
 module "hub_dns_private_zone" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
+  source      = "../../modules/dns"
   project_id  = var.project_id_hub
   name        = "${local.hub_prefix}private"
   description = "local data"

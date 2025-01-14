@@ -17,3 +17,19 @@ variable "folder_id" {
 variable "project_id_hub" {
   description = "hub project id"
 }
+
+variable "aura_env_name" {
+  description = "aura environment name"
+}
+
+variable "neo4j_dbid" {
+  description = "neo4j database id"
+}
+
+variable "neo4j_db_username" {
+  description = "neo4j database username"
+}
+
+variable "neo4j_db_password" {
+  description = "neo4j database password"
+}
