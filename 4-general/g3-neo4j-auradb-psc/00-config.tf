@@ -323,14 +323,13 @@ locals {
 #=====================================================
 
 locals {
-  spoke1_prefix      = var.prefix == "" ? "spoke1-" : join("-", [var.prefix, "spoke1-"])
-  spoke1_bucket_name = "${local.spoke1_prefix}${var.project_id_spoke1}-bucket"
-  spoke1_asn         = "65411"
-  spoke1_eu_region   = local.region1
-  spoke1_us_region   = local.region2
-  spoke1_supernet    = "10.11.0.0/16"
-  spoke1_domain      = "spoke1"
-  spoke1_dns_zone    = "${local.spoke1_domain}.${local.cloud_domain}"
+  spoke1_prefix    = var.prefix == "" ? "spoke1-" : join("-", [var.prefix, "spoke1-"])
+  spoke1_asn       = "65411"
+  spoke1_eu_region = local.region1
+  spoke1_us_region = local.region2
+  spoke1_supernet  = "10.11.0.0/16"
+  spoke1_domain    = "spoke1"
+  spoke1_dns_zone  = "${local.spoke1_domain}.${local.cloud_domain}"
 
   spoke1_subnets                  = merge(local.spoke1_subnets_eu, local.spoke1_subnets_us)
   spoke1_subnets_list             = [for k, v in local.spoke1_subnets : merge({ name = k }, v) if lookup(v, "purpose", null) == null]
@@ -437,14 +436,13 @@ locals {
 #=====================================================
 
 locals {
-  spoke2_prefix      = var.prefix == "" ? "spoke2-" : join("-", [var.prefix, "spoke2-"])
-  spoke2_bucket_name = "${local.spoke2_prefix}${var.project_id_spoke2}-bucket"
-  spoke2_asn         = "65422"
-  spoke2_eu_region   = local.region1
-  spoke2_us_region   = local.region2
-  spoke2_supernet    = "10.22.0.0/16"
-  spoke2_domain      = "spoke2"
-  spoke2_dns_zone    = "${local.spoke2_domain}.${local.cloud_domain}"
+  spoke2_prefix    = var.prefix == "" ? "spoke2-" : join("-", [var.prefix, "spoke2-"])
+  spoke2_asn       = "65422"
+  spoke2_eu_region = local.region1
+  spoke2_us_region = local.region2
+  spoke2_supernet  = "10.22.0.0/16"
+  spoke2_domain    = "spoke2"
+  spoke2_dns_zone  = "${local.spoke2_domain}.${local.cloud_domain}"
 
   spoke2_subnets                  = merge(local.spoke2_subnets_eu, local.spoke2_subnets_us)
   spoke2_subnets_list             = [for k, v in local.spoke2_subnets : merge({ name = k }, v) if lookup(v, "purpose", null) == null]
