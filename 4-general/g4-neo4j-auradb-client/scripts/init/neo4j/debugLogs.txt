@@ -1,0 +1,18 @@
+[DEBUG   ] [Thread 140335424935744] [Task None           ] 2025-01-14 09:14:14,450  [#0000]  _: <POOL> created, routing address IPv4Address(('abc123-devsalawu0615.databases.neo4j-dev.io', 7687))
+[DEBUG   ] [Thread 140335424935744] [Task None           ] 2025-01-14 09:14:14,451  [#0000]  _: <WORKSPACE> resolve home database
+[DEBUG   ] [Thread 140335424935744] [Task None           ] 2025-01-14 09:14:14,451  [#0000]  _: <POOL> attempting to update routing table from IPv4Address(('abc123-devsalawu0615.databases.neo4j-dev.io', 7687))
+[DEBUG   ] [Thread 140335424935744] [Task None           ] 2025-01-14 09:14:14,452  [#0000]  _: <RESOLVE> in: abc123-devsalawu0615.databases.neo4j-dev.io:7687
+[DEBUG   ] [Thread 140335424935744] [Task None           ] 2025-01-14 09:14:14,462  [#0000]  _: <RESOLVE> dns resolver out: 35.190.206.117:7687
+[DEBUG   ] [Thread 140335424935744] [Task None           ] 2025-01-14 09:14:14,462  [#0000]  _: <POOL> _acquire router connection, database=None, address=ResolvedIPv4Address(('35.190.206.117', 7687))
+[DEBUG   ] [Thread 140335424935744] [Task None           ] 2025-01-14 09:14:14,463  [#0000]  _: <POOL> trying to hand out new connection
+[DEBUG   ] [Thread 140335424935744] [Task None           ] 2025-01-14 09:14:14,463  [#0000]  C: <OPEN> 35.190.206.117:7687
+[DEBUG   ] [Thread 140335424935744] [Task None           ] 2025-01-14 09:14:14,476  [#80A0]  C: <MAGIC> 0x6060B017
+[DEBUG   ] [Thread 140335424935744] [Task None           ] 2025-01-14 09:14:14,477  [#80A0]  C: <HANDSHAKE> 0x00070705 0x00020404 0x00000104 0x00000003
+[DEBUG   ] [Thread 140335424935744] [Task None           ] 2025-01-14 09:14:14,484  [#80A0]  S: <CONNECTION FAILED> ServiceUnavailable: Failed to read any data from server ResolvedIPv4Address(('35.190.206.117', 7687)) after connected (deadline Deadline(timeout=60.0))
+[DEBUG   ] [Thread 140335424935744] [Task None           ] 2025-01-14 09:14:14,485  [#0000]  _: <POOL> deactivating address ResolvedIPv4Address(('35.190.206.117', 7687))
+[DEBUG   ] [Thread 140335424935744] [Task None           ] 2025-01-14 09:14:14,485  [#0000]  _: <POOL> table={None: RoutingTable(database=None, routers={IPv4Address(('abc123-devsalawu0615.databases.neo4j-dev.io', 7687))}, readers={}, writers={}, last_updated_time=338981.989774469, ttl=0)}
+[DEBUG   ] [Thread 140335424935744] [Task None           ] 2025-01-14 09:14:14,485  [#0000]  _: <POOL> failed to fetch routing info from ResolvedIPv4Address(('35.190.206.117', 7687))
+[DEBUG   ] [Thread 140335424935744] [Task None           ] 2025-01-14 09:14:14,485  [#0000]  _: <POOL> deactivating address IPv4Address(('abc123-devsalawu0615.databases.neo4j-dev.io', 7687))
+[DEBUG   ] [Thread 140335424935744] [Task None           ] 2025-01-14 09:14:14,486  [#0000]  _: <POOL> table={None: RoutingTable(database=None, routers={}, readers={}, writers={}, last_updated_time=338981.989774469, ttl=0)}
+[ERROR   ] [Thread 140335424935744] [Task None           ] 2025-01-14 09:14:14,486  Unable to retrieve routing information
+[DEBUG   ] [Thread 140335424935744] [Task None           ] 2025-01-14 09:14:14,551  [#0000]  _: <POOL> close

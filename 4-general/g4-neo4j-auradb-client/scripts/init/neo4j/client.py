@@ -7,7 +7,7 @@ from neo4j.debug import watch
 from itertools import count
 from dotenv import load_dotenv
 
-load_dotenv(".env")
+load_dotenv("database.txt")
 
 watch("neo4j", out=sys.stdout)
 watch("neo4j", out=open("debugLogs.txt", "w"))

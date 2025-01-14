@@ -1,5 +1,5 @@
 
-# Lab: G3 GCP Private Service Connect for Neo4j AuraDB <!-- omit from toc -->
+# Lab: G4 Neo4j GCP Client <!-- omit from toc -->
 
 Contents- [Overview](#overview)
 - [Overview](#overview)
@@ -15,7 +15,7 @@ Contents- [Overview](#overview)
 
 ## Overview
 
-This lab deploys a simple GCP VPC with a VM installed with neo4j client. The aim is to demonstrate how to use GCP Private Service Connect to connect to a Neo4j AuraDB instance.
+This lab deploys a simple GCP VPC with a VM installed with neo4j client for testing connectivity to Neo4j databases.
 
 ## Prerequisites
 
@@ -33,7 +33,7 @@ This lab deploys a simple GCP VPC with a VM installed with neo4j client. The aim
 2\. Navigate to the lab directory
 
 ```sh
-cd gcp-network-terraform/4-general/g4-neo4j-auradb-psc
+cd gcp-network-terraform/4-general/g4-neo4j-auradb-client
 ```
 
 3\. Run the following terraform commands and type ***yes*** at the prompt:
@@ -75,7 +75,7 @@ See the [troubleshooting](../../troubleshooting/README.md) section for tips on h
 1\. (Optional) Navigate back to the lab directory (if you are not already there).
 
 ```sh
-cd gcp-network-terraform/4-general/g4-neo4j-auradb-psc
+cd gcp-network-terraform/4-general/g4-neo4j-auradb-client
 ```
 
 2\. Run terraform destroy.

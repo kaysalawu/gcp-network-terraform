@@ -61,10 +61,15 @@ locals {
     local.vm_script_targets_region2,
     local.vm_script_targets_misc,
   )
-  vm_init_vars = {}
+  vm_init_vars = {
+    DBID           = "abc123"
+    NEO4J_USERNAME = "neo4j"
+    NEO4J_PASSWORD = "Password123"
+  }
   vm_init_files = {
     "${local.init_dir}/neo4j/Dockerfile"       = { owner = "root", permissions = "0744", content = templatefile("./scripts/init/neo4j/Dockerfile", {}) }
-    "${local.init_dir}/neo4j/client.py"        = { owner = "root", permissions = "0744", content = templatefile("./scripts/init/neo4j/client.py", {}) }
+    "${local.init_dir}/neo4j/client.py"        = { owner = "root", permissions = "0744", content = templatefile("./scripts/init/neo4j/client.py", local.vm_init_vars) }
+    "${local.init_dir}/neo4j/database.txt"     = { owner = "root", permissions = "0744", content = templatefile("./scripts/init/neo4j/database.txt", local.vm_init_vars) }
     "${local.init_dir}/neo4j/requirements.txt" = { owner = "root", permissions = "0744", content = templatefile("./scripts/init/neo4j/requirements.txt", {}) }
   }
   vm_startup_init_files = {

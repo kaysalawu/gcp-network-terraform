@@ -202,7 +202,6 @@ locals {
     drp-rule-bypass-www        = { dns_name = "www.googleapis.com.", behavior = "bypassResponsePolicy" }
     drp-rule-bypass-ouath2     = { dns_name = "oauth2.googleapis.com.", behavior = "bypassResponsePolicy" }
     drp-rule-bypass-psc        = { dns_name = "*.p.googleapis.com.", behavior = "bypassResponsePolicy" }
-    drp-rule-eu-psc-aura       = { dns_name = "*.devsalawu0601.neo4j-dev.io.", local_data = { A = { rrdatas = [local.hub_eu_psc_ep_auradb] } } }
   }
 }
 
