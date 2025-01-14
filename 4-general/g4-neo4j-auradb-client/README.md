@@ -52,7 +52,7 @@ cd gcp-network-terraform/4-general/g4-neo4j-auradb-client
 Example:
 
 ```sh
-export TF_VAR_project_id_hub="my-project-id"
+export TF_VAR_project_id_hub=<my-project-id>
 ```
 
 2\. Set the neo4j environment variables:
@@ -65,9 +65,11 @@ export TF_VAR_neo4j_db_username="neo4j"
 export TF_VAR_neo4j_db_password="Password123"
 ```
 
-3\. You need provide value for the AuraDB environment variable - `aura_env_name`.
+3\. Set the AuraDB environment variable - `aura_env_name`.
 
-Set the value using `export TF_VAR_aura_env_name` or provide the value at the prompt when you run `terraform apply`.
+```sh
+export TF_VAR_aura_env_name=<my-auradb-env>
+```
 
 4\. Run the following terraform commands and type ***yes*** at the prompt:
 
