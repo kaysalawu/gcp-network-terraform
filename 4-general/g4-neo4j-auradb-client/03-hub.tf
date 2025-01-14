@@ -299,3 +299,7 @@ resource "local_file" "hub_files" {
   filename = each.key
   content  = each.value
 }
+
+output "hub_eu_vm_external_ip" {
+  value = module.hub_eu_vm.external_ip
+}
