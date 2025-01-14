@@ -32,6 +32,16 @@ module "hub_vpc" {
 # nat
 ####################################################
 
+# addresses
+
+resource "google_compute_address" "hub_nat_eu" {
+  project = var.project_id_hub
+  name    = "${local.hub_prefix}eu-nat"
+  region  = local.hub_eu_region
+}
+
+# nat
+
 module "hub_nat_eu" {
   source         = "../../modules/net-cloudnat"
   project_id     = var.project_id_hub
@@ -39,6 +49,9 @@ module "hub_nat_eu" {
   name           = "${local.hub_prefix}eu-nat"
   router_network = module.hub_vpc.self_link
   router_create  = true
+  addresses = [
+    google_compute_address.hub_nat_eu.self_link,
+  ]
 
   config_source_subnetworks = {
     primary_ranges_only = true
@@ -300,6 +313,6 @@ resource "local_file" "hub_files" {
   content  = each.value
 }
 
-output "hub_eu_vm_external_ip" {
-  value = module.hub_eu_vm.external_ip
+output "neo4j_client_external_ip" {
+  value = google_compute_address.hub_nat_eu.address
 }
