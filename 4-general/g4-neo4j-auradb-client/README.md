@@ -91,12 +91,12 @@ No requirements.
 
 ## Inputs
 
-| Name                                                                              | Description                   | Type     | Default | Required |
-| --------------------------------------------------------------------------------- | ----------------------------- | -------- | ------- | :------: |
-| <a name="input_folder_id"></a> [folder\_id](#input\_folder\_id)                   | folder id                     | `any`    | `null`  |    no    |
-| <a name="input_organization_id"></a> [organization\_id](#input\_organization\_id) | organization id               | `any`    | `null`  |    no    |
-| <a name="input_prefix"></a> [prefix](#input\_prefix)                              | prefix used for all resources | `string` | `"g4"`  |    no    |
-| <a name="input_project_id_hub"></a> [project\_id\_hub](#input\_project\_id\_hub)  | hub project id                | `any`    | n/a     |   yes    |
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| <a name="input_folder_id"></a> [folder\_id](#input\_folder\_id) | folder id | `any` | `null` | no |
+| <a name="input_organization_id"></a> [organization\_id](#input\_organization\_id) | organization id | `any` | `null` | no |
+| <a name="input_prefix"></a> [prefix](#input\_prefix) | prefix used for all resources | `string` | `"g4"` | no |
+| <a name="input_project_id_hub"></a> [project\_id\_hub](#input\_project\_id\_hub) | hub project id | `any` | n/a | yes |
 
 ## Outputs
 
