@@ -1,3 +1,0 @@
-NEO4J_URI=neo4j://abc123-devsalawu0615.databases.neo4j-dev.io
-NEO4J_USERNAME=neo4j
-NEO4J_PASSWORD=Password123

@@ -5,6 +5,7 @@ Contents- [Overview](#overview)
 - [Overview](#overview)
 - [Prerequisites](#prerequisites)
 - [Deploy the Lab](#deploy-the-lab)
+- [Initial Configuration](#initial-configuration)
 - [Troubleshooting](#troubleshooting)
   - [1. Configuration and Testing](#1-configuration-and-testing)
 - [Cleanup](#cleanup)
@@ -44,7 +45,23 @@ cd gcp-network-terraform/4-general/g4-neo4j-auradb-client
  terraform apply -parallelism=50
  ```
 
- ## Troubleshooting
+ ## Initial Configuration
+
+1\. Set the required environment variables.
+
+Example:
+
+```sh
+export TF_VAR_neo4j_dbid="abc123"
+export TF_VAR_neo4j_db_username="neo4j"
+export TF_VAR_neo4j_db_password="Password123"
+```
+
+2\. You need provide value for the AuraDB environment variable - `aura_env_name`.
+
+Set the value using `export TF_VAR_aura_env_name` or provide the value at the prompt when you run `terraform apply`.
+
+## Troubleshooting
 
 See the [troubleshooting](../../troubleshooting/README.md) section for tips on how to resolve common issues that may occur during the deployment of the lab.
 
@@ -91,12 +108,12 @@ No requirements.
 
 ## Inputs
 
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
-| <a name="input_folder_id"></a> [folder\_id](#input\_folder\_id) | folder id | `any` | `null` | no |
-| <a name="input_organization_id"></a> [organization\_id](#input\_organization\_id) | organization id | `any` | `null` | no |
-| <a name="input_prefix"></a> [prefix](#input\_prefix) | prefix used for all resources | `string` | `"g4"` | no |
-| <a name="input_project_id_hub"></a> [project\_id\_hub](#input\_project\_id\_hub) | hub project id | `any` | n/a | yes |
+| Name                                                                              | Description                   | Type     | Default | Required |
+| --------------------------------------------------------------------------------- | ----------------------------- | -------- | ------- | :------: |
+| <a name="input_folder_id"></a> [folder\_id](#input\_folder\_id)                   | folder id                     | `any`    | `null`  |    no    |
+| <a name="input_organization_id"></a> [organization\_id](#input\_organization\_id) | organization id               | `any`    | `null`  |    no    |
+| <a name="input_prefix"></a> [prefix](#input\_prefix)                              | prefix used for all resources | `string` | `"g4"`  |    no    |
+| <a name="input_project_id_hub"></a> [project\_id\_hub](#input\_project\_id\_hub)  | hub project id                | `any`    | n/a     |   yes    |
 
 ## Outputs
 
