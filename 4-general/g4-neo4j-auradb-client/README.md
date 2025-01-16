@@ -85,7 +85,8 @@ See the [troubleshooting](../../troubleshooting/README.md) section for tips on h
 **1.2** Navigate to the pre-installed neo4j directory.
 
 ```sh
-
+sudo su && cd /var/lib/gcp/neo4j/
+ls -la
 ```
 
 <details>
@@ -93,11 +94,42 @@ See the [troubleshooting](../../troubleshooting/README.md) section for tips on h
 <summary>Sample output</summary>
 
 ```sh
-
+# ls -la
+total 32
+drwxr-xr-x 3 root root 4096 Jan 14 16:51 .
+drwxr-xr-x 4 root root 4096 Jan 14 16:50 ..
+-rwxr--r-- 1 root root  124 Jan 14 16:50 Dockerfile
+-rwxr--r-- 1 root root 1378 Jan 14 16:50 client.py
+-rwxr--r-- 1 root root  112 Jan 14 16:50 devenv.txt
+drwxr-xr-x 5 root root 4096 Jan 14 16:51 env
+-rwxr--r-- 1 root root 2588 Jan 14 16:50 query.py
+-rwxr--r-- 1 root root   35 Jan 14 16:50 requirements.txt
 ```
 
 </details>
 <p>
+
+**1.3** Activate the python virtual environment **env**.
+
+```sh
+source env/bin/activate
+```
+
+**1.4** Install the required python packages.
+
+```sh
+pip install -r requirements.txt
+```
+
+**1.5** Run the `client.py` script to test connection to the database.
+
+```sh
+python3 client.py devenv.txt
+```
+
+The client should successfully connect to the Neo4j database.
+
+<img src="./images/db-connection.png" alt="Database Connection" width="700">
 
 ## Cleanup
 
