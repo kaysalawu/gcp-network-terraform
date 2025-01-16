@@ -10,13 +10,17 @@ The module also manages policy rules via code or a factory, and optional policy 
 The module also makes fewer assumptions about implicit defaults, only using one to set `match.layer4_configs` to `[{ protocol = "all" }]` if no explicit set of protocols and ports has been specified.
 
 <!-- BEGIN TOC -->
-- [Examples](#examples)
-  - [Hierarchical Policy](#hierarchical-policy)
-  - [Global Network policy](#global-network-policy)
-  - [Regional Network policy](#regional-network-policy)
-  - [Factory](#factory)
-- [Variables](#variables)
-- [Outputs](#outputs)
+- [Firewall Policies](#firewall-policies)
+  - [Examples](#examples)
+    - [Hierarchical Policy](#hierarchical-policy)
+    - [Global Network policy](#global-network-policy)
+    - [Regional Network policy](#regional-network-policy)
+    - [Factory](#factory)
+  - [Variables](#variables)
+  - [Outputs](#outputs)
+  - [Requirements](#requirements)
+  - [Inputs](#inputs)
+  - [Outputs](#outputs-1)
 <!-- END TOC -->
 
 ## Examples

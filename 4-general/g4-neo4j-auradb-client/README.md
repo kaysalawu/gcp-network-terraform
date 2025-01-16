@@ -182,14 +182,19 @@ No requirements.
 
 ## Inputs
 
-| Name                                                                              | Description                   | Type     | Default | Required |
-| --------------------------------------------------------------------------------- | ----------------------------- | -------- | ------- | :------: |
-| <a name="input_folder_id"></a> [folder\_id](#input\_folder\_id)                   | folder id                     | `any`    | `null`  |    no    |
-| <a name="input_organization_id"></a> [organization\_id](#input\_organization\_id) | organization id               | `any`    | `null`  |    no    |
-| <a name="input_prefix"></a> [prefix](#input\_prefix)                              | prefix used for all resources | `string` | `"g4"`  |    no    |
-| <a name="input_project_id_hub"></a> [project\_id\_hub](#input\_project\_id\_hub)  | hub project id                | `any`    | n/a     |   yes    |
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| <a name="input_folder_id"></a> [folder\_id](#input\_folder\_id) | folder id | `any` | `null` | no |
+| <a name="input_neo4j_db_password"></a> [neo4j\_db\_password](#input\_neo4j\_db\_password) | neo4j database password | `any` | n/a | yes |
+| <a name="input_neo4j_db_uri"></a> [neo4j\_db\_uri](#input\_neo4j\_db\_uri) | neo4j database uri | `any` | n/a | yes |
+| <a name="input_neo4j_db_username"></a> [neo4j\_db\_username](#input\_neo4j\_db\_username) | neo4j database username | `any` | n/a | yes |
+| <a name="input_organization_id"></a> [organization\_id](#input\_organization\_id) | organization id | `any` | `null` | no |
+| <a name="input_prefix"></a> [prefix](#input\_prefix) | prefix used for all resources | `string` | `"g4"` | no |
+| <a name="input_project_id_hub"></a> [project\_id\_hub](#input\_project\_id\_hub) | project id | `any` | n/a | yes |
 
 ## Outputs
 
-No outputs.
+| Name | Description |
+|------|-------------|
+| <a name="output_neo4j_client_external_ip"></a> [neo4j\_client\_external\_ip](#output\_neo4j\_client\_external\_ip) | n/a |
 <!-- END_TF_DOCS -->

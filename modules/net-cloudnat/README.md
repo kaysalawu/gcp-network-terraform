@@ -3,13 +3,14 @@
 Simple Cloud NAT management, with optional router creation.
 
 <!-- BEGIN TOC -->
-- [Basic Example](#basic-example)
-- [Subnetwork configuration](#subnetwork-configuration)
-- [Reserved IPs and custom rules](#reserved-ips-and-custom-rules)
-- [Hybrid NAT](#hybrid-nat)
-- [NAT for Proxy net or Secure Web Proxy](#nat-for-proxy-net-or-secure-web-proxy)
-- [Variables](#variables)
-- [Outputs](#outputs)
+- [Cloud NAT Module](#cloud-nat-module)
+  - [Basic Example](#basic-example)
+  - [Subnetwork configuration](#subnetwork-configuration)
+  - [Reserved IPs and custom rules](#reserved-ips-and-custom-rules)
+  - [Hybrid NAT](#hybrid-nat)
+  - [NAT for Proxy net or Secure Web Proxy](#nat-for-proxy-net-or-secure-web-proxy)
+  - [Variables](#variables)
+  - [Outputs](#outputs)
 <!-- END TOC -->
 
 ## Basic Example

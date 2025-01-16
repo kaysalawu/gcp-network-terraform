@@ -8,16 +8,17 @@ This module allows creation and management of different types of firewall rules 
 The predefined rules are enabled by default and set to the ranges of the GCP health checkers for HTTP/HTTPS, and the IAP forwarders for SSH. See the relevant section below on how to configure or disable them.
 
 <!-- BEGIN TOC -->
-- [Examples](#examples)
-  - [Minimal open firewall](#minimal-open-firewall)
-  - [Custom rules](#custom-rules)
-  - [Controlling or turning off default rules](#controlling-or-turning-off-default-rules)
-    - [Overriding default tags and ranges](#overriding-default-tags-and-ranges)
-    - [Disabling predefined rules](#disabling-predefined-rules)
-  - [Including source and destination ranges](#including-source-and-destination-ranges)
-  - [Rules Factory](#rules-factory)
-- [Variables](#variables)
-- [Outputs](#outputs)
+- [Google Cloud VPC Firewall](#google-cloud-vpc-firewall)
+  - [Examples](#examples)
+    - [Minimal open firewall](#minimal-open-firewall)
+    - [Custom rules](#custom-rules)
+    - [Controlling or turning off default rules](#controlling-or-turning-off-default-rules)
+      - [Overriding default tags and ranges](#overriding-default-tags-and-ranges)
+      - [Disabling predefined rules](#disabling-predefined-rules)
+    - [Including source and destination ranges](#including-source-and-destination-ranges)
+    - [Rules Factory](#rules-factory)
+  - [Variables](#variables)
+  - [Outputs](#outputs)
 <!-- END TOC -->
 
 ## Examples

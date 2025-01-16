@@ -5,13 +5,14 @@ This module allows management of a [Google Cloud DNS policy and its rules](https
 The module also allows setting rules via a factory. An example is given below.
 
 <!-- BEGIN TOC -->
-- [Examples](#examples)
-  - [Manage policy and override resolution for specific names](#manage-policy-and-override-resolution-for-specific-names)
-  - [Use existing policy and override resolution via wildcard with exceptions](#use-existing-policy-and-override-resolution-via-wildcard-with-exceptions)
-  - [Define policy rules via a factory file](#define-policy-rules-via-a-factory-file)
-- [Variables](#variables)
-- [Outputs](#outputs)
-- [Fixtures](#fixtures)
+- [Google Cloud DNS Response Policy](#google-cloud-dns-response-policy)
+  - [Examples](#examples)
+    - [Manage policy and override resolution for specific names](#manage-policy-and-override-resolution-for-specific-names)
+    - [Use existing policy and override resolution via wildcard with exceptions](#use-existing-policy-and-override-resolution-via-wildcard-with-exceptions)
+    - [Define policy rules via a factory file](#define-policy-rules-via-a-factory-file)
+  - [Variables](#variables)
+  - [Outputs](#outputs)
+  - [Fixtures](#fixtures)
 <!-- END TOC -->
 
 ## Examples
