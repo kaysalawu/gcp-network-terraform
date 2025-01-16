@@ -245,11 +245,7 @@ module "instance-group" {
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
-| Name | Version |
-|------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.7.4 |
-| <a name="requirement_google"></a> [google](#requirement\_google) | >= 5.41.0, < 6.0.0 |
-| <a name="requirement_google-beta"></a> [google-beta](#requirement\_google-beta) | >= 5.41.0, < 6.0.0 |
+No requirements.
 
 ## Inputs
 

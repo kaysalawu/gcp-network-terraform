@@ -61,10 +61,16 @@ locals {
     local.vm_script_targets_region2,
     local.vm_script_targets_misc,
   )
-  vm_init_vars = {}
+  vm_init_vars = {
+    NEO4J_USERNAME = var.neo4j_db_username
+    NEO4J_PASSWORD = var.neo4j_db_password
+    NEO4J_URI      = var.neo4j_db_uri
+  }
   vm_init_files = {
     "${local.init_dir}/neo4j/Dockerfile"       = { owner = "root", permissions = "0744", content = templatefile("./scripts/init/neo4j/Dockerfile", {}) }
-    "${local.init_dir}/neo4j/client.py"        = { owner = "root", permissions = "0744", content = templatefile("./scripts/init/neo4j/client.py", {}) }
+    "${local.init_dir}/neo4j/client.py"        = { owner = "root", permissions = "0744", content = templatefile("./scripts/init/neo4j/client.py", local.vm_init_vars) }
+    "${local.init_dir}/neo4j/query.py"         = { owner = "root", permissions = "0744", content = templatefile("./scripts/init/neo4j/query.py", local.vm_init_vars) }
+    "${local.init_dir}/neo4j/devenv.txt"       = { owner = "root", permissions = "0744", content = templatefile("./scripts/init/neo4j/devenv.txt", local.vm_init_vars) }
     "${local.init_dir}/neo4j/requirements.txt" = { owner = "root", permissions = "0744", content = templatefile("./scripts/init/neo4j/requirements.txt", {}) }
   }
   vm_startup_init_files = {
@@ -108,7 +114,7 @@ locals {
 # service account
 
 module "hub_sa" {
-  source       = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v34.1.0"
+  source       = "../../modules/iam-service-account"
   project_id   = var.project_id_hub
   name         = trimsuffix("${local.hub_prefix}sa", "-")
   generate_key = false
@@ -123,8 +129,7 @@ module "hub_sa" {
 
 locals {
   main_files = {
-    "output/startup.sh"          = templatefile("./scripts/startup.sh", local.vm_init_vars)
-    "output/vm-cloud-config.yml" = module.vm_cloud_init.cloud_config
+    "output/startup.sh" = templatefile("./scripts/startup.sh", local.vm_init_vars)
   }
 }
 

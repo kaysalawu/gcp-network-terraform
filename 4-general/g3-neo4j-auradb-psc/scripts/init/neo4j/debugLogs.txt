@@ -1,0 +1,74 @@
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,497  [#0000]  _: <POOL> created, routing address IPv4Address(('abc123-devsalawu0615.databases.neo4j-dev.io', 7687))
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,497  [#0000]  _: <WORKSPACE> resolve home database
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,498  [#0000]  _: <POOL> attempting to update routing table from IPv4Address(('abc123-devsalawu0615.databases.neo4j-dev.io', 7687))
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,498  [#0000]  _: <RESOLVE> in: abc123-devsalawu0615.databases.neo4j-dev.io:7687
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,518  [#0000]  _: <RESOLVE> dns resolver out: 35.190.206.117:7687
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,518  [#0000]  _: <POOL> _acquire router connection, database=None, address=ResolvedIPv4Address(('35.190.206.117', 7687))
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,519  [#0000]  _: <POOL> trying to hand out new connection
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,538  [#0000]  C: <OPEN> 35.190.206.117:7687
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,548  [#D08C]  C: <SECURE> abc123-devsalawu0615.databases.neo4j-dev.io
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,565  [#D08C]  C: <MAGIC> 0x6060B017
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,565  [#D08C]  C: <HANDSHAKE> 0x00070705 0x00020404 0x00000104 0x00000003
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,575  [#D08C]  S: <HANDSHAKE> 0x00000705
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,576  [#D08C]  C: HELLO {'user_agent': 'neo4j-python/5.27.0 Python/3.11.6-final-0 (linux)', 'routing': {'address': 'abc123-devsalawu0615.databases.neo4j-dev.io:7687'}, 'bolt_agent': {'product': 'neo4j-python/5.27.0', 'platform': 'Linux 6.1.0-28-cloud-amd64; x86_64', 'language': 'Python/3.11.6-final-0', 'language_details': 'CPython; 3.11.6-final-0 (main, Oct  2 2023 13:45:54) [GCC 11.4.0]'}}
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,576  [#D08C]  _: <CONNECTION> client state: CONNECTED > AUTHENTICATION
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,577  [#D08C]  C: LOGON {'scheme': 'basic', 'principal': 'neo4j', 'credentials': '*******'}
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,577  [#D08C]  _: <CONNECTION> client state: AUTHENTICATION > READY
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,586  [#D08C]  S: SUCCESS {'server': 'Neo4j/5.26-aura', 'connection_id': 'bolt-800', 'hints': {'connection.recv_timeout_seconds': 60, 'telemetry.enabled': True}}
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,587  [#D08C]  _: <CONNECTION> server state: CONNECTED > AUTHENTICATION
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,694  [#D08C]  S: SUCCESS {}
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,694  [#D08C]  _: <CONNECTION> server state: AUTHENTICATION > READY
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,694  [#D08C]  C: ROUTE {'address': 'abc123-devsalawu0615.databases.neo4j-dev.io:7687'} () {}
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,809  [#D08C]  S: SUCCESS {'rt': {'servers': [{'addresses': ['p-abc123-4f1c-0003.devsalawu0615-orch-0001.neo4j-dev.io:7687'], 'role': 'WRITE'}, {'addresses': ['p-abc123-4f1c-0001.devsalawu0615-orch-0001.neo4j-dev.io:7687', 'p-abc123-4f1c-0002.devsalawu0615-orch-0001.neo4j-dev.io:7687'], 'role': 'READ'}, {'addresses': ['p-abc123-4f1c-0002.devsalawu0615-orch-0001.neo4j-dev.io:7687', 'p-abc123-4f1c-0001.devsalawu0615-orch-0001.neo4j-dev.io:7687', 'p-abc123-4f1c-0003.devsalawu0615-orch-0001.neo4j-dev.io:7687'], 'role': 'ROUTE'}], 'ttl': 10, 'db': 'neo4j'}}
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,810  [#D08C]  _: <POOL> released bolt-800
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,810  [#0000]  _: <ROUTING> updated table=RoutingTable(database='neo4j', routers={IPv4Address(('p-abc123-4f1c-0002.devsalawu0615-orch-0001.neo4j-dev.io', 7687)), IPv4Address(('p-abc123-4f1c-0001.devsalawu0615-orch-0001.neo4j-dev.io', 7687)), IPv4Address(('p-abc123-4f1c-0003.devsalawu0615-orch-0001.neo4j-dev.io', 7687))}, readers={IPv4Address(('p-abc123-4f1c-0001.devsalawu0615-orch-0001.neo4j-dev.io', 7687)), IPv4Address(('p-abc123-4f1c-0002.devsalawu0615-orch-0001.neo4j-dev.io', 7687))}, writers={IPv4Address(('p-abc123-4f1c-0003.devsalawu0615-orch-0001.neo4j-dev.io', 7687))}, last_updated_time=350011.3485748, ttl=10)
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,811  [#0000]  _: <POOL> update routing table from address=ResolvedIPv4Address(('35.190.206.117', 7687)) (RoutingTable(database='neo4j', routers={IPv4Address(('p-abc123-4f1c-0002.devsalawu0615-orch-0001.neo4j-dev.io', 7687)), IPv4Address(('p-abc123-4f1c-0001.devsalawu0615-orch-0001.neo4j-dev.io', 7687)), IPv4Address(('p-abc123-4f1c-0003.devsalawu0615-orch-0001.neo4j-dev.io', 7687))}, readers={IPv4Address(('p-abc123-4f1c-0001.devsalawu0615-orch-0001.neo4j-dev.io', 7687)), IPv4Address(('p-abc123-4f1c-0002.devsalawu0615-orch-0001.neo4j-dev.io', 7687))}, writers={IPv4Address(('p-abc123-4f1c-0003.devsalawu0615-orch-0001.neo4j-dev.io', 7687))}, last_updated_time=350011.3485748, ttl=10))
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,811  [#0000]  _: <POOL> acquire routing connection, access_mode='WRITE', database='neo4j'
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,811  [#0000]  _: <POOL> routing aged?, database=None
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,811  [#0000]  _: <ROUTING> purge check: last_updated_time=350011.035971513, ttl=0, perf_time=350011.349707891 => False
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,811  [#0000]  _: <POOL> routing aged?, database=neo4j
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,812  [#0000]  _: <ROUTING> purge check: last_updated_time=350011.3485748, ttl=10, perf_time=350011.349930772 => False
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,812  [#0000]  _: <ROUTING> checking table freshness (readonly=False): table expired=False, has_server_for_mode=True, table routers={IPv4Address(('p-abc123-4f1c-0002.devsalawu0615-orch-0001.neo4j-dev.io', 7687)), IPv4Address(('p-abc123-4f1c-0001.devsalawu0615-orch-0001.neo4j-dev.io', 7687)), IPv4Address(('p-abc123-4f1c-0003.devsalawu0615-orch-0001.neo4j-dev.io', 7687))} => True
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,812  [#0000]  _: <POOL> using existing routing table RoutingTable(database='neo4j', routers={IPv4Address(('p-abc123-4f1c-0002.devsalawu0615-orch-0001.neo4j-dev.io', 7687)), IPv4Address(('p-abc123-4f1c-0001.devsalawu0615-orch-0001.neo4j-dev.io', 7687)), IPv4Address(('p-abc123-4f1c-0003.devsalawu0615-orch-0001.neo4j-dev.io', 7687))}, readers={IPv4Address(('p-abc123-4f1c-0001.devsalawu0615-orch-0001.neo4j-dev.io', 7687)), IPv4Address(('p-abc123-4f1c-0002.devsalawu0615-orch-0001.neo4j-dev.io', 7687))}, writers={IPv4Address(('p-abc123-4f1c-0003.devsalawu0615-orch-0001.neo4j-dev.io', 7687))}, last_updated_time=350011.3485748, ttl=10)
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,812  [#0000]  _: <POOL> acquire address, database='neo4j' address=IPv4Address(('p-abc123-4f1c-0003.devsalawu0615-orch-0001.neo4j-dev.io', 7687))
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,812  [#0000]  _: <POOL> trying to hand out new connection
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,812  [#0000]  _: <RESOLVE> in: p-abc123-4f1c-0003.devsalawu0615-orch-0001.neo4j-dev.io:7687
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,833  [#0000]  _: <RESOLVE> dns resolver out: 35.190.206.117:7687
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,834  [#0000]  C: <OPEN> 35.190.206.117:7687
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,841  [#D09A]  C: <SECURE> p-abc123-4f1c-0003.devsalawu0615-orch-0001.neo4j-dev.io
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,853  [#D09A]  C: <MAGIC> 0x6060B017
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,854  [#D09A]  C: <HANDSHAKE> 0x00070705 0x00020404 0x00000104 0x00000003
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,864  [#D09A]  S: <HANDSHAKE> 0x00000705
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,864  [#D09A]  C: HELLO {'user_agent': 'neo4j-python/5.27.0 Python/3.11.6-final-0 (linux)', 'routing': {'address': 'abc123-devsalawu0615.databases.neo4j-dev.io:7687'}, 'bolt_agent': {'product': 'neo4j-python/5.27.0', 'platform': 'Linux 6.1.0-28-cloud-amd64; x86_64', 'language': 'Python/3.11.6-final-0', 'language_details': 'CPython; 3.11.6-final-0 (main, Oct  2 2023 13:45:54) [GCC 11.4.0]'}}
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,865  [#D09A]  _: <CONNECTION> client state: CONNECTED > AUTHENTICATION
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,865  [#D09A]  C: LOGON {'scheme': 'basic', 'principal': 'neo4j', 'credentials': '*******'}
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,865  [#D09A]  _: <CONNECTION> client state: AUTHENTICATION > READY
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,875  [#D09A]  S: SUCCESS {'server': 'Neo4j/5.26-aura', 'connection_id': 'bolt-813', 'hints': {'connection.recv_timeout_seconds': 60, 'telemetry.enabled': True}}
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,875  [#D09A]  _: <CONNECTION> server state: CONNECTED > AUTHENTICATION
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,927  [#D09A]  S: SUCCESS {}
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,928  [#D09A]  _: <CONNECTION> server state: AUTHENTICATION > READY
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,928  [#D09A]  C: TELEMETRY 2  # (<TelemetryAPI.AUTO_COMMIT: 2>)
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,928  [#D09A]  C: RUN '\n        SHOW DATABASES\n        ' {} {'db': 'neo4j'}
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,929  [#D09A]  _: <CONNECTION> client state: READY > STREAMING
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,929  [#D09A]  C: PULL {'n': 1000}
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:03,939  [#D09A]  S: SUCCESS {}
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:05,255  [#D09A]  S: SUCCESS {'t_first': 1315, 'fields': ['name', 'type', 'aliases', 'access', 'address', 'role', 'writer', 'requestedStatus', 'currentStatus', 'statusMessage', 'default', 'home', 'constituents']}
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:05,255  [#D09A]  _: <CONNECTION> server state: READY > STREAMING
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:05,267  [#D09A]  S: RECORD * 1
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:05,267  [#D09A]  S: RECORD * 1
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:05,268  [#D09A]  S: RECORD * 1
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:05,268  [#D09A]  S: RECORD * 1
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:05,268  [#D09A]  S: RECORD * 1
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:05,268  [#D09A]  S: RECORD * 1
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:05,269  [#D09A]  S: SUCCESS {'bookmark': 'FB:kcwQAAAAAAAAAAAAAAAAAAAAAXSQ', 'statuses': [{'gql_status': '00000', 'status_description': 'note: successful completion'}], 'type': 's', 't_last': 9, 'db': 'neo4j'}
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:05,269  [#D09A]  _: <CONNECTION> server state: STREAMING > READY
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:05,269  [#D09A]  _: <POOL> released bolt-813
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:05,315  [#0000]  _: <POOL> close
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:05,316  [#D08C]  C: GOODBYE
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:05,316  [#D08C]  _: <CONNECTION> error: Failed to write data to connection ResolvedIPv4Address(('35.190.206.117', 7687)) (ResolvedIPv4Address(('35.190.206.117', 7687))): SSLError(0, 'Underlying socket connection gone (_ssl.c:2355)')
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:05,316  [#D08C]  _: <CONNECTION> ignoring failed close SessionExpired("Failed to write data to connection ResolvedIPv4Address(('35.190.206.117', 7687)) (ResolvedIPv4Address(('35.190.206.117', 7687)))")
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:05,316  [#D08C]  C: <CLOSE>
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:05,317  [#D09A]  C: GOODBYE
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:05,317  [#D09A]  _: <CONNECTION> error: Failed to write data to connection IPv4Address(('p-abc123-4f1c-0003.devsalawu0615-orch-0001.neo4j-dev.io', 7687)) (ResolvedIPv4Address(('35.190.206.117', 7687))): SSLError(0, 'Underlying socket connection gone (_ssl.c:2355)')
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:05,317  [#D09A]  _: <CONNECTION> ignoring failed close SessionExpired("Failed to write data to connection IPv4Address(('p-abc123-4f1c-0003.devsalawu0615-orch-0001.neo4j-dev.io', 7687)) (ResolvedIPv4Address(('35.190.206.117', 7687)))")
+[DEBUG   ] [Thread 140227794655040] [Task None           ] 2025-01-14 12:18:05,318  [#D09A]  C: <CLOSE>
