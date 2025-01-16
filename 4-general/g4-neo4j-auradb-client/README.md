@@ -1,5 +1,5 @@
 
-# Lab: G4 Neo4j GCP Client <!-- omit from toc -->
+# Lab G4: Neo4j GCP Client <!-- omit from toc -->
 
 Contents- [Overview](#overview)
 - [Overview](#overview)
@@ -85,7 +85,7 @@ See the [troubleshooting](../../troubleshooting/README.md) section for tips on h
 **1.2** Navigate to the pre-installed neo4j directory.
 
 ```sh
-sudo su && cd /var/lib/gcp/neo4j/
+cd /var/lib/gcp/neo4j && sudo su
 ls -la
 ```
 
@@ -127,9 +127,39 @@ pip install -r requirements.txt
 python3 client.py devenv.txt
 ```
 
+**1.6** Confirm
+
 The client should successfully connect to the Neo4j database.
 
 <img src="./images/db-connection.png" alt="Database Connection" width="700">
+<p>
+
+**1.7** Confirm that the database query uses [bolt](https://neo4j.com/docs/bolt/current/bolt/) protocol on **TCP** port **7687**.
+
+The databse query runs on tcp port 7687 as shown in the output below:
+
+```sh
+tcpdump -nnn -q -i any tcp port 7474 or tcp port 7473 or tcp port 7687
+```
+
+Sample output:
+
+```sh
+tcpdump: data link type LINUX_SLL2
+tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
+listening on any, link-type LINUX_SLL2 (Linux cooked v2), snapshot length 262144 bytes
+18:59:38.060299 ens4  Out IP 10.1.11.9.60970 > 35.190.206.117.7687: tcp 0
+18:59:38.062519 ens4  In  IP 35.190.206.117.7687 > 10.1.11.9.60970: tcp 0
+18:59:38.062544 ens4  Out IP 10.1.11.9.60970 > 35.190.206.117.7687: tcp 0
+18:59:38.072518 ens4  Out IP 10.1.11.9.60970 > 35.190.206.117.7687: tcp 517
+18:59:38.072942 ens4  In  IP 35.190.206.117.7687 > 10.1.11.9.60970: tcp 0
+18:59:38.074605 ens4  In  IP 35.190.206.117.7687 > 10.1.11.9.60970: tcp 6486
+18:59:38.074625 ens4  Out IP 10.1.11.9.60970 > 35.190.206.117.7687: tcp 0
+18:59:38.078005 ens4  Out IP 10.1.11.9.60970 > 35.190.206.117.7687: tcp 80
+18:59:38.085615 ens4  Out IP 10.1.11.9.60970 > 35.190.206.117.7687: tcp 42
+18:59:38.086067 ens4  In  IP 35.190.206.117.7687 > 10.1.11.9.60970: tcp 0
+18:59:38.086846 ens4  In  IP 35.190.206.117.7687 > 10.1.11.9.60970: tcp 508
+```
 
 ## Cleanup
 

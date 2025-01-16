@@ -15,5 +15,17 @@ variable "folder_id" {
 }
 
 variable "project_id_hub" {
-  description = "hub project id"
+  description = "project id"
+}
+
+variable "neo4j_db_uri" {
+  description = "neo4j database uri"
+}
+
+variable "neo4j_db_username" {
+  description = "neo4j database username"
+}
+
+variable "neo4j_db_password" {
+  description = "neo4j database password"
 }
