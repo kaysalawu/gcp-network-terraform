@@ -18,12 +18,8 @@ variable "project_id_hub" {
   description = "project id"
 }
 
-variable "aura_env_name" {
+variable "neo4j_db_uri" {
   description = "aura environment name"
-}
-
-variable "neo4j_dbid" {
-  description = "neo4j database id"
 }
 
 variable "neo4j_db_username" {

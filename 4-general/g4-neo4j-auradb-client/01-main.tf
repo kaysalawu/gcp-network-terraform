@@ -64,7 +64,7 @@ locals {
   vm_init_vars = {
     NEO4J_USERNAME = var.neo4j_db_username
     NEO4J_PASSWORD = var.neo4j_db_password
-    NEO4J_URI      = "neo4j+s://${var.neo4j_dbid}-${var.aura_env_name}.databases.neo4j-dev.io"
+    NEO4J_URI      = var.neo4j_db_uri
   }
   vm_init_files = {
     "${local.init_dir}/neo4j/Dockerfile"       = { owner = "root", permissions = "0744", content = templatefile("./scripts/init/neo4j/Dockerfile", {}) }
