@@ -19,7 +19,7 @@ variable "project_id_hub" {
 }
 
 variable "neo4j_db_uri" {
-  description = "aura environment name"
+  description = "neo4j database uri"
 }
 
 variable "neo4j_db_username" {
