@@ -60,7 +60,7 @@ export TF_VAR_project_id_hub=<my-project-id>
 Example:
 
 ```sh
-export TF_VAR_neo4j_db_uri=<your-db-host.databases.neo4j.io>
+export TF_VAR_neo4j_db_uri=<neo4j+s://your-db-host.databases.neo4j.io>
 export TF_VAR_neo4j_db_username="neo4j"
 export TF_VAR_neo4j_db_password="Password123"
 ```
