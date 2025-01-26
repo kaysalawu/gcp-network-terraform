@@ -624,6 +624,10 @@ kubeconfig entry generated for g5-spoke2-eu-cluster.
     "phase": "Running"
   }
 ]
+
+
+kubectl logs $(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep endpoints)
+
 ```
 
 

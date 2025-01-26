@@ -1,6 +1,6 @@
 import subprocess
 import json
-import time
+from datetime import datetime
 
 
 # Pod is configured with a service account that has workload identity
@@ -44,10 +44,9 @@ def format_pod_info(pods):
 
 
 if __name__ == "__main__":
-    N = 10
     get_context()
-    while True:
-        pods = get_pods()
-        formatted_pods = format_pod_info(pods)
-        print(json.dumps(formatted_pods, indent=2))
-        time.sleep(N)
+    pods = get_pods()
+    formatted_pods = format_pod_info(pods)
+    timestamp = datetime.utcnow().strftime("%d/%m/%Y %H:%M:%S")
+    result = {"timestamp": timestamp, "pods": formatted_pods}
+    print(json.dumps(result, indent=2))
