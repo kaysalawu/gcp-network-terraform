@@ -360,8 +360,10 @@ locals {
     us-psc-alb-nat6 = { region = local.spoke1_us_region, ip_cidr_range = "10.11.29.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
   }
 
-  spoke1_gke_master_cidr1     = "172.16.11.0/28"
-  spoke1_gke_master_cidr2     = "172.16.11.16/28"
+  spoke1_eu_gke_master_cidr1  = "172.16.11.0/28"
+  spoke1_eu_gke_master_cidr2  = "172.16.11.16/28"
+  spoke1_us_gke_master_cidr1  = "172.16.11.32/28"
+  spoke1_us_gke_master_cidr2  = "172.16.11.48/28"
   spoke1_eu_psa_range1        = "10.11.120.0/22"
   spoke1_eu_psa_range2        = "10.11.124.0/22"
   spoke1_psc_api_fr_range     = "10.11.0.0/24" # vip range
@@ -473,8 +475,10 @@ locals {
     us-psc-alb-nat6 = { region = local.spoke2_us_region, ip_cidr_range = "10.22.29.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
   }
 
-  spoke2_gke_master_cidr1     = "172.16.22.0/28"
-  spoke2_gke_master_cidr2     = "172.16.22.16/28"
+  spoke2_eu_gke_master_cidr1  = "172.16.22.0/28"
+  spoke2_eu_gke_master_cidr2  = "172.16.22.16/28"
+  spoke2_us_gke_master_cidr1  = "172.16.22.32/28"
+  spoke2_us_gke_master_cidr2  = "172.16.22.48/28"
   spoke2_us_psa_range1        = "10.22.120.0/22"
   spoke2_us_psa_range2        = "10.22.124.0/22"
   spoke2_psc_api_fr_range     = "10.22.0.0/24" # vip range

@@ -34,7 +34,7 @@ resource "google_container_cluster" "spoke2_eu_cluster" {
 
   private_cluster_config {
     enable_private_nodes   = true
-    master_ipv4_cidr_block = local.spoke2_gke_master_cidr1
+    master_ipv4_cidr_block = local.spoke2_eu_gke_master_cidr1
     master_global_access_config {
       enabled = true
     }
@@ -156,7 +156,7 @@ provider "kubernetes" {
 
 # service account
 
-resource "kubernetes_service_account" "spoke2_sa_gke" {
+resource "kubernetes_service_account" "spoke2_eu_sa_gke" {
   provider = kubernetes.spoke2_eu
   metadata {
     name      = local.spoke2_eu_cluster_ksa
@@ -165,33 +165,66 @@ resource "kubernetes_service_account" "spoke2_sa_gke" {
       "iam.gke.io/gcp-service-account" = module.spoke2_sa_gke.email
     }
   }
+  # token: used by k8s to authenticate to the api server
+  automount_service_account_token = true
+  # secrets: used by pods to pull images from private repo (artifact registry)
+  image_pull_secret {
+    name = "artifact-registry-secret"
+  }
+}
+
+# secret for artifact registry credentials
+
+resource "kubernetes_secret" "spoke2_eu_artifact_registry" {
+  provider = kubernetes.spoke2_eu
+  metadata {
+    name      = "artifact-registry-secret"
+    namespace = local.spoke2_eu_cluster_namespace
+  }
+  data = {
+    ".dockerconfigjson" = jsonencode({
+      auths = {
+        "${local.spoke2_eu_region}-docker.pkg.dev" = {
+          username = "_json_key"
+          password = trimspace(base64decode(module.spoke2_sa_gke.key.private_key))
+          email    = module.spoke2_sa_gke.email
+          auth     = base64encode("_json_key:${trimspace(base64decode(module.spoke2_sa_gke.key.private_key))}")
+        }
+      }
+    })
+  }
+  type = "kubernetes.io/dockerconfigjson"
 }
 
 ####################################################
 # kubernetes rbac for spoke2 cluster
 ####################################################
 
-resource "kubernetes_cluster_role" "spoke2_list_pods" {
+# cluster role to allow listing all resources in the cluster
+
+resource "kubernetes_cluster_role" "spoke2_eu_list_all" {
   provider = kubernetes.spoke2_eu
   metadata {
-    name = "spoke2-list-pods"
+    name = "list-all-resources"
   }
   rule {
-    api_groups = [""]
-    resources  = ["endpoints", "pods"]
+    api_groups = ["*"]
+    resources  = ["*"]
     verbs      = ["list", "get"]
   }
 }
 
-resource "kubernetes_cluster_role_binding" "spoke2_list_pods_binding" {
+# cluster role binding
+
+resource "kubernetes_cluster_role_binding" "spoke2_eu_list_all_binding" {
   provider = kubernetes.spoke2_eu
   metadata {
-    name = "spoke2-list-pods-binding"
+    name = "list-all-resources-binding"
   }
   role_ref {
     api_group = "rbac.authorization.k8s.io"
     kind      = "ClusterRole"
-    name      = kubernetes_cluster_role.spoke2_list_pods.metadata[0].name
+    name      = kubernetes_cluster_role.spoke2_eu_list_all.metadata[0].name
   }
   subject {
     kind      = "ServiceAccount"
@@ -205,17 +238,36 @@ resource "kubernetes_cluster_role_binding" "spoke2_list_pods_binding" {
 ####################################################
 
 module "spoke2_sa_gke" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v34.1.0"
-  project_id = var.project_id_spoke2
-  name       = "${local.spoke2_prefix}sa-gke"
+  source       = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v34.1.0"
+  project_id   = var.project_id_spoke2
+  name         = "${local.spoke2_prefix}sa-gke"
+  generate_key = true
   iam = {
     # spoke2_eu cluster pods with *k8s svc account* impersonate this *spoke2_sa_gke.email*
     # *spoke2_sa_gke.email* has project-wide roles
     "roles/iam.workloadIdentityUser" = [
-      "serviceAccount:${var.project_id_spoke2}.svc.id.goog[${kubernetes_service_account.spoke2_sa_gke.id}]"
+      "serviceAccount:${var.project_id_spoke2}.svc.id.goog[${kubernetes_service_account.spoke2_eu_sa_gke.id}]",
     ]
   }
   iam_project_roles = {
-    "${var.project_id_spoke2}" = ["roles/editor", ]
+    "${var.project_id_spoke2}" = [
+      "roles/editor",
+      "roles/artifactregistry.reader"
+    ]
   }
+}
+
+####################################################
+# output files
+####################################################
+
+locals {
+  svc_spoke2_eu_files = {
+  }
+}
+
+resource "local_file" "svc_spoke2_eu_files" {
+  for_each = local.svc_spoke2_eu_files
+  filename = each.key
+  content  = each.value
 }

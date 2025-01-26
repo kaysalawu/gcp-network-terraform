@@ -9,3 +9,17 @@ profiles:
       kustomize:
         paths:
           - tools/manifests/kustomize/base
+  - name: endpoints
+    build:
+      tagPolicy:
+        envTemplate:
+          template: "{{.VERSION}}"
+      artifacts:
+        - image: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/endpoints
+          context: discovery/endpoints/app
+          docker:
+            dockerfile: Dockerfile
+    deploy:
+      kustomize:
+        paths:
+          - discovery/endpoints/manifests/kustomize/base

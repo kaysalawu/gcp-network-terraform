@@ -156,7 +156,7 @@ provider "kubernetes" {
 
 # service account
 
-resource "kubernetes_service_account" "hub_sa_gke" {
+resource "kubernetes_service_account" "hub_eu_sa_gke" {
   provider = kubernetes.hub_eu
   metadata {
     name      = local.hub_eu_cluster_ksa
@@ -165,6 +165,35 @@ resource "kubernetes_service_account" "hub_sa_gke" {
       "iam.gke.io/gcp-service-account" = module.hub_sa_gke.email
     }
   }
+  # token: used by k8s to authenticate to the api server
+  automount_service_account_token = true
+  # secrets: used by pods to pull images from private repo (artifact registry)
+  image_pull_secret {
+    name = "artifact-registry-secret"
+  }
+}
+
+# secret for artifact registry credentials
+
+resource "kubernetes_secret" "hub_eu_artifact_registry" {
+  provider = kubernetes.hub_eu
+  metadata {
+    name      = "artifact-registry-secret"
+    namespace = local.hub_eu_cluster_namespace
+  }
+  data = {
+    ".dockerconfigjson" = jsonencode({
+      auths = {
+        "${local.hub_eu_region}-docker.pkg.dev" = {
+          username = "_json_key"
+          password = trimspace(base64decode(module.hub_sa_gke.key.private_key))
+          email    = module.hub_sa_gke.email
+          auth     = base64encode("_json_key:${trimspace(base64decode(module.hub_sa_gke.key.private_key))}")
+        }
+      }
+    })
+  }
+  type = "kubernetes.io/dockerconfigjson"
 }
 
 ####################################################
@@ -173,7 +202,7 @@ resource "kubernetes_service_account" "hub_sa_gke" {
 
 # cluster role to allow listing all resources in the cluster
 
-resource "kubernetes_cluster_role" "hub_list_all" {
+resource "kubernetes_cluster_role" "hub_eu_list_all" {
   provider = kubernetes.hub_eu
   metadata {
     name = "list-all-resources"
@@ -187,7 +216,7 @@ resource "kubernetes_cluster_role" "hub_list_all" {
 
 # cluster role binding
 
-resource "kubernetes_cluster_role_binding" "hub_list_all_binding" {
+resource "kubernetes_cluster_role_binding" "hub_eu_list_all_binding" {
   provider = kubernetes.hub_eu
   metadata {
     name = "list-all-resources-binding"
@@ -195,7 +224,7 @@ resource "kubernetes_cluster_role_binding" "hub_list_all_binding" {
   role_ref {
     api_group = "rbac.authorization.k8s.io"
     kind      = "ClusterRole"
-    name      = kubernetes_cluster_role.hub_list_all.metadata[0].name
+    name      = kubernetes_cluster_role.hub_eu_list_all.metadata[0].name
   }
   subject {
     kind      = "ServiceAccount"
@@ -210,18 +239,39 @@ resource "kubernetes_cluster_role_binding" "hub_list_all_binding" {
 ####################################################
 
 module "hub_sa_gke" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v34.1.0"
-  project_id = var.project_id_hub
-  name       = "${local.hub_prefix}sa-gke"
+  source       = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v34.1.0"
+  project_id   = var.project_id_hub
+  name         = "${local.hub_prefix}sa-gke"
+  generate_key = true
   iam = {
     # hub_eu cluster pods with *k8s svc account* impersonate this *hub_sa_gke.email*
     # *hub_sa_gke.email* has project-wide roles
     "roles/iam.workloadIdentityUser" = [
-      "serviceAccount:${var.project_id_hub}.svc.id.goog[${kubernetes_service_account.hub_sa_gke.id}]",
+      "serviceAccount:${var.project_id_hub}.svc.id.goog[${kubernetes_service_account.hub_eu_sa_gke.id}]",
     ]
   }
   iam_project_roles = {
-    "${var.project_id_hub}"    = ["roles/editor", ]
-    "${var.project_id_spoke2}" = ["roles/container.admin", ]
+    "${var.project_id_hub}" = [
+      "roles/editor",
+      "roles/artifactregistry.reader"
+    ]
+    "${var.project_id_spoke2}" = [
+      "roles/container.admin",
+    ]
   }
+}
+
+####################################################
+# output files
+####################################################
+
+locals {
+  svc_hub_eu_files = {
+  }
+}
+
+resource "local_file" "svc_hub_eu_files" {
+  for_each = local.svc_hub_eu_files
+  filename = each.key
+  content  = each.value
 }

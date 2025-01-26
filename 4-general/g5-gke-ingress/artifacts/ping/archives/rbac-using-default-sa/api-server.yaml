@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: api-server
-          image: europe-west2-docker.pkg.dev/prj-hub-lab/g1-hub-eu-repo/api-server:latest
+          image: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/api-server:latest
           ports:
             - containerPort: 8080
 ---

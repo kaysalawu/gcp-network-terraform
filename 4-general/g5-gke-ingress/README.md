@@ -597,8 +597,34 @@ if __name__ == "__main__":
 
 
 ##############
-
-
+```sh
+artifacts$ k get pods
+NAME                        READY   STATUS      RESTARTS      AGE
+endpoints-d7fd7f8fb-9lnt2   0/1     Completed   2 (20s ago)   27s
+gcloud                      1/1     Running     0             9h
+netshoot                    1/1     Running     0             9h
+artifacts$
+artifacts$
+artifacts$
+artifacts$
+artifacts$ k logs endpoints-d7fd7f8fb-9lnt2
+Fetching cluster endpoint and auth data.
+kubeconfig entry generated for g5-spoke2-eu-cluster.
+[
+  {
+    "name": "gcloud",
+    "podIP": "10.22.100.11",
+    "hostIP": "10.22.12.3",
+    "phase": "Running"
+  },
+  {
+    "name": "netshoot",
+    "podIP": "10.22.100.10",
+    "hostIP": "10.22.12.3",
+    "phase": "Running"
+  }
+]
+```
 
 
 ## Cleanup

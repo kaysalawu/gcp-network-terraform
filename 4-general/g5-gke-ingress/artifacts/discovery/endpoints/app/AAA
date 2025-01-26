@@ -1,11 +1,6 @@
 import subprocess
 import json
-
-
-# Pod is configured with a service account that has workload identity
-# linked to a service account in the ingress project, and has roles
-# roles/container.admin role to all target workload clusters.
-# Context to the workload cluster works with the service account.
+import time
 
 
 def get_context():
@@ -43,7 +38,10 @@ def format_pod_info(pods):
 
 
 if __name__ == "__main__":
+    N = 10
     get_context()
-    pods = get_pods()
-    formatted_pods = format_pod_info(pods)
-    print(json.dumps(formatted_pods, indent=2))
+    while True:
+        pods = get_pods()
+        formatted_pods = format_pod_info(pods)
+        print(json.dumps(formatted_pods, indent=2))
+        time.sleep(N)

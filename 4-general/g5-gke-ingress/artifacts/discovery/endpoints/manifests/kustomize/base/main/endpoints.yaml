@@ -2,35 +2,35 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: discovery-endpoints
+  name: endpoints
   namespace: default
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: discovery-endpoints
+      app: endpoints
   template:
     metadata:
       labels:
-        app: discovery-endpoints
+        app: endpoints
     spec:
       serviceAccountName: cluster-ksa
       containers:
-        - name: discovery-endpoints
-          image: europe-west2-docker.pkg.dev/prj-hub-lab/g1-hub-eu-repo/discovery-endpoints:latest
+        - name: endpoints
+          image: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/endpoints:latest
           ports:
             - containerPort: 8080
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: discovery-endpoints
+  name: endpoints
   namespace: default
 spec:
+  type: ClusterIP
   selector:
-    app: discovery-endpoints
+    app: endpoints
   ports:
     - protocol: TCP
       port: 80
       targetPort: 8080
-  type: ClusterIP
