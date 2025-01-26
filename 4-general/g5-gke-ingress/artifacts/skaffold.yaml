@@ -1,18 +1,11 @@
 apiVersion: skaffold/v2beta8
 kind: Config
-build:
-  tagPolicy:
-    envTemplate:
-      template: "{{.VERSION}}"
-  artifacts:
-    - image: europe-west2-docker.pkg.dev/prj-hub-lab/g1-hub-eu-repo/ping-operator
-      context: ping/app/operator
-    - image: europe-west2-docker.pkg.dev/prj-hub-lab/g1-hub-eu-repo/control-plane
-      context: ping/app/control-plane
-    - image: europe-west2-docker.pkg.dev/prj-hub-lab/g1-hub-eu-repo/api-server
-      context: ping/app/api-server
-deploy:
-  kustomize:
-    paths:
-      - ping/manifests/kustomize/base
-      - ping/manifests/kustomize/overlays/load-balancers
+profiles:
+  - name: tools
+    build:
+      local:
+        push: false
+    deploy:
+      kustomize:
+        paths:
+          - tools/manifests/kustomize/base

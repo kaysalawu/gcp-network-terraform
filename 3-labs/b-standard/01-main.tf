@@ -13,11 +13,11 @@ locals {
   spoke1_psc_api_secure = true
   spoke2_psc_api_secure = true
 
+  enable_ipv6 = true
+
   hub_eu_run_httpbin_host    = module.hub_eu_run_httpbin.service.uri
   spoke1_eu_run_httpbin_host = module.spoke1_eu_run_httpbin.service.uri
   spoke2_us_run_httpbin_host = module.spoke2_us_run_httpbin.service.uri
-
-  enable_ipv6 = true
 
   spoke1_bucket_name = "${local.spoke1_prefix}${var.project_id_spoke1}-bucket"
   spoke2_bucket_name = "${local.spoke2_prefix}${var.project_id_spoke2}-bucket"
@@ -139,17 +139,6 @@ locals {
   probe_startup_init_files = {
     "${local.init_dir}/init/startup.sh" = { owner = "root", permissions = "0744", content = templatefile("../../scripts/startup.sh", local.probe_init_vars) }
   }
-  proxy_startup_files = {
-    "${local.init_dir}/unbound/Dockerfile"         = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/unbound/Dockerfile", {}) }
-    "${local.init_dir}/unbound/docker-compose.yml" = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/unbound/docker-compose.yml", {}) }
-    "${local.init_dir}/unbound/setup-unbound.sh"   = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/unbound/setup-unbound.sh", local.proxy_init_vars) }
-    "/etc/unbound/unbound.conf"                    = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/unbound/unbound.conf", local.proxy_init_vars) }
-
-    "${local.init_dir}/squid/docker-compose.yml" = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/squid/docker-compose.yml", local.proxy_init_vars) }
-    "${local.init_dir}/squid/setup-squid.sh"     = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/squid/setup-squid.sh", local.proxy_init_vars) }
-    "/etc/squid/blocked_sites"                   = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/squid/blocked_sites", local.proxy_init_vars) }
-    "/etc/squid/squid.conf"                      = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/squid/squid.conf", local.proxy_init_vars) }
-  }
 }
 
 module "vm_cloud_init" {
@@ -175,35 +164,6 @@ module "probe_vm_cloud_init" {
     ". ${local.init_dir}/init/startup.sh",
     "HOSTNAME=$(hostname) docker compose -f ${local.init_dir}/fastapi/docker-compose-http-80.yml up -d",
     "HOSTNAME=$(hostname) docker compose -f ${local.init_dir}/fastapi/docker-compose-http-8080.yml up -d",
-  ]
-}
-
-module "proxy_vm_cloud_init" {
-  source = "../../modules/cloud-config-gen"
-  files  = local.proxy_startup_files
-  run_commands = [
-    "sysctl -w net.ipv4.ip_forward=1",
-    "sysctl -w net.ipv4.conf.eth0.disable_xfrm=1",
-    "sysctl -w net.ipv4.conf.eth0.disable_policy=1",
-    "echo 'net.ipv4.ip_forward=1' >> /etc/sysctl.conf",
-    "sysctl -w net.ipv6.conf.all.forwarding=1",
-    "echo 'net.ipv6.conf.all.forwarding=1' >> /etc/sysctl.conf",
-    "sysctl -p",
-    "echo iptables-persistent iptables-persistent/autosave_v4 boolean false | debconf-set-selections",
-    "echo iptables-persistent iptables-persistent/autosave_v6 boolean false | debconf-set-selections",
-    "apt-get -y install iptables-persistent",
-    "iptables -P FORWARD ACCEPT",
-    "iptables -P INPUT ACCEPT",
-    "iptables -P OUTPUT ACCEPT",
-    "iptables -t nat -A POSTROUTING -d 10.0.0.0/8 -j ACCEPT",
-    "iptables -t nat -A POSTROUTING -d 172.16.0.0/12 -j ACCEPT",
-    "iptables -t nat -A POSTROUTING -d 192.168.0.0/16 -j ACCEPT",
-    "iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE",
-    ". ${local.init_dir}/init/startup.sh",
-    ". ${local.init_dir}/unbound/setup-unbound.sh",
-    ". ${local.init_dir}/squid/setup-squid.sh",
-    "docker compose -f ${local.init_dir}/unbound/docker-compose.yml up -d",
-    "docker compose -f ${local.init_dir}/squid/docker-compose.yml up -d",
   ]
 }
 

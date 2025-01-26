@@ -82,9 +82,9 @@ module "spoke1_dns_private_zone" {
   source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
   project_id  = var.project_id_spoke1
   name        = "${local.spoke1_prefix}private"
-  description = "spoke1 network attached"
+  description = "local data"
   zone_config = {
-    domain = "${local.spoke1_domain}.${local.cloud_domain}."
+    domain = "${local.spoke1_dns_zone}."
     private = {
       client_networks = [
         module.hub_vpc.self_link,
@@ -167,4 +167,18 @@ module "spoke1_eu_vm" {
   metadata = {
     user-data = module.vm_cloud_init.cloud_config
   }
+}
+
+####################################################
+# output files
+####################################################
+
+locals {
+  spoke1_files = {}
+}
+
+resource "local_file" "spoke1_files" {
+  for_each = local.spoke1_files
+  filename = each.key
+  content  = each.value
 }

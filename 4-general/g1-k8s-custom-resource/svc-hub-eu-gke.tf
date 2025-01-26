@@ -1,13 +1,22 @@
 
+locals {
+  hub_eu_cluster_namespace = "default"
+  hub_eu_k8s_svc_account   = "cluster-ksa"
+  hub_eu_master_authorized_networks = [
+    { display_name = "100-64-10", cidr_block = "100.64.0.0/10" },
+    { display_name = "all", cidr_block = "0.0.0.0/0" }
+  ]
+}
+
 ####################################################
 # gke cluster
 ####################################################
 
 # cluster
 
-resource "google_container_cluster" "hub_cluster" {
+resource "google_container_cluster" "hub_eu_cluster" {
   project  = var.project_id_hub
-  name     = "${local.hub_prefix}cluster"
+  name     = "${local.hub_prefix}eu-cluster"
   location = "${local.hub_eu_region}-b"
 
   default_max_pods_per_node = 110
@@ -33,7 +42,7 @@ resource "google_container_cluster" "hub_cluster" {
 
   master_authorized_networks_config {
     dynamic "cidr_blocks" {
-      for_each = local.hub_master_authorized_networks
+      for_each = local.hub_eu_master_authorized_networks
       content {
         cidr_block   = cidr_blocks.value.cidr_block
         display_name = cidr_blocks.value.display_name
@@ -47,9 +56,9 @@ resource "google_container_cluster" "hub_cluster" {
     cluster_dns_domain = "cluster.local"
   }
 
-  # workload_identity_config {
-  #   workload_pool = "${var.project_id_hub}.svc.id.goog"
-  # }
+  workload_identity_config {
+    workload_pool = "${var.project_id_hub}.svc.id.goog"
+  }
 
   addons_config {
     horizontal_pod_autoscaling {
@@ -84,19 +93,20 @@ resource "google_container_cluster" "hub_cluster" {
   # }
 }
 
-data "google_container_cluster" "hub_cluster" {
+data "google_container_cluster" "hub_eu_cluster" {
   project  = var.project_id_hub
-  name     = google_container_cluster.hub_cluster.name
-  location = google_container_cluster.hub_cluster.location
+  name     = google_container_cluster.hub_eu_cluster.name
+  location = google_container_cluster.hub_eu_cluster.location
 }
 
+####################################################
 # node pool
-#------------------------------------------
+####################################################
 
-resource "google_container_node_pool" "hub_cluster" {
+resource "google_container_node_pool" "hub_eu_cluster" {
   project    = var.project_id_hub
-  name       = "${local.hub_prefix}cluster"
-  cluster    = google_container_cluster.hub_cluster.id
+  name       = "${local.hub_prefix}eu-cluster"
+  cluster    = google_container_cluster.hub_eu_cluster.id
   location   = "${local.hub_eu_region}-b"
   node_count = 1
 
@@ -106,17 +116,17 @@ resource "google_container_node_pool" "hub_cluster" {
   }
 
   node_config {
-    machine_type    = "e2-medium"
-    disk_size_gb    = "80"
-    disk_type       = "pd-ssd"
-    preemptible     = true
-    service_account = module.hub_sa.email
-    oauth_scopes    = ["cloud-platform"]
-    tags            = [local.tag_ssh, ]
+    machine_type = "e2-medium"
+    disk_size_gb = "80"
+    disk_type    = "pd-ssd"
+    preemptible  = true
+    # service_account = module.hub_sa.email
+    oauth_scopes = ["cloud-platform"]
+    tags         = [local.tag_ssh, ]
 
-    # workload_metadata_config {
-    #   mode = "GKE_METADATA"
-    # }
+    workload_metadata_config {
+      mode = "GKE_METADATA"
+    }
   }
   timeouts {
     create = "60m"
@@ -132,10 +142,23 @@ resource "google_container_node_pool" "hub_cluster" {
 # kubernetes provider
 
 provider "kubernetes" {
-  alias                  = "hub"
-  host                   = "https://${data.google_container_cluster.hub_cluster.endpoint}"
+  alias                  = "hub_eu"
+  host                   = "https://${data.google_container_cluster.hub_eu_cluster.endpoint}"
   token                  = data.google_client_config.current.access_token
-  cluster_ca_certificate = base64decode(google_container_cluster.hub_cluster.master_auth.0.cluster_ca_certificate)
+  cluster_ca_certificate = base64decode(google_container_cluster.hub_eu_cluster.master_auth.0.cluster_ca_certificate)
+}
+
+# k8s service account
+
+resource "kubernetes_service_account" "hub_sa_gke" {
+  provider = kubernetes.hub_eu
+  metadata {
+    name      = local.hub_eu_k8s_svc_account
+    namespace = local.hub_eu_cluster_namespace
+    annotations = {
+      "iam.gke.io/gcp-service-account" = module.hub_sa_gke.email
+    }
+  }
 }
 
 # gcp service account
@@ -144,35 +167,15 @@ module "hub_sa_gke" {
   source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v34.1.0"
   project_id = var.project_id_hub
   name       = "${local.hub_prefix}sa-gke"
-  # iam = {
-  #   "roles/iam.workloadIdentityUser" = [
-  #     "serviceAccount:${var.project_id_hub}.svc.id.goog[${local.hub_cluster_namespace}/${local.hub_prefix}sa-gke]"
-  #   ]
-  # }
+  iam = {
+    # used by pods with no custom service account specified in manifest
+    "roles/iam.workloadIdentityUser" = [
+      "serviceAccount:${var.project_id_hub}.svc.id.goog[${local.hub_eu_cluster_namespace}/${local.hub_eu_k8s_svc_account}]",
+    ]
+  }
   iam_project_roles = {
     "${var.project_id_hub}" = [
       "roles/editor",
     ]
   }
 }
-
-# # k8s service account
-
-# resource "kubernetes_service_account" "hub_sa_gke" {
-#   provider = kubernetes.hub
-#   metadata {
-#     name      = "cluster-ksa"
-#     namespace = local.hub_cluster_namespace
-#     annotations = {
-#       "iam.gke.io/gcp-service-account" = module.hub_sa_gke.email
-#     }
-#   }
-# }
-
-# iam policy binding
-
-# resource "google_project_iam_member" "hub_cluster_workload_id_role" {
-#   service_account_id = module.hub_sa_gke.id
-#   role               = "roles/iam.workloadIdentityUser"
-#   member             = "serviceAccount:${var.project_id_hub}.svc.id.goog[${local.hub_cluster_namespace}/${local.hub_prefix}sa-gke]"
-# }

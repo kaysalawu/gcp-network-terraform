@@ -20,6 +20,10 @@ locals {
 # common resources
 ####################################################
 
+# data
+
+data "google_client_config" "current" {}
+
 # artifacts registry
 
 resource "google_artifact_registry_repository" "eu_repo" {

@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: netshoot
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: netshoot
+  template:
+    metadata:
+      labels:
+        app: netshoot
+    spec:
+      serviceAccountName: cluster-ksa
+      containers:
+        - name: netshoot
+          image: nicolaka/netshoot:latest
+          command: ["sleep", "infinity"]

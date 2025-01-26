@@ -272,7 +272,7 @@ module "spoke2_vpc_fw_policy" {
 resource "google_compute_global_address" "spoke2_psc_api_fr_addr" {
   provider     = google-beta
   project      = var.project_id_spoke2
-  name         = "${local.spoke2_prefix}${local.spoke2_psc_api_fr_name}"
+  name         = local.spoke2_psc_api_fr_name
   address_type = "INTERNAL"
   purpose      = "PRIVATE_SERVICE_CONNECT"
   network      = module.spoke2_vpc.self_link
@@ -290,7 +290,6 @@ resource "google_compute_global_forwarding_rule" "spoke2_psc_api_fr" {
   ip_address            = google_compute_global_address.spoke2_psc_api_fr_addr.id
   load_balancing_scheme = ""
 }
-
 
 ####################################################
 # dns policy
@@ -368,9 +367,9 @@ module "spoke2_dns_private_zone" {
   source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
   project_id  = var.project_id_spoke2
   name        = "${local.spoke2_prefix}private"
-  description = "spoke2 network attached"
+  description = "local data"
   zone_config = {
-    domain = "${local.spoke2_domain}.${local.cloud_domain}."
+    domain = "${local.spoke2_dns_zone}."
     private = {
       client_networks = [
         module.hub_vpc.self_link,
@@ -427,10 +426,10 @@ module "spoke2_reverse_zone" {
 }
 
 ####################################################
-# vm
+# workload
 ####################################################
 
-# test
+# eu
 
 module "spoke2_eu_vm" {
   source     = "../../modules/compute-vm"
@@ -456,7 +455,7 @@ module "spoke2_eu_vm" {
   }
 }
 
-# instance
+# us
 
 module "spoke2_us_vm" {
   source     = "../../modules/compute-vm"
@@ -480,4 +479,18 @@ module "spoke2_us_vm" {
   metadata = {
     user-data = module.vm_cloud_init.cloud_config
   }
+}
+
+####################################################
+# output files
+####################################################
+
+locals {
+  spoke2_files = {}
+}
+
+resource "local_file" "spoke2_files" {
+  for_each = local.spoke2_files
+  filename = each.key
+  content  = each.value
 }
