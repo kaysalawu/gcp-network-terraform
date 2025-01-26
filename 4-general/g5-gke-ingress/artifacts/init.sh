@@ -1,9 +1,17 @@
-#!bin/bash
+#!/bin/bash
 
-PROJECT_ID=prj-hub-lab
-LOCATION=europe-west2
-CLUSTER_NAME1=g5-hub-eu-cluster
-CLUSTER_NAME2=g5-hub-us-cluster
-CURRENT_DIR=$(pwd)
+gcloud auth configure-docker
 
-gcloud container clusters get-credentials $CLUSTER_NAME1 --region "$LOCATION-b" --project=$PROJECT_ID
+echo "Please select a GCP project:"
+gcloud projects list --format="value(projectId)" | nl
+read -p "Enter the number of the project you wish to use: " project_number
+project_id=$(gcloud projects list --format="value(projectId)" | sed "${project_number}q;d")
+
+echo "Please select a GKE cluster:"
+gcloud container clusters list --format=json --project=$project_id | jq -r '.[] | "\(.name) (\(.location))"' | nl
+read -p "Enter the number of the cluster you wish to use: " cluster_number
+
+cluster_name=$(gcloud container clusters list --format=json --project=$project_id | jq -r ".[$((cluster_number - 1))].name")
+location=$(gcloud container clusters list --format=json --project=$project_id | jq -r ".[$((cluster_number - 1))].location" | cut -d'/' -f4)
+
+gcloud container clusters get-credentials $cluster_name --region $location --project=$project_id

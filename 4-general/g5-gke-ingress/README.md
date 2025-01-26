@@ -9,6 +9,7 @@ Contents
 - [Initial Setup](#initial-setup)
 - [(Optional) Testing the Operator (locally)](#optional-testing-the-operator-locally)
 - [Testing the Operator (GKE)](#testing-the-operator-gke)
+  - [SORT](#sort)
 - [Cleanup](#cleanup)
 - [Useful Commands](#useful-commands)
 - [Requirements](#requirements)
@@ -18,7 +19,7 @@ Contents
 
 ## Overview
 
-This lab deploys a GKE cluster and a simple Kubernetes Operator that watches for a custom resource and prints a message to the logs when the custom resource is created.
+This lab deploys a GKE ingress pattern to allow access from a hub to spoke clusters. The hub ingress, haproxy, performs service discovery and routing to the spoke clusters. The ingress uses host names in SNI to route traffic to the correct cluster.
 
 <img src="images/image.png" alt="FastAPI Web Interface" width="900"/>
 
@@ -26,6 +27,7 @@ This lab deploys a GKE cluster and a simple Kubernetes Operator that watches for
 
 1. Ensure you meet all requirements in the [prerequisites](../../prerequisites/README.md) before proceeding.
 2. [Install skaffold](https://skaffold.dev/docs/install/) for deploying the operator to the GKE cluster.
+3. Install kubectx to switch between kubernetes contexts. [Install kubectx](https://github.com/ahmetb/kubectx?tab=readme-ov-file#installation)
 
 ## Deploy the Lab
 
@@ -38,7 +40,7 @@ This lab deploys a GKE cluster and a simple Kubernetes Operator that watches for
 2\. Navigate to the lab directory
 
 ```sh
-cd gcp-network-terraform/4-general/g1-k8s-custom-resource
+cd gcp-network-terraform/4-general/g5-gke-ingress
 ```
 
 3\. Run the following terraform commands and type ***yes*** at the prompt:
@@ -61,10 +63,9 @@ See the [troubleshooting](../../troubleshooting/README.md) section for tips on h
 ```sh
 PROJECT_ID=<your-project-id>
 LOCATION=europe-west2
-CLUSTER_NAME=g1-hub-cluster
-APP_PATH=artifacts/ping/app
-DOCKERFILE_PING_OPERATOR_PATH=Dockerfile-ping-operator
-DOCKERFILE_CONTROL_PLANE_PATH=Dockerfile-control-plane
+INGRESS_CLUSTER_NAME=g1-ingress-cluster
+SPOKE1_CLUSTER_NAME=g1-spoke1-cluster
+SPOKE2_CLUSTER_NAME=g1-spoke2-cluster
 ```
 
 2\. Get the GKE cluster credentials
@@ -448,12 +449,164 @@ curl -X DELETE "http://$API_SERVER_IP/api/delete_ping/test-ping2"
 skaffold delete
 ```
 
+### SORT
+
+##############
+From hub pod
+The in-cluster Kubernetes configuration is stored as files in that directory. Check the files like this:
+root@gcloud:/# ls /var/run/secrets/kubernetes.io/serviceaccount
+ca.crt  namespace  token
+
+The context is automatically inferred by kubectl from the in-cluster configuration, specifically:
+
+API server URL from the Kubernetes environment variable KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT.
+Credentials from /var/run/secrets/kubernetes.io/serviceaccount (token, namespace, and CA cert).
+
+gte local pods
+root@gcloud:/# kubectl get pods
+NAME       READY   STATUS    RESTARTS   AGE
+gcloud     1/1     Running   0          42m
+netshoot   1/1     Running   0          42m
+
+
+get spoke2 pods
+root@gcloud:/# gcloud container clusters get-credentials g5-spoke2-eu-cluster --region europe-west2-b --project prj-spoke2-lab
+Fetching cluster endpoint and auth data.
+kubeconfig entry generated for g5-spoke2-eu-cluster.
+root@gcloud:/# kubectl get pods
+NAME       READY   STATUS    RESTARTS   AGE
+gcloud     1/1     Running   0          26m
+netshoot   1/1     Running   0          26m
+
+root@gcloud:/# kubectl describe pod gcloud
+Name:             gcloud
+Namespace:        default
+Priority:         0
+Service Account:  cluster-ksa
+Node:             gke-g5-spoke2-eu-clu-g5-spoke2-eu-clu-9f95abe1-jpd4/10.22.12.3
+Start Time:       Sun, 26 Jan 2025 12:30:59 +0000
+Labels:           skaffold.dev/run-id=d292403c-d0b5-4cad-825b-22ca8495dc99
+Annotations:      <none>
+Status:           Running
+IP:               10.22.100.11
+IPs:
+  IP:  10.22.100.11
+Containers:
+  gcloud:
+    Container ID:  containerd://4941ad3253c8b14ac848e27d5fb1e4ee109cce3bbd637061522ad6b99f592b57
+    Image:         google/cloud-sdk:latest
+    Image ID:      docker.io/google/cloud-sdk@sha256:7ad5616cf9abbbb7525e38ea83671f5f1389cedcec0c7244cca68e005717bb7f
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      sleep
+      infinity
+    State:          Running
+      Started:      Sun, 26 Jan 2025 12:32:23 +0000
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-rl8xp (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True
+  Initialized                 True
+  Ready                       True
+  ContainersReady             True
+  PodScheduled                True
+Volumes:
+  kube-api-access-rl8xp:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  26m   default-scheduler  Successfully assigned default/gcloud to gke-g5-spoke2-eu-clu-g5-spoke2-eu-clu-9f95abe1-jpd4
+  Normal  Pulling    26m   kubelet            Pulling image "google/cloud-sdk:latest"
+  Normal  Pulled     25m   kubelet            Successfully pulled image "google/cloud-sdk:latest" in 1m23.199s (1m23.199s including waiting). Image size: 1313001752 bytes.
+  Normal  Created    25m   kubelet            Created container gcloud
+  Normal  Started    25m   kubelet            Started container gcloud
+
+root@gcloud:/# kubectl get pods -o wide
+NAME       READY   STATUS    RESTARTS   AGE   IP             NODE                                                  NOMINATED NODE   READINESS GATES
+gcloud     1/1     Running   0          28m   10.22.100.11   gke-g5-spoke2-eu-clu-g5-spoke2-eu-clu-9f95abe1-jpd4   <none>           <none>
+netshoot   1/1     Running   0          28m   10.22.100.10   gke-g5-spoke2-eu-clu-g5-spoke2-eu-clu-9f95abe1-jpd4   <none>           <none>
+
+now test python script
+
+```sh
+root@gcloud:/# kubectl config current-context
+gke_prj-spoke2-lab_europe-west2-b_g5-spoke2-eu-cluster
+
+root@gcloud:/# kubectl config delete-context gke_prj-spoke2-lab_europe-west2-b_g5-spoke2-eu-cluster
+warning: this removed your active context, use "kubectl config use-context" to select a different one
+deleted context gke_prj-spoke2-lab_europe-west2-b_g5-spoke2-eu-cluster from /root/.kube/config
+
+kubectl config unset contexts.gke_prj-spoke2-lab_europe-west2-b_g5-spoke2-eu-cluster
+kubectl config unset current-context
+
+apt install -y python3.11-venv
+python3 -m venv /tmp/venv
+source /tmp/venv/bin/activate
+pip install kubernetes
+
+```
+
+```python
+from kubernetes import client, config
+from google.auth.transport.requests import Request
+from google.oauth2 import id_token
+import requests
+
+# Generate a GCP access token for the spoke2 cluster
+def get_gcp_token(project_id, cluster_name, region):
+    url = f"https://container.googleapis.com/v1/projects/{project_id}/locations/{region}/clusters/{cluster_name}"
+    token_request = Request()
+    token = id_token.fetch_id_token(token_request, url)
+    return token
+
+# Configure Kubernetes API dynamically for spoke2
+def configure_k8s_api(cluster_endpoint, token):
+    configuration = client.Configuration()
+    configuration.host = f"https://{cluster_endpoint}"
+    configuration.verify_ssl = True
+    configuration.api_key = {"authorization": f"Bearer {token}"}
+    client.Configuration.set_default(configuration)
+
+# List pods in spoke2
+def list_spoke2_pods(project_id, cluster_name, region):
+    token = get_gcp_token(project_id, cluster_name, region)
+    configure_k8s_api("spoke2-cluster-endpoint", token)  # Replace with actual spoke2 API endpoint
+    v1 = client.CoreV1Api()
+    pods = v1.list_pod_for_all_namespaces()
+    for pod in pods.items:
+        print(f"Pod: {pod.metadata.name}, Namespace: {pod.metadata.namespace}")
+
+if __name__ == "__main__":
+    list_spoke2_pods("prj-spoke2-lab", "g5-spoke2-eu-cluster", "europe-west2")
+```
+
+
+
+##############
+
+
+
+
 ## Cleanup
 
 1\. (Optional) Navigate back to the lab directory (if you are not already there).
 
 ```sh
-cd gcp-network-terraform/4-general/g1-k8s-custom-resource
+cd gcp-network-terraform/4-general/g5-gke-ingress
 ```
 
 2\. Run terraform destroy.

@@ -1,7 +1,7 @@
 
 locals {
   hub_eu_cluster_namespace = "default"
-  hub_eu_k8s_svc_account   = "cluster-ksa"
+  hub_eu_cluster_ksa       = "cluster-ksa"
   hub_eu_master_authorized_networks = [
     { display_name = "100-64-10", cidr_block = "100.64.0.0/10" },
     { display_name = "all", cidr_block = "0.0.0.0/0" }
@@ -133,13 +133,19 @@ resource "google_container_node_pool" "hub_eu_cluster" {
     update = "60m"
     delete = "60m"
   }
+
+  lifecycle {
+    ignore_changes = [
+      node_config[0].resource_labels,
+    ]
+  }
 }
 
 ####################################################
-# workload identity
+# kubernetes
 ####################################################
 
-# kubernetes provider
+# provider
 
 provider "kubernetes" {
   alias                  = "hub_eu"
@@ -148,12 +154,12 @@ provider "kubernetes" {
   cluster_ca_certificate = base64decode(google_container_cluster.hub_eu_cluster.master_auth.0.cluster_ca_certificate)
 }
 
-# k8s service account
+# service account
 
 resource "kubernetes_service_account" "hub_sa_gke" {
   provider = kubernetes.hub_eu
   metadata {
-    name      = local.hub_eu_k8s_svc_account
+    name      = local.hub_eu_cluster_ksa
     namespace = local.hub_eu_cluster_namespace
     annotations = {
       "iam.gke.io/gcp-service-account" = module.hub_sa_gke.email
@@ -161,21 +167,61 @@ resource "kubernetes_service_account" "hub_sa_gke" {
   }
 }
 
+####################################################
+# kubernetes rbac for spoke2 cluster
+####################################################
+
+# cluster role to allow listing all resources in the cluster
+
+resource "kubernetes_cluster_role" "hub_list_all" {
+  provider = kubernetes.hub_eu
+  metadata {
+    name = "list-all-resources"
+  }
+  rule {
+    api_groups = ["*"]
+    resources  = ["*"]
+    verbs      = ["list", "get"]
+  }
+}
+
+# cluster role binding
+
+resource "kubernetes_cluster_role_binding" "hub_list_all_binding" {
+  provider = kubernetes.hub_eu
+  metadata {
+    name = "list-all-resources-binding"
+  }
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "ClusterRole"
+    name      = kubernetes_cluster_role.hub_list_all.metadata[0].name
+  }
+  subject {
+    kind      = "ServiceAccount"
+    name      = local.hub_eu_cluster_ksa
+    namespace = local.hub_eu_cluster_namespace
+  }
+}
+
+
+####################################################
 # gcp service account
+####################################################
 
 module "hub_sa_gke" {
   source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v34.1.0"
   project_id = var.project_id_hub
   name       = "${local.hub_prefix}sa-gke"
   iam = {
-    # used by pods with no custom service account specified in manifest
+    # hub_eu cluster pods with *k8s svc account* impersonate this *hub_sa_gke.email*
+    # *hub_sa_gke.email* has project-wide roles
     "roles/iam.workloadIdentityUser" = [
-      "serviceAccount:${var.project_id_hub}.svc.id.goog[${local.hub_eu_cluster_namespace}/${local.hub_eu_k8s_svc_account}]",
+      "serviceAccount:${var.project_id_hub}.svc.id.goog[${kubernetes_service_account.hub_sa_gke.id}]",
     ]
   }
   iam_project_roles = {
-    "${var.project_id_hub}" = [
-      "roles/editor",
-    ]
+    "${var.project_id_hub}"    = ["roles/editor", ]
+    "${var.project_id_spoke2}" = ["roles/container.admin", ]
   }
 }
