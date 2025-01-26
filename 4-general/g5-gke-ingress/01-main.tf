@@ -9,8 +9,11 @@ locals {
   us_repo_name = google_artifact_registry_repository.us_repo.name
   httpbin_port = 80
 
-  hub_psc_api_secure = false
-  enable_ipv6        = true
+  hub_psc_api_secure    = false
+  spoke1_psc_api_secure = true
+  spoke2_psc_api_secure = true
+
+  enable_ipv6 = true
 }
 
 ####################################################
@@ -45,24 +48,10 @@ locals {
     health_check_response = local.uhc_config.response
   }
   vm_script_targets_region1 = [
-    { name = "hub-eu-vm    ", host = local.hub_eu_vm_fqdn, ipv4 = local.hub_eu_vm_addr, probe = true, ping = true },
-    { name = "hub-eu-ilb   ", host = local.hub_eu_ilb_fqdn, ipv4 = local.hub_eu_ilb_addr, },
-    { name = "hub-eu-nlb   ", host = local.hub_eu_nlb_fqdn, ipv4 = local.hub_eu_nlb_addr, ipv6 = false },
-    { name = "hub-eu-alb   ", host = local.hub_eu_alb_fqdn, ipv4 = local.hub_eu_alb_addr, ipv6 = false },
   ]
   vm_script_targets_region2 = [
-    { name = "hub-us-vm    ", host = local.hub_us_vm_fqdn, ipv4 = local.hub_us_vm_addr, probe = true, ping = true },
-    { name = "hub-us-ilb   ", host = local.hub_us_ilb_fqdn, ipv4 = local.hub_us_ilb_addr },
-    { name = "hub-us-nlb   ", host = local.hub_us_nlb_fqdn, ipv4 = local.hub_us_nlb_addr, ipv6 = false },
-    { name = "hub-us-alb   ", host = local.hub_us_alb_fqdn, ipv4 = local.hub_us_alb_addr, ipv6 = false },
   ]
   vm_script_targets_misc = [
-    { name = "hub-geo-ilb", host = local.hub_geo_ilb_fqdn },
-    { name = "internet", host = "icanhazip.com", probe = true },
-    { name = "www", host = "www.googleapis.com", path = "/generate_204", probe = true },
-    { name = "storage", host = "storage.googleapis.com", path = "/generate_204", probe = true },
-    { name = "hub-eu-psc-https", host = local.hub_eu_psc_https_ctrl_run_dns, path = "/generate_204" },
-    { name = "hub-us-psc-https", host = local.hub_us_psc_https_ctrl_run_dns, path = "/generate_204" },
   ]
   vm_script_targets = concat(
     local.vm_script_targets_region1,
@@ -142,8 +131,194 @@ module "probe_vm_cloud_init" {
 }
 
 ############################################
+# firewall rules
+############################################
+
+locals {
+  firewall_policies = {
+    site_egress_rules = {
+      smtp = {
+        priority = 900
+        match = {
+          destination_ranges = ["0.0.0.0/0"]
+          layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
+        }
+      }
+      all = {
+        priority = 910
+        action   = "allow"
+        match = {
+          destination_ranges = ["0.0.0.0/0"]
+          layer4_configs     = [{ protocol = "all", ports = [] }]
+        }
+      }
+    }
+    site_egress_rules_ipv6 = {
+      smtp = {
+        priority = 901
+        match = {
+          destination_ranges = ["0::/0"]
+          layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
+        }
+      }
+      all = {
+        priority = 911
+        action   = "allow"
+        match = {
+          destination_ranges = ["0::/0"]
+          layer4_configs     = [{ protocol = "all", ports = [] }]
+        }
+      }
+    }
+    site_ingress_rules = {
+      # ipv4
+      internal = {
+        priority = 1000
+        match = {
+          source_ranges  = local.netblocks.internal
+          layer4_configs = [{ protocol = "all" }]
+        }
+      }
+      dns = {
+        priority = 1100
+        match = {
+          source_ranges  = local.netblocks.dns
+          layer4_configs = [{ protocol = "all", ports = [] }]
+        }
+      }
+      ssh = {
+        priority       = 1200
+        enable_logging = true
+        match = {
+          source_ranges  = ["0.0.0.0/0", ]
+          layer4_configs = [{ protocol = "tcp", ports = ["22"] }]
+        }
+      }
+      iap = {
+        priority       = 1300
+        enable_logging = true
+        match = {
+          source_ranges  = local.netblocks.iap
+          layer4_configs = [{ protocol = "all", ports = [] }]
+        }
+      }
+      vpn = {
+        priority = 1400
+        match = {
+          source_ranges = ["0.0.0.0/0", ]
+          layer4_configs = [
+            { protocol = "udp", ports = ["500", "4500", ] },
+            { protocol = "esp", ports = [] }
+          ]
+        }
+      }
+      gfe = {
+        priority = 1500
+        match = {
+          source_ranges  = local.netblocks.gfe
+          layer4_configs = [{ protocol = "all", ports = [] }]
+        }
+      }
+      # ipv6
+      internal-6 = {
+        priority = 1001
+        match = {
+          source_ranges  = local.netblocks_ipv6.internal
+          layer4_configs = [{ protocol = "all" }]
+        }
+      }
+      ssh-6 = {
+        priority       = 1201
+        enable_logging = true
+        match = {
+          source_ranges  = ["0::/0", ]
+          layer4_configs = [{ protocol = "tcp", ports = ["22"] }]
+        }
+      }
+      vpn-6 = {
+        priority = 1401
+        match = {
+          source_ranges = ["0::/0", ]
+          layer4_configs = [
+            { protocol = "udp", ports = ["500", "4500", ] },
+            { protocol = "esp", ports = [] }
+          ]
+        }
+      }
+      gfe-6 = {
+        priority = 1501
+        match = {
+          source_ranges  = local.netblocks_ipv6.gfe
+          layer4_configs = [{ protocol = "all", ports = [] }]
+        }
+      }
+    }
+  }
+}
+
+############################################
+# addresses
+############################################
+
+# site1
+#---------------------------------
+
+# addresses
+
+resource "google_compute_address" "site1_router" {
+  project = var.project_id_onprem
+  name    = "${local.site1_prefix}router"
+  region  = local.site1_region
+}
+
+# service account
+
+module "site1_sa" {
+  source       = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v34.1.0"
+  project_id   = var.project_id_onprem
+  name         = trimsuffix("${local.site1_prefix}sa", "-")
+  generate_key = false
+  iam_project_roles = {
+    (var.project_id_onprem) = ["roles/owner", ]
+    (var.project_id_hub)    = ["roles/owner", ]
+    (var.project_id_spoke1) = ["roles/owner", ]
+    (var.project_id_spoke2) = ["roles/owner", ]
+  }
+}
+
+# site2
+#---------------------------------
+
+# addresses
+
+resource "google_compute_address" "site2_router" {
+  project = var.project_id_onprem
+  name    = "${local.site2_prefix}router"
+  region  = local.site2_region
+}
+
+# service account
+
+module "site2_sa" {
+  source       = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v34.1.0"
+  project_id   = var.project_id_onprem
+  name         = trimsuffix("${local.site2_prefix}sa", "-")
+  generate_key = false
+  iam_project_roles = {
+    (var.project_id_onprem) = ["roles/owner", ]
+    (var.project_id_hub)    = ["roles/owner", ]
+    (var.project_id_spoke1) = ["roles/owner", ]
+    (var.project_id_spoke2) = ["roles/owner", ]
+  }
+}
+
+############################################
 # hub
 ############################################
+
+data "google_project" "hub_project_number" {
+  project_id = var.project_id_hub
+}
 
 locals {
   hub_psc_api_fr_name = (
@@ -163,7 +338,6 @@ locals {
   )
 }
 
-
 # service account
 
 module "hub_sa" {
@@ -172,9 +346,104 @@ module "hub_sa" {
   name         = trimsuffix("${local.hub_prefix}sa", "-")
   generate_key = false
   iam_project_roles = {
-    (var.project_id_hub) = ["roles/owner", ]
+    (var.project_id_onprem) = ["roles/owner", ]
+    (var.project_id_hub)    = ["roles/owner", ]
+    (var.project_id_spoke1) = ["roles/owner", ]
+    (var.project_id_spoke2) = ["roles/owner", ]
   }
 }
+
+
+############################################
+# host
+############################################
+
+data "google_project" "host_project_number" {
+  project_id = var.project_id_host
+}
+
+############################################
+# spoke1
+############################################
+
+data "google_project" "spoke1_project_number" {
+  project_id = var.project_id_spoke1
+}
+
+locals {
+  spoke1_psc_api_fr_name = (
+    local.spoke1_psc_api_secure ?
+    local.spoke1_psc_api_sec_fr_name :
+    local.spoke1_psc_api_all_fr_name
+  )
+  spoke1_psc_api_fr_addr = (
+    local.spoke1_psc_api_secure ?
+    local.spoke1_psc_api_sec_fr_addr :
+    local.spoke1_psc_api_all_fr_addr
+  )
+  spoke1_psc_api_fr_target = (
+    local.spoke1_psc_api_secure ?
+    "vpc-sc" :
+    "all-apis"
+  )
+}
+
+# service account
+
+module "spoke1_sa" {
+  source       = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v34.1.0"
+  project_id   = var.project_id_spoke1
+  name         = trimsuffix("${local.spoke1_prefix}sa", "-")
+  generate_key = false
+  iam_project_roles = {
+    (var.project_id_onprem) = ["roles/owner", ]
+    (var.project_id_hub)    = ["roles/owner", ]
+    (var.project_id_spoke1) = ["roles/owner", ]
+    (var.project_id_spoke2) = ["roles/owner", ]
+  }
+}
+
+############################################
+# spoke2
+############################################
+
+data "google_project" "spoke2_project_number" {
+  project_id = var.project_id_spoke2
+}
+
+locals {
+  spoke2_psc_api_fr_name = (
+    local.spoke2_psc_api_secure ?
+    local.spoke2_psc_api_sec_fr_name :
+    local.spoke2_psc_api_all_fr_name
+  )
+  spoke2_psc_api_fr_addr = (
+    local.spoke2_psc_api_secure ?
+    local.spoke2_psc_api_sec_fr_addr :
+    local.spoke2_psc_api_all_fr_addr
+  )
+  spoke2_psc_api_fr_target = (
+    local.spoke2_psc_api_secure ?
+    "vpc-sc" :
+    "all-apis"
+  )
+}
+
+# service account
+
+module "spoke2_sa" {
+  source       = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/iam-service-account?ref=v34.1.0"
+  project_id   = var.project_id_spoke2
+  name         = trimsuffix("${local.spoke2_prefix}sa", "-")
+  generate_key = false
+  iam_project_roles = {
+    (var.project_id_onprem) = ["roles/owner", ]
+    (var.project_id_hub)    = ["roles/owner", ]
+    (var.project_id_spoke1) = ["roles/owner", ]
+    (var.project_id_spoke2) = ["roles/owner", ]
+  }
+}
+
 
 ####################################################
 # output files

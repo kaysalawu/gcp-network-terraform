@@ -1,5 +1,5 @@
 
-# Simple Kubernetes Operator Customer Resource and Operator <!-- omit from toc -->
+# Simple Kubernetes Customer Resource and Operator <!-- omit from toc -->
 
 Contents
 - [Overview](#overview)
@@ -10,11 +10,17 @@ Contents
 - [(Optional) Testing the Operator (locally)](#optional-testing-the-operator-locally)
 - [Testing the Operator (GKE)](#testing-the-operator-gke)
 - [Cleanup](#cleanup)
+- [Useful Commands](#useful-commands)
+- [Requirements](#requirements)
+- [Inputs](#inputs)
+- [Outputs](#outputs)
 
 
 ## Overview
 
 This lab deploys a GKE cluster and a simple Kubernetes Operator that watches for a custom resource and prints a message to the logs when the custom resource is created.
+
+<img src="images/image.png" alt="FastAPI Web Interface" width="900"/>
 
 ## Prerequisites
 
@@ -454,6 +460,14 @@ cd gcp-network-terraform/4-general/g1-k8s-custom-resource
 
 ```sh
 terraform destroy -auto-approve
+```
+
+## Useful Commands
+
+1\. Force delete PingResource custom resource
+
+```sh
+kubectl patch pingresource test-ping1 -p '{"metadata":{"finalizers":[]}}' --type=merge
 ```
 
 <!-- BEGIN_TF_DOCS -->
