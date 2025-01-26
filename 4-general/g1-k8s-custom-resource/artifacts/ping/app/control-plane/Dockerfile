@@ -1,6 +1,10 @@
 FROM python:3.9-slim
 
-RUN pip install fastapi uvicorn kubernetes
+RUN python -m venv /opt/venv && \
+    . /opt/venv/bin/activate && \
+    pip install --no-cache-dir fastapi uvicorn kubernetes
+
+ENV PATH="/opt/venv/bin:$PATH"
 COPY control_plane.py /app/control_plane.py
 WORKDIR /app
 

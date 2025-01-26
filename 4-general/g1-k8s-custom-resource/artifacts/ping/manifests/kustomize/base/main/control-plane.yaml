@@ -1,3 +1,7 @@
+# Deployment for the Control Plane
+# The `control-plane` Deployment runs the control-plane application,
+# which interacts with `pingresources` in the `default` namespace.
+# Updated to use the `control-plane-sa` ServiceAccount for proper RBAC scoping.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -13,13 +17,17 @@ spec:
       labels:
         app: control-plane
     spec:
-      serviceAccountName: default
+      serviceAccountName: control-plane-sa
       containers:
         - name: control-plane
           image: europe-west2-docker.pkg.dev/prj-hub-lab/g1-hub-eu-repo/control-plane
           ports:
             - containerPort: 9000
+
 ---
+# Service for the Control Plane
+# Exposes the control-plane Deployment internally as a ClusterIP service
+# on port 9000 to allow internal communication.
 apiVersion: v1
 kind: Service
 metadata:
@@ -33,3 +41,73 @@ spec:
     - protocol: TCP
       port: 9000
       targetPort: 9000
+
+---
+# ServiceAccount for the Control Plane Deployment
+# A dedicated ServiceAccount used by the `control-plane` Deployment to authenticate
+# with the Kubernetes API for managing `pingresources` in the `default` namespace.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: control-plane-sa
+  namespace: default
+
+---
+# ClusterRole for Cluster-level Access
+# Grants cluster-wide permissions to the `control-plane` Deployment for:
+# - Watching and listing CRDs (CustomResourceDefinitions) in the cluster.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: control-plane-crd-cluster-role
+rules:
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: control-plane-crd-cluster-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: control-plane-crd-cluster-role
+subjects:
+  - kind: ServiceAccount
+    name: control-plane-sa
+    namespace: default
+
+---
+# Role for Namespace-level Access
+# Grants namespace-specific permissions to the `control-plane` Deployment to:
+# - Full control (create, delete, update, patch) over `pingresources` in the `default` namespace.
+# - Updating the status of the `pingresources` in the `default` namespace.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: control-plane-namespace-role
+  namespace: default
+rules:
+  - apiGroups: ["example.com"]
+    resources: ["pingresources"]
+    verbs: ["get", "list", "watch", "create", "delete", "update", "patch"]
+  - apiGroups: ["example.com"]
+    resources: ["pingresources/status"]
+    verbs: ["get", "update", "patch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: control-plane-namespace-rolebinding
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: control-plane-namespace-role
+subjects:
+  - kind: ServiceAccount
+    name: control-plane-sa
+    namespace: default

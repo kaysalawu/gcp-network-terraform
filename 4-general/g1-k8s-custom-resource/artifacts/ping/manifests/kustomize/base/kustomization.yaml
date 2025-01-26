@@ -1,5 +1,5 @@
 resources:
   - main/api-server.yaml
   - main/control-plane.yaml
-  - main/ping-operator-deploy.yaml
+  - main/ping-operator.yaml
   - main/pingresource-crd.yaml
