@@ -23,3 +23,17 @@ profiles:
       kustomize:
         paths:
           - discovery/endpoints/manifests/kustomize/base
+  - name: operator
+    build:
+      tagPolicy:
+        envTemplate:
+          template: "{{.VERSION}}"
+      artifacts:
+        - image: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/operator
+          context: discovery/operator/app
+          docker:
+            dockerfile: Dockerfile
+    deploy:
+      kustomize:
+        paths:
+          - discovery/operator/manifests/kustomize/base
