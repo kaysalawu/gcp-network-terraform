@@ -1,48 +1,46 @@
-# Deployment for the Orchestra Operator
-# The `orchestra-operator` Deployment runs the Orchestra Operator, which manages
-# performs service discovery for all orchestra custom resources.
+# The `service-discovery-operator` Deployment is responsible for
+# service discovery (of pods) for all orchestra custom resources under its control.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: orchestra-operator
+  name: service-discovery-operator
   namespace: default
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: orchestra-operator
+      app: service-discovery-operator
   template:
     metadata:
       labels:
-        app: orchestra-operator
+        app: service-discovery-operator
     spec:
-      serviceAccountName: orchestra-operator-sa
+      serviceAccountName: service-discovery-operator-sa
       containers:
-        - name: orchestra-operator
-          image: europe-west2-docker.pkg.dev/prj-hub-lab/g1-hub-eu-repo/orchestra-operator:latest
+        - name: service-discovery-operator
+          image: europe-west2-docker.pkg.dev/prj-hub-lab/g1-hub-eu-repo/service-discovery-operator:latest
           imagePullPolicy: Always
 
 ---
 
-# ServiceAccount for the Orchestra Operator Deployment
-# This ServiceAccount is used by the `orchestra-operator` Deployment to authenticate
+# This ServiceAccount is used by the `service-discovery-operator` Deployment to authenticate
 # with the Kubernetes API for managing cluster-level and namespace-specific resources.
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: orchestra-operator-sa
+  name: service-discovery-operator-sa
   namespace: default
 
 ---
 
 # ClusterRole for Cluster-wide Access
-# Grants cluster-wide permissions to the Orchestra Operator for:
+# Grants cluster-wide permissions to the Operator for:
 # - Watching and listing CRDs (CustomResourceDefinitions) in the cluster.
 # - Watching and listing all instances of the `orchestras` custom resource in all namespaces.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: orchestra-operator-cluster-role
+  name: service-discovery-operator-cluster-role
 rules:
   - apiGroups: ["example.com"]
     resources: ["orchestras"]
@@ -54,31 +52,31 @@ rules:
 ---
 
 # ClusterRoleBinding to Attach ClusterRole to the ServiceAccount
-# Binds the `orchestra-operator-cluster-role` to the `orchestra-operator-sa`
+# Binds the `service-discovery-operator-cluster-role` to the `service-discovery-operator-sa`
 # allowing it to access cluster-level resources.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: orchestra-operator-cluster-rolebinding
+  name: service-discovery-operator-cluster-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: orchestra-operator-cluster-role
+  name: service-discovery-operator-cluster-role
 subjects:
   - kind: ServiceAccount
-    name: orchestra-operator-sa
+    name: service-discovery-operator-sa
     namespace: default
 
 ---
 
 # Role for Namespace-level Access
-# Grants namespace-specific permissions to the Orchestra Operator Deployment for:
+# Grants namespace-specific permissions to the Operator Deployment for:
 # - Full control (create, delete, update, patch) over `orchestras` in the `default` namespace.
 # - Updating the status of the `orchestras` in the `default` namespace.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: orchestra-operator-namespace-role
+  name: service-discovery-operator-namespace-role
   namespace: default
 rules:
   - apiGroups: ["example.com"]
@@ -91,18 +89,18 @@ rules:
 ---
 
 # RoleBinding to Attach Namespace Role to the ServiceAccount
-# Binds the `orchestra-operator-namespace-role` to the `orchestra-operator-sa`
+# Binds the `service-discovery-operator-namespace-role` to the `service-discovery-operator-sa`
 # allowing it to manage `orchestras` resources in the `default` namespace.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: orchestra-operator-namespace-rolebinding
+  name: service-discovery-operator-namespace-rolebinding
   namespace: default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: orchestra-operator-namespace-role
+  name: service-discovery-operator-namespace-role
 subjects:
   - kind: ServiceAccount
-    name: orchestra-operator-sa
+    name: service-discovery-operator-sa
     namespace: default

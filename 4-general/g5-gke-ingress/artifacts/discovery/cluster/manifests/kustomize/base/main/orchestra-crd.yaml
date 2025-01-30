@@ -24,7 +24,7 @@ spec:
             spec:
               type: object
               properties:
-                orchestraName:
+                name:
                   type: string
                 region:
                   type: string
@@ -34,6 +34,8 @@ spec:
                   nullable: true
                 project:
                   type: string
+                ingress:
+                  type: string
               oneOf:
                 - required: ["region"]
                 - required: ["zone"]
@@ -42,40 +44,3 @@ spec:
               properties:
                 state:
                   type: string
-
----
-
-# Role Definition for Updating Status
-# Grants permissions to the Orchestra Operator to manage and update
-# the status of Orchestra custom resources within the namespace.
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: orchestra-operator-role
-  namespace: default
-rules:
-  - apiGroups: ["example.com"]
-    resources: ["orchestras"]
-    verbs: ["get", "list", "watch", "update", "patch"]
-  - apiGroups: ["example.com"]
-    resources: ["orchestras/status"]
-    verbs: ["get", "update", "patch"]
-
----
-
-# RoleBinding to Attach Role to the Default ServiceAccount
-# Binds the `orchestra-operator-role` to the default ServiceAccount,
-# allowing it to access Orchestra resources in the default namespace.
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: orchestra-operator-rolebinding
-  namespace: default
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: orchestra-operator-role
-subjects:
-  - kind: ServiceAccount
-    name: default
-    namespace: default
