@@ -57,3 +57,4 @@ _dev.*
 _delete.*
 _env.txt
 __pycache__
+venv

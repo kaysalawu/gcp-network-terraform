@@ -628,6 +628,8 @@ kubeconfig entry generated for g5-spoke2-eu-cluster.
 
 kubectl logs $(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep endpoints)
 
+# test the endpoinst script locally
+python -m uvicorn main:app --reload --host 0.0.0.0 --port 8080
 ```
 
 

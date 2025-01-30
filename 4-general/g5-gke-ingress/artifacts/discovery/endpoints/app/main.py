@@ -1,52 +1,39 @@
 import subprocess
 import json
+import time
 from datetime import datetime
-
+from fastapi import FastAPI
+import threading
+from _PodManager import PodManager
 
 # Pod is configured with a service account that has workload identity
 # linked to a service account in the ingress project, and has roles
 # roles/container.admin role to all target workload clusters.
 # Context to the workload cluster works with the service account.
 
-
-def get_context():
-    cmd = [
-        "gcloud",
-        "container",
-        "clusters",
-        "get-credentials",
-        "g5-spoke2-eu-cluster",
-        "--zone",
-        "europe-west2-b",
-        "--project",
-        "prj-spoke2-lab",
-    ]
-    subprocess.run(cmd, check=True)
+app = FastAPI()
 
 
-def get_pods():
-    cmd = ["kubectl", "get", "pods", "-o", "json"]
-    result = subprocess.check_output(cmd, text=True)
-    return json.loads(result)
+def endpoints_scanner():
+    print("[LOG] Initializing pod scanner...")
+    PodManager.get_context()
+    while True:
+        pods = PodManager.get_pods()
+        formatted_pods = PodManager.format_pod_info(pods)
+        timestamp = datetime.utcnow().strftime("%d/%m/%Y %H:%M:%S")
+        print({"timestamp": timestamp, "pods": formatted_pods})
+        time.sleep(10)
 
 
-def format_pod_info(pods):
-    formatted_pods = []
-    for pod in pods["items"]:
-        name = pod["metadata"]["name"]
-        pod_ip = pod["status"].get("podIP", "No IP assigned")
-        host_ip = pod["status"].get("hostIP", "No Host IP assigned")
-        phase = pod["status"].get("phase", "Unknown")
-        formatted_pods.append(
-            {"name": name, "podIP": pod_ip, "hostIP": host_ip, "phase": phase}
-        )
-    return formatted_pods
-
-
-if __name__ == "__main__":
-    get_context()
-    pods = get_pods()
-    formatted_pods = format_pod_info(pods)
+@app.get("/scan")
+def get_pods_endpoint():
+    PodManager.get_context()
+    pods = PodManager.get_pods()
+    formatted_pods = PodManager.format_pod_info(pods)
     timestamp = datetime.utcnow().strftime("%d/%m/%Y %H:%M:%S")
-    result = {"timestamp": timestamp, "pods": formatted_pods}
-    print(json.dumps(result, indent=2))
+    return {"timestamp": timestamp, "pods": formatted_pods}
+
+
+thread = threading.Thread(target=endpoints_scanner, daemon=True)
+thread.start()
+print("[LOG] Continuous pod logging thread started.")

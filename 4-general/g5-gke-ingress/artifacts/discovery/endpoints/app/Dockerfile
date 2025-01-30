@@ -6,12 +6,13 @@ RUN apt-get update && \
 
 ENV PATH="/opt/venv/bin:$PATH"
 
-COPY requirements.txt /tmp/requirements.txt
-
-RUN python3 -m venv /opt/venv && \
-    /opt/venv/bin/pip install --no-cache-dir -r /tmp/requirements.txt
-
-COPY main.py /app/main.py
 WORKDIR /app
 
-CMD ["python", "main.py"]
+COPY requirements.txt .
+
+RUN python3 -m venv /opt/venv && \
+    /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
+
+COPY main.py _PodManager.py /app/
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
