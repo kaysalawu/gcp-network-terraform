@@ -63,9 +63,9 @@ See the [troubleshooting](../../troubleshooting/README.md) section for tips on h
 ```sh
 PROJECT_ID=<your-project-id>
 LOCATION=europe-west2
-INGRESS_CLUSTER_NAME=g1-ingress-cluster
-SPOKE1_CLUSTER_NAME=g1-spoke1-cluster
-SPOKE2_CLUSTER_NAME=g1-spoke2-cluster
+INGRESS_CLUSTER_NAME=g5-ingress-cluster
+SPOKE1_CLUSTER_NAME=g5-spoke1-cluster
+SPOKE2_CLUSTER_NAME=g5-spoke2-cluster
 ```
 
 2\. Get the GKE cluster credentials
@@ -121,7 +121,7 @@ kopf run ping_operator-local.py
 
 ```sh
 (ping-venv) operator$ kopf run ping_operator-local.py
-/home/salawu/GCP/gcp-network-terraform/4-general/g1-k8s-custom-resource/artifacts/ping/app/ping-venv/lib/python3.11/site-packages/kopf/_core/reactor/running.py:179: FutureWarning: Absence of either namespaces or cluster-wide flag will become an error soon. For now, switching to the cluster-wide mode for backward compatibility.
+/home/salawu/GCP/gcp-network-terraform/4-general/g5-k8s-custom-resource/artifacts/ping/app/ping-venv/lib/python3.11/site-packages/kopf/_core/reactor/running.py:179: FutureWarning: Absence of either namespaces or cluster-wide flag will become an error soon. For now, switching to the cluster-wide mode for backward compatibility.
   warnings.warn("Absence of either namespaces or cluster-wide flag will become an error soon."
 [2025-01-08 07:05:26,490] kopf._core.engines.a [INFO    ] Initial authentication has been initiated.
 [2025-01-08 07:05:26,515] kopf.activities.auth [INFO    ] Activity 'login_via_client' succeeded.
@@ -193,7 +193,7 @@ python -m uvicorn control_plane-local:app --reload --host 0.0.0.0 --port 9000
 
 ```sh
 (ping-venv) control-plane$ python -m uvicorn control_plane-local:app --reload --host 0.0.0.0 --port 9000
-INFO:     Will watch for changes in these directories: ['/home/salawu/GCP/gcp-network-terraform/4-general/g1-k8s-custom-resource/artifacts/ping/app/control-plane']
+INFO:     Will watch for changes in these directories: ['/home/salawu/GCP/gcp-network-terraform/4-general/g5-k8s-custom-resource/artifacts/ping/app/control-plane']
 INFO:     Uvicorn running on http://0.0.0.0:9000 (Press CTRL+C to quit)
 INFO:     Started reloader process [73643] using statreload
 Started monitoring PingResource events...
@@ -234,7 +234,7 @@ python -m uvicorn ping_api:app --reload --host 0.0.0.0 --port 8000
 
 ```sh
 (ping-venv) api-server$ python -m uvicorn ping_api-local:app --reload --host 0.0.0.0 --port 8000
-INFO:     Will watch for changes in these directories: ['/home/salawu/GCP/gcp-network-terraform/4-general/g1-k8s-custom-resource/artifacts/ping/app/api-server']
+INFO:     Will watch for changes in these directories: ['/home/salawu/GCP/gcp-network-terraform/4-general/g5-k8s-custom-resource/artifacts/ping/app/api-server']
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
 INFO:     Started reloader process [74140] using statreload
 INFO:     Started server process [74142]
@@ -630,6 +630,31 @@ kubectl logs $(kubectl get pods --no-headers -o custom-columns=":metadata.name" 
 
 # test the endpoinst script locally
 python -m uvicorn main:app --reload --host 0.0.0.0 --port 8080
+
+
+kubectl auth can-i get orchestras --as=system:serviceaccount:default:default
+
+kopf run main.py --namespace default
+
+
+USER=$(kubectl config view --minify --output 'jsonpath={.contexts[0].context.user}')
+echo $USER
+# gke_prj-hub-lab_europe-west2-b_g5-hub-eu-cluster
+kubectl create clusterrolebinding my-user-admin --clusterrole=cluster-admin --user=$USER
+# clusterrolebinding.rbac.authorization.k8s.io/my-user-admin created
+kubectl auth can-i get orchestras --as=$USER
+
+
+kubectl auth can-i get apis --as=$USER
+kubectl auth can-i get crds --as=$USER
+kubectl auth can-i get orchestras --as=$USER
+
+
+kubectl config view --minify
+gcloud auth print-access-token | kubectl auth can-i get pods --all-namespaces --token=$(cat)
+
+kubectl patch orch orch-001 --type=json -p '[{"op": "remove", "path": "/metadata/finalizers"}]'
+kubectl patch orch orch-002 --type=json -p '[{"op": "remove", "path": "/metadata/finalizers"}]
 ```
 
 

@@ -1,4 +1,8 @@
-FROM python:3.9-slim
+FROM google/cloud-sdk:latest
+
+RUN apt-get update && \
+    apt-get install -y python3-venv && \
+    rm -rf /var/lib/apt/lists/*
 
 ENV PATH="/opt/venv/bin:$PATH"
 
@@ -9,6 +13,6 @@ COPY requirements.txt .
 RUN python3 -m venv /opt/venv && \
     /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
 
-COPY operator.py /app/
+COPY main.py _PodManager.py /app/
 
-CMD ["kopf", "run", "/app/operator.py"]
+CMD ["kopf", "run", "/app/main.py"]

@@ -9,7 +9,6 @@ from _PodManager import PodManager
 # Pod is configured with a service account that has workload identity
 # linked to a service account in the ingress project, and has
 # roles/container.admin role for access to all target workload clusters.
-# Context to the workload cluster works with the service account.
 
 app = FastAPI()
 

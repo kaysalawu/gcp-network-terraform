@@ -88,6 +88,8 @@ resource "google_container_cluster" "hub_eu_cluster" {
     delete = "60m"
   }
 
+  deletion_protection = false
+
   # lifecycle {
   #   ignore_changes = all
   # }
@@ -210,7 +212,7 @@ resource "kubernetes_cluster_role" "hub_eu_list_all" {
   rule {
     api_groups = ["*"]
     resources  = ["*"]
-    verbs      = ["list", "get"]
+    verbs      = ["list", "get", "watch", "create", "update", "delete", "patch", ]
   }
 }
 
@@ -233,7 +235,6 @@ resource "kubernetes_cluster_role_binding" "hub_eu_list_all_binding" {
   }
 }
 
-
 ####################################################
 # gcp service account
 ####################################################
@@ -244,7 +245,7 @@ module "hub_sa_gke" {
   name         = "${local.hub_prefix}sa-gke"
   generate_key = true
   iam = {
-    # hub_eu cluster pods with *k8s svc account* impersonate this *hub_sa_gke.email*
+    # hub_eu cluster pods with KSA *hub_eu_sa_gke* impersonate this *hub_sa_gke.email*
     # *hub_sa_gke.email* has project-wide roles
     "roles/iam.workloadIdentityUser" = [
       "serviceAccount:${var.project_id_hub}.svc.id.goog[${kubernetes_service_account.hub_eu_sa_gke.id}]",

@@ -88,6 +88,8 @@ resource "google_container_cluster" "spoke2_eu_cluster" {
     delete = "60m"
   }
 
+  deletion_protection = false
+
   # lifecycle {
   #   ignore_changes = all
   # }
@@ -210,7 +212,7 @@ resource "kubernetes_cluster_role" "spoke2_eu_list_all" {
   rule {
     api_groups = ["*"]
     resources  = ["*"]
-    verbs      = ["list", "get"]
+    verbs      = ["list", "get", "watch", "create", "update", "delete", "patch", ]
   }
 }
 
@@ -243,7 +245,7 @@ module "spoke2_sa_gke" {
   name         = "${local.spoke2_prefix}sa-gke"
   generate_key = true
   iam = {
-    # spoke2_eu cluster pods with *k8s svc account* impersonate this *spoke2_sa_gke.email*
+    # spoke2_eu cluster pods with KSA *spoke2_eu_sa_gke* impersonate this *spoke2_sa_gke.email*
     # *spoke2_sa_gke.email* has project-wide roles
     "roles/iam.workloadIdentityUser" = [
       "serviceAccount:${var.project_id_spoke2}.svc.id.goog[${kubernetes_service_account.spoke2_eu_sa_gke.id}]",

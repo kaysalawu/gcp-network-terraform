@@ -30,7 +30,7 @@ profiles:
         envTemplate:
           template: "{{.VERSION}}"
       artifacts:
-        - image: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/service-discovery-operator
+        - image: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/discovery-operator
           context: discovery/operator/app
           docker:
             dockerfile: Dockerfile
@@ -38,4 +38,8 @@ profiles:
       kustomize:
         paths:
           - discovery/operator/manifests/kustomize/base
+  - name: orchestras
+    deploy:
+      kustomize:
+        paths:
           - discovery/operator/manifests/kustomize/overlays/orchestras

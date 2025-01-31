@@ -3,33 +3,37 @@ import json
 
 
 class PodManager:
-    orchestra_name = "g5-spoke2-eu-cluster"
-    zone = "europe-west2-b"
-    project = "prj-spoke2-lab"
+    def __init__(self, orchestra_name, project, zone=None, region=None):
+        if not zone and not region:
+            raise ValueError("Either zone or region must be specified.")
+        self.orchestra_name = orchestra_name
+        self.project = project
+        self.zone = zone
+        self.region = region
 
-    @classmethod
-    def get_context(cls):
+    def get_context(self):
         cmd = [
             "gcloud",
             "container",
             "clusters",
             "get-credentials",
-            cls.orchestra_name,
-            "--zone",
-            cls.zone,
+            self.orchestra_name,
             "--project",
-            cls.project,
+            self.project,
         ]
+        if self.zone:
+            cmd.extend(["--zone", self.zone])
+        else:
+            cmd.extend(["--region", self.region])
+
         subprocess.run(cmd, check=True)
 
-    @classmethod
-    def get_pods(cls):
+    def get_pods(self):
         cmd = ["kubectl", "get", "pods", "-o", "json"]
         result = subprocess.check_output(cmd, text=True)
         return json.loads(result)
 
-    @classmethod
-    def format_pod_info(cls, pods):
+    def format_pod_info(self, pods):
         formatted_pods = []
         for pod in pods["items"]:
             name = pod["metadata"]["name"]

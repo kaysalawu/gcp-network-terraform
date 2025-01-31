@@ -3,7 +3,7 @@ import kubernetes
 
 # Initialize Kubernetes config
 # use local kubeconfig when running locally
-kubernetes.config.load_incluster_config()
+kubernetes.config.load_kube_config()
 
 
 @kopf.on.create("example.com", "v1", "orchestras")
