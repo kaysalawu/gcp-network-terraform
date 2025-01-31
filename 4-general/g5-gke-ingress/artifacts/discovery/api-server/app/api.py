@@ -24,8 +24,8 @@ class OrchestraRequest(BaseModel):
                 "name": "test-orchestra",
                 "ingress": "ingress-001",
                 "project": "prj-spoke2-lab",
-                "region": "europe-west2",
-                "zone": None,
+                "region": None,
+                "zone": "europe-west2-b",
             }
         }
 
