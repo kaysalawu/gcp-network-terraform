@@ -2,7 +2,7 @@
 
 PROJECT_ID=team-aura-networking
 LOCATION=europe-west2
-CLUSTER_NAME=g1-hub-cluster
+CLUSTER_NAME=g5-hub-cluster
 APP_PATH=app/python
 DOCKERFILE_PING_OPERATOR_PATH=Dockerfile-ping-operator
 DOCKERFILE_CONTROL_PLANE_PATH=Dockerfile-control-plane

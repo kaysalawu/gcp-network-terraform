@@ -3,7 +3,7 @@ import json
 
 
 class PodManager:
-    cluster_name = "g5-spoke2-eu-cluster"
+    orchestra_name = "g5-spoke2-eu-cluster"
     zone = "europe-west2-b"
     project = "prj-spoke2-lab"
 
@@ -14,7 +14,7 @@ class PodManager:
             "container",
             "clusters",
             "get-credentials",
-            cls.cluster_name,
+            cls.orchestra_name,
             "--zone",
             cls.zone,
             "--project",

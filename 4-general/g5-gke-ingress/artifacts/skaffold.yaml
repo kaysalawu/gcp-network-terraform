@@ -23,13 +23,14 @@ profiles:
       kustomize:
         paths:
           - discovery/endpoints/manifests/kustomize/base
+          - discovery/endpoints/manifests/kustomize/overlays
   - name: operator
     build:
       tagPolicy:
         envTemplate:
           template: "{{.VERSION}}"
       artifacts:
-        - image: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/operator
+        - image: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/service-discovery-operator
           context: discovery/operator/app
           docker:
             dockerfile: Dockerfile
@@ -37,3 +38,4 @@ profiles:
       kustomize:
         paths:
           - discovery/operator/manifests/kustomize/base
+          - discovery/operator/manifests/kustomize/overlays/orchestras

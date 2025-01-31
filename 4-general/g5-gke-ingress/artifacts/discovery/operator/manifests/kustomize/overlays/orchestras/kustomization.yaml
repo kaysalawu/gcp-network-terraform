@@ -1,0 +1,6 @@
+bases:
+  - ../../base
+
+resources:
+  - orch-001.yaml
+  - orch-002.yaml

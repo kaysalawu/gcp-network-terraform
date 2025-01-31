@@ -4,6 +4,8 @@ kind: Pod
 metadata:
   name: endpoints
   namespace: default
+  labels:
+    app: endpoints
 spec:
   serviceAccountName: cluster-ksa
   containers:
