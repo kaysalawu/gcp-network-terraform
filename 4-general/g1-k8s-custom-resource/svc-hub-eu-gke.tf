@@ -88,11 +88,9 @@ resource "google_container_cluster" "hub_eu_cluster" {
 
   deletion_protection = false
 
-  lifecycle {
-    ignore_changes = [
-      node_config[0].resource_labels,
-    ]
-  }
+  # lifecycle {
+  #   ignore_changes = all
+  # }
 }
 
 data "google_container_cluster" "hub_eu_cluster" {
