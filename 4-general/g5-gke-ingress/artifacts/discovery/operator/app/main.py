@@ -9,9 +9,26 @@ from fastapi import FastAPI
 import threading
 from _PodManager import PodManager
 
-# Pod is configured with a service account that has workload identity
-# linked to a service account in the ingress project, and has
-# roles/container.admin role for access to all target workload clusters.
+
+"""
+=========================================================================
+The ingress cluster hosts the operator deployment running this code.
+The deployment is configured with a k8s service account that has workload
+identity linked to a GCE service account in the local project.
+The GCE service account has project roles/container.admin role for access
+to target external workload clusters.
+
+The operator knows which external clusters to scan for pods by reading
+custom resources (CRs) of kind 'orchestras.example.com'. The CRs contain
+the context information needed to switch to the target external cluster.
+
+The operator switches context to each cluster, extracts pod information
+and updates the CR status with the pod information.
+
+A FastAPI endpoint is exposed to trigger the scan manually. The endpoint
+fetches all CRs and scans the external clusters for pods.
+=========================================================================
+"""
 
 app = FastAPI()
 
@@ -28,13 +45,16 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+# Set the context to the target external cluster and fetch pod information.
+#
 def scan_pods(name, cluster, project, region=None, zone=None):
     pod_manager = PodManager(name, cluster, project, zone, region)
-    pod_manager.get_context()
+    pod_manager.set_context()
     pods = pod_manager.get_pods()
     formatted_pods = pod_manager.format_pod_info(pods)
     timestamp = datetime.utcnow().strftime("%d/%m/%Y %H:%M:%S")
     logger.info({"timestamp": timestamp, "pods": formatted_pods})
+    pod_manager.unset_context()
 
 
 def endpoints_scanner():
@@ -44,6 +64,8 @@ def endpoints_scanner():
         cmd = ["kubectl", "get", "orchestras.example.com", "-o", "json"]
         result = subprocess.check_output(cmd, text=True)
         crs = json.loads(result).get("items", [])
+
+        logger.info(f"[LOG] Displaying CRs found: {crs}")
 
         threads = []
         for cr in crs:
