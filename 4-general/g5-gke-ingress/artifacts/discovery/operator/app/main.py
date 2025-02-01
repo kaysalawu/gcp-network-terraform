@@ -7,27 +7,12 @@ import time
 from datetime import datetime
 import threading
 from _PodManager import PodManager
+from google.cloud import dns
+from utils import *
 
 
-"""
-=========================================================================
-The ingress cluster hosts the operator deployment running this code.
-The deployment is configured with a k8s service account that has workload
-identity linked to a GCE service account in the local project.
-The GCE service account has project roles/container.admin role for access
-to target external workload clusters.
-
-The operator knows which external clusters to scan for pods by reading
-custom resources (CRs) of kind 'orchestras.example.com'. The CRs contain
-the context information needed to switch to the target external cluster.
-
-The operator switches context to each cluster, extracts pod information
-and updates the CR status with the pod information.
-
-A FastAPI endpoint is exposed to trigger the scan manually. The endpoint
-fetches all CRs and scans the external clusters for pods.
-=========================================================================
-"""
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Initialize Kubernetes config
 try:
@@ -37,9 +22,17 @@ except:
     # use local kubeconfig when running locally
     config.load_kube_config()
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Project is required to fetch the private DNS zone.
+project_id = get_current_project_id()
+logging.info(f"Project ID: {project_id}")
+
+
+# In this example, we are fetching DNS zones with a search string = "private".
+# This is our private DNS zone used to register the endpoints discovered.
+private_dns_zone = get_dns_zone(project_id, "private")
+logging.info(f"Private DNS zone: {private_dns_zone}")
+
+create_private_dns_a_record(project_id, private_dns_zone, "test", "1.1.1.1")
 
 
 # Set the context to the target external cluster and fetch pod information.
@@ -132,6 +125,7 @@ def on_orchestra_update(spec, meta, **kwargs):
 def on_orchestra_delete(meta, **kwargs):
     name = meta.get("name")
     logger.info(f"Orchestra {name} has been deleted.")
+    process_all_orchestras()
 
 
 @kopf.on.startup()

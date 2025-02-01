@@ -13,6 +13,6 @@ COPY requirements.txt .
 RUN python3 -m venv /opt/venv && \
     /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
 
-COPY main.py _PodManager.py /app/
+COPY main.py _PodManager.py utils/ /app/
 
 CMD ["kopf", "run", "/app/main.py"]
