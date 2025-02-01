@@ -67,6 +67,6 @@ class PodManager:
             host_ip = pod["status"].get("hostIP", "No Host IP assigned")
             phase = pod["status"].get("phase", "Unknown")
             formatted_pods.append(
-                {"name": name, "podIP": pod_ip, "hostIP": host_ip, "phase": phase}
+                {"podName": name, "podIp": pod_ip, "hostIp": host_ip, "phase": phase}
             )
         return formatted_pods

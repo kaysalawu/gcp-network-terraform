@@ -50,6 +50,10 @@ spec:
                         type: string
                       podIp:
                         type: string
+                      hostIp:
+                        type: string
+                      phase:
+                        type: string
       additionalPrinterColumns:
         - name: Cluster
           type: string

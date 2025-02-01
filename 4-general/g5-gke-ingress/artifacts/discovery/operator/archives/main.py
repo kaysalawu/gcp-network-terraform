@@ -1,5 +1,5 @@
 import kopf
-import kubernetes
+from kubernetes import config
 import logging
 import subprocess
 import json
@@ -9,50 +9,80 @@ from fastapi import FastAPI
 import threading
 from _PodManager import PodManager
 
-# Pod is configured with a service account that has workload identity
-# linked to a service account in the ingress project, and has
-# roles/container.admin role for access to all target workload clusters.
+
+"""
+=========================================================================
+The ingress cluster hosts the operator deployment running this code.
+The deployment is configured with a k8s service account that has workload
+identity linked to a GCE service account in the local project.
+The GCE service account has project roles/container.admin role for access
+to target external workload clusters.
+
+The operator knows which external clusters to scan for pods by reading
+custom resources (CRs) of kind 'orchestras.example.com'. The CRs contain
+the context information needed to switch to the target external cluster.
+
+The operator switches context to each cluster, extracts pod information
+and updates the CR status with the pod information.
+
+A FastAPI endpoint is exposed to trigger the scan manually. The endpoint
+fetches all CRs and scans the external clusters for pods.
+=========================================================================
+"""
 
 app = FastAPI()
 
 # Initialize Kubernetes config
-# use in-cluster kubeconfig when running in the cluster
-kubernetes.config.load_incluster_config()
+try:
+    # use in-cluster kubeconfig when running in the cluster
+    config.load_incluster_config()
+except:
+    # use local kubeconfig when running locally
+    config.load_kube_config()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def scan_pods(orchestra_name, project, zone=None, region=None):
-    pod_manager = PodManager(orchestra_name, project, zone, region)
-    pod_manager.get_context()
+# Set the context to the target external cluster and fetch pod information.
+#
+def scan_pods(name, cluster, project, region=None, zone=None):
+    pod_manager = PodManager(name, cluster, project, zone, region)
+    pod_manager.set_context()
     pods = pod_manager.get_pods()
     formatted_pods = pod_manager.format_pod_info(pods)
     timestamp = datetime.utcnow().strftime("%d/%m/%Y %H:%M:%S")
     logger.info({"timestamp": timestamp, "pods": formatted_pods})
+    pod_manager.unset_context()
 
 
 def endpoints_scanner():
     logger.info("[LOG] Initializing pod scanner...")
     while True:
+        logger.info("[LOG] Fetching orchestras CRs...")
         cmd = ["kubectl", "get", "orchestras.example.com", "-o", "json"]
         result = subprocess.check_output(cmd, text=True)
         crs = json.loads(result).get("items", [])
 
+        logger.info(f"[LOG] Displaying CRs found: {crs}")
+
         threads = []
         for cr in crs:
             spec = cr.get("spec", {})
-            orchestra_name = spec.get("name")
+            name = cr.get("metadata").get("name")
+            cluster = spec.get("cluster")
             project = spec.get("project")
             region = spec.get("region")
             zone = spec.get("zone")
 
-            if not project or not orchestra_name:
+            if not project or not cluster:
                 continue
 
+            logger.info(f"[LOG] Processing CR: {cr.get('metadata').get('name')}")
+
             thread = threading.Thread(
-                target=scan_pods, args=(orchestra_name, project, zone, region)
+                target=scan_pods, args=(name, cluster, project, region, zone)
             )
             threads.append(thread)
             thread.start()
@@ -60,7 +90,7 @@ def endpoints_scanner():
         for thread in threads:
             thread.join()
 
-        time.sleep(10)
+        time.sleep(30)
 
 
 @app.get("/scan")
@@ -72,16 +102,16 @@ def get_pods_endpoint():
     threads = []
     for cr in crs:
         spec = cr.get("spec", {})
-        orchestra_name = spec.get("name")
+        cluster = spec.get("cluster")
         project = spec.get("project")
         region = spec.get("region")
         zone = spec.get("zone")
 
-        if not project or not orchestra_name:
+        if not project or not cluster:
             continue
 
         thread = threading.Thread(
-            target=scan_pods, args=(orchestra_name, project, zone, region)
+            target=scan_pods, args=(cluster, project, zone, region)
         )
         threads.append(thread)
         thread.start()
@@ -97,7 +127,7 @@ def get_pods_endpoint():
 @kopf.on.update("example.com", "v1", "orchestras")
 def on_orchestra_event(spec, **kwargs):
     orchestra_data = {
-        "name": spec.get("name"),
+        "cluster": spec.get("cluster"),
         "region": spec.get("region"),
         "zone": spec.get("zone"),
         "project": spec.get("project"),
@@ -115,5 +145,7 @@ def on_orchestra_delete(meta, **kwargs):
     logger.info(f"Orchestra {name} has been deleted.")
 
 
-scanner_thread = threading.Thread(target=endpoints_scanner, daemon=True)
-scanner_thread.start()
+@kopf.on.startup()
+def start_scanner(**kwargs):
+    thread = threading.Thread(target=endpoints_scanner, daemon=True)
+    thread.start()
