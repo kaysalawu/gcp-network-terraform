@@ -3,10 +3,10 @@ import json
 
 
 class PodManager:
-    def __init__(self, orchestra_name, project, zone=None, region=None):
+    def __init__(self, name, cluster, project, region=None, zone=None):
         if not zone and not region:
             raise ValueError("Either zone or region must be specified.")
-        self.orchestra_name = orchestra_name
+        self.cluster = cluster
         self.project = project
         self.zone = zone
         self.region = region
@@ -17,7 +17,7 @@ class PodManager:
             "container",
             "clusters",
             "get-credentials",
-            self.orchestra_name,
+            self.cluster,
             "--project",
             self.project,
         ]

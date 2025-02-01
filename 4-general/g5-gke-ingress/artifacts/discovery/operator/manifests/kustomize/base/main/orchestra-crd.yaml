@@ -26,7 +26,7 @@ spec:
               properties:
                 ingress:
                   type: string
-                name:
+                cluster:
                   type: string
                 project:
                   type: string
@@ -36,9 +36,6 @@ spec:
                 zone:
                   type: string
                   nullable: true
-              oneOf:
-                - required: ["region"]
-                - required: ["zone"]
             status:
               type: object
               properties:
@@ -54,9 +51,9 @@ spec:
                       podIp:
                         type: string
       additionalPrinterColumns:
-        - name: Name
+        - name: Cluster
           type: string
-          jsonPath: ".spec.name"
+          jsonPath: ".spec.cluster"
         - name: Ingress
           type: string
           jsonPath: ".spec.ingress"

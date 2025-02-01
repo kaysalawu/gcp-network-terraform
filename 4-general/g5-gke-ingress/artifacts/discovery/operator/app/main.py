@@ -1,5 +1,5 @@
 import kopf
-import kubernetes
+from kubernetes import config
 import logging
 import subprocess
 import json
@@ -16,16 +16,20 @@ from _PodManager import PodManager
 app = FastAPI()
 
 # Initialize Kubernetes config
-# use in-cluster kubeconfig when running in the cluster
-kubernetes.config.load_incluster_config()
+try:
+    # use in-cluster kubeconfig when running in the cluster
+    config.load_incluster_config()
+except:
+    # use local kubeconfig when running locally
+    config.load_kube_config()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def scan_pods(orchestra_name, project, zone=None, region=None):
-    pod_manager = PodManager(orchestra_name, project, zone, region)
+def scan_pods(name, cluster, project, region=None, zone=None):
+    pod_manager = PodManager(name, cluster, project, zone, region)
     pod_manager.get_context()
     pods = pod_manager.get_pods()
     formatted_pods = pod_manager.format_pod_info(pods)
@@ -41,23 +45,22 @@ def endpoints_scanner():
         result = subprocess.check_output(cmd, text=True)
         crs = json.loads(result).get("items", [])
 
-        logger.info(f"[LOG] Retrieved CRs: {json.dumps(crs, indent=2)}")
-
         threads = []
         for cr in crs:
             spec = cr.get("spec", {})
-            orchestra_name = spec.get("name")
+            name = cr.get("metadata").get("name")
+            cluster = spec.get("cluster")
             project = spec.get("project")
             region = spec.get("region")
             zone = spec.get("zone")
 
-            if not project or not orchestra_name:
+            if not project or not cluster:
                 continue
 
-            logger.info(f"[LOG] Processing {orchestra_name} in {project}...")
+            logger.info(f"[LOG] Processing CR: {cr.get('metadata').get('name')}")
 
             thread = threading.Thread(
-                target=scan_pods, args=(orchestra_name, project, zone, region)
+                target=scan_pods, args=(name, cluster, project, region, zone)
             )
             threads.append(thread)
             thread.start()
@@ -65,7 +68,7 @@ def endpoints_scanner():
         for thread in threads:
             thread.join()
 
-        time.sleep(10)
+        time.sleep(30)
 
 
 @app.get("/scan")
@@ -77,16 +80,16 @@ def get_pods_endpoint():
     threads = []
     for cr in crs:
         spec = cr.get("spec", {})
-        orchestra_name = spec.get("name")
+        cluster = spec.get("cluster")
         project = spec.get("project")
         region = spec.get("region")
         zone = spec.get("zone")
 
-        if not project or not orchestra_name:
+        if not project or not cluster:
             continue
 
         thread = threading.Thread(
-            target=scan_pods, args=(orchestra_name, project, zone, region)
+            target=scan_pods, args=(cluster, project, zone, region)
         )
         threads.append(thread)
         thread.start()
@@ -102,7 +105,7 @@ def get_pods_endpoint():
 @kopf.on.update("example.com", "v1", "orchestras")
 def on_orchestra_event(spec, **kwargs):
     orchestra_data = {
-        "name": spec.get("name"),
+        "cluster": spec.get("cluster"),
         "region": spec.get("region"),
         "zone": spec.get("zone"),
         "project": spec.get("project"),

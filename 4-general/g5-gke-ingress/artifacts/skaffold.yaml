@@ -38,8 +38,23 @@ profiles:
       kustomize:
         paths:
           - discovery/operator/manifests/kustomize/base
+  - name: api-server
+    build:
+      tagPolicy:
+        envTemplate:
+          template: "{{.VERSION}}"
+      artifacts:
+        - image: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/api-server
+          context: discovery/api-server/app
+          docker:
+            dockerfile: Dockerfile
+    deploy:
+      kustomize:
+        paths:
+          - discovery/api-server/manifests/kustomize/base
+          - discovery/api-server/manifests/kustomize/overlays/load-balancers
   - name: orchestras
     deploy:
       kustomize:
         paths:
-          - discovery/operator/manifests/kustomize/overlays/orchestras
+          - discovery/orchestras/manifests/kustomize/base

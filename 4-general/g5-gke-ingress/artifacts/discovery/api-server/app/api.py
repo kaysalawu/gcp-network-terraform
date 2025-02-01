@@ -2,32 +2,84 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from kubernetes import client, config
 import uuid
+import kubernetes
 
 # Initialize FastAPI app
 app = FastAPI()
 
-# Load Kubernetes configuration (use load_incluster_config() if running in-cluster)
-config.load_incluster_config()
+# Initialize Kubernetes config
+try:
+    # use in-cluster kubeconfig when running in the cluster
+    config.load_incluster_config()
+except:
+    # use local kubeconfig when running locally
+    config.load_kube_config()
 
 
 # Define the request model
 class OrchestraRequest(BaseModel):
-    name: str = None
+    name: str
+    cluster: str
     ingress: str
     project: str
     region: str = None
     zone: str = None
 
-    class Config:
-        schema_extra = {
-            "example": {
-                "name": "test-orchestra",
-                "ingress": "ingress-001",
-                "project": "prj-spoke2-lab",
-                "region": None,
-                "zone": "europe-west2-b",
-            }
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "name": "orchestra-001",
+                    "cluster": "g5-spoke2-eu-cluster",
+                    "ingress": "ingress-001",
+                    "project": "prj-spoke2-lab",
+                    "region": None,
+                    "zone": "europe-west2-b",
+                },
+                {
+                    "name": "orchestra-002",
+                    "cluster": "g5-spoke2-us-cluster",
+                    "ingress": "ingress-001",
+                    "project": "prj-spoke2-lab",
+                    "region": None,
+                    "zone": "us-west2-b",
+                },
+            ]
         }
+    }
+
+
+# Endpoint to list all Orchestra CRs
+@app.get("/api/list_orchestras")
+async def list_orchestras():
+    api_instance = client.CustomObjectsApi()
+    try:
+        resources = api_instance.list_namespaced_custom_object(
+            group="example.com",
+            version="v1",
+            namespace="default",
+            plural="orchestras",
+        )
+        return {"status": "success", "orchestras": resources.get("items", [])}
+    except client.exceptions.ApiException as e:
+        raise HTTPException(status_code=500, detail=f"Error listing resources: {e}")
+
+
+# Endpoint to get a specific Orchestra CR
+@app.get("/api/get_orchestra/{name}")
+async def get_orchestra(name: str):
+    api_instance = client.CustomObjectsApi()
+    try:
+        resource = api_instance.get_namespaced_custom_object(
+            group="example.com",
+            version="v1",
+            namespace="default",
+            plural="orchestras",
+            name=name,
+        )
+        return {"status": "success", "orchestra": resource}
+    except client.exceptions.ApiException as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving resource: {e}")
 
 
 # Endpoint to create an Orchestra CR
@@ -49,6 +101,7 @@ async def create_orchestra(orchestra_request: OrchestraRequest):
         "kind": "Orchestra",
         "metadata": {"name": resource_name},
         "spec": {
+            "cluster": orchestra_request.cluster,
             "ingress": orchestra_request.ingress,
             "project": orchestra_request.project,
             "region": orchestra_request.region,
@@ -86,6 +139,7 @@ async def update_orchestra(name: str, orchestra_request: OrchestraRequest):
         )
 
         # Update spec
+        existing_resource["spec"]["cluster"] = orchestra_request.cluster
         existing_resource["spec"]["ingress"] = orchestra_request.ingress
         existing_resource["spec"]["project"] = orchestra_request.project
         existing_resource["spec"]["region"] = orchestra_request.region
