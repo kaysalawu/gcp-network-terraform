@@ -1,0 +1,87 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: haproxy-config
+  namespace: {{ .Values.nameSpace }}
+data:
+  haproxy.cfg: |
+    global
+      log /dev/log local0
+      log /dev/log local1 notice
+      user haproxy
+      group haproxy
+      daemon
+
+    defaults
+      log global
+      timeout connect 5000ms
+      timeout client 50000ms
+      timeout server 50000ms
+
+    frontend fe-http
+      bind *:{{ .Values.portNeo4jHttp }}
+      mode http
+    {{- range $user := .Values.users }}
+      acl host_{{ $user.name }}_and_port hdr_beg(host) -i {{ $user.host }}
+    {{- end }}
+    {{- range $user := .Values.users }}
+      use_backend be_{{ $user.name }}_http if host_{{ $user.name }}_and_port
+    {{- end }}
+
+    frontend fe-https
+      bind *:{{ .Values.portNeo4jHttps }} ssl crt /etc/ssl/certs/tls-combined.pem
+      mode http
+    {{- range $user := .Values.users }}
+      acl host_{{ $user.name }}_and_port hdr_beg(host) -i {{ $user.host }}
+    {{- end }}
+    {{- range $user := .Values.users }}
+      use_backend be_{{ $user.name }}_https if host_{{ $user.name }}_and_port
+    {{- end }}
+
+    frontend fe-bolt
+      bind *:{{ .Values.portNeo4jBolt }} #ssl crt /etc/ssl/certs/tls-combined.pem
+      mode tcp
+    {{- if .Values.bolt_use_sni }}
+    {{- range $user := .Values.users }}
+      acl host_{{ $user.name }}_and_port req.ssl_sni -i {{ $user.host }}
+    {{- end }}
+    {{- range $user := .Values.users }}
+      use_backend be_{{ $user.name }}_bolt if host_{{ $user.name }}_and_port
+    {{- end }}
+    {{- else }}
+      default_backend be_{{ (index .Values.users 0).name }}_bolt
+    {{- end }}
+
+    {{- range $user := .Values.users }}
+
+    backend be_{{ $user.name }}_http
+      mode http
+      option forwardfor
+      server {{ $user.name }} {{ $user.name }}.{{ $.Values.nameSpace }}.svc.cluster.local:{{ $.Values.portNeo4jHttp }} check
+
+    backend be_{{ $user.name }}_https
+      mode http
+      option forwardfor
+      server {{ $user.name }} {{ $user.name }}.{{ $.Values.nameSpace }}.svc.cluster.local:{{ $.Values.portNeo4jHttps }} check
+
+    backend be_{{ $user.name }}_bolt
+      mode tcp
+      server {{ $user.name }} {{ $user.name }}.{{ $.Values.nameSpace }}.svc.cluster.local:{{ $.Values.portNeo4jBolt }} check
+
+    {{- end }}
+
+    frontend stats-in
+      bind *:8404
+      mode http
+      acl allowed_stats hdr_beg(host) -i {{ .Values.defaultHost }}
+      http-request deny if !allowed_stats
+      stats enable
+      stats uri /stats
+      stats refresh 10s
+
+    frontend prometheus-in
+      bind *:9101
+      mode http
+      acl allowed_metrics hdr_beg(host) -i {{ .Values.defaultHost }}
+      http-request deny if !allowed_metrics
+      http-request use-service prometheus-exporter if { path /metrics }

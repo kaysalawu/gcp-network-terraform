@@ -58,3 +58,36 @@ profiles:
       kustomize:
         paths:
           - discovery/orchestras/manifests/kustomize/base
+
+  - name: apps
+    build:
+      tagPolicy:
+        envTemplate:
+          template: "{{.VERSION}}"
+      artifacts:
+      - image: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/http
+        context: discovery/apps/src/fastapi/http
+      - image: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/https
+        context: discovery/apps/src/fastapi/https
+      - image: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/bolt
+        context: discovery/apps/src/fastapi/bolt
+
+    deploy:
+      helm:
+        releases:
+          - name: system
+            chartPath: discovery/apps/charts/0-system
+            valuesFiles:
+              - discovery/apps/charts/values.yaml
+          - name: users
+            chartPath: discovery/apps/charts/1-users
+            valuesFiles:
+              - discovery/apps/charts/values.yaml
+          - name: haproxy
+            chartPath: discovery/apps/charts/2-haproxy
+            valuesFiles:
+              - discovery/apps/charts/values.yaml
+          - name: test
+            chartPath: discovery/apps/charts/3-k6
+            valuesFiles:
+              - discovery/apps/charts/values.yaml

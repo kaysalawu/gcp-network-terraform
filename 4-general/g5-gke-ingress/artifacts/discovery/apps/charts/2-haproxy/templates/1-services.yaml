@@ -1,0 +1,142 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: haproxy
+  namespace: {{ .Values.nameSpace }}
+spec:
+  type: ClusterIP
+  selector:
+    app: haproxy
+  ports:
+    - name: http
+      port: {{ .Values.portNeo4jHttp }}
+      protocol: TCP
+      targetPort: {{ .Values.portNeo4jHttp }}
+    - name: https
+      port: {{ .Values.portNeo4jHttps }}
+      protocol: TCP
+      targetPort: {{ .Values.portNeo4jHttps }}
+    - name: bolt
+      port: {{ .Values.portNeo4jBolt }}
+      protocol: TCP
+      targetPort: {{ .Values.portNeo4jBolt }}
+    - name: stats
+      port: 8404
+      protocol: TCP
+      targetPort: 8404
+    - name: prometheus-metrics
+      port: 9101
+      protocol: TCP
+      targetPort: 9101
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: haproxy-elb
+  namespace: {{ .Values.nameSpace }}
+  annotations:
+    cloud.google.com/l4-rbs: "enabled"
+spec:
+  type: LoadBalancer
+  loadBalancerIP: {{ .Values.loadBalancerIP }}
+  selector:
+    app: haproxy
+  ports:
+    - name: http
+      port: {{ .Values.portNeo4jHttp }}
+      protocol: TCP
+      targetPort: {{ .Values.portNeo4jHttp }}
+    - name: https
+      port: {{ .Values.portNeo4jHttps }}
+      protocol: TCP
+      targetPort: {{ .Values.portNeo4jHttps }}
+    - name: bolt
+      port: {{ .Values.portNeo4jBolt }}
+      protocol: TCP
+      targetPort: {{ .Values.portNeo4jBolt }}
+    - name: stats
+      port: 8404
+      protocol: TCP
+      targetPort: 8404
+    - name: prometheus-metrics
+      port: 9101
+      protocol: TCP
+      targetPort: 9101
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: haproxy-ilb
+  namespace: {{ .Values.nameSpace }}
+  annotations:
+    networking.gke.io/load-balancer-type: "Internal"
+spec:
+  type: LoadBalancer
+  selector:
+    app: haproxy
+  ports:
+    - name: http
+      port: {{ .Values.portNeo4jHttp }}
+      protocol: TCP
+      targetPort: {{ .Values.portNeo4jHttp }}
+    - name: https
+      port: {{ .Values.portNeo4jHttps }}
+      protocol: TCP
+      targetPort: {{ .Values.portNeo4jHttps }}
+    - name: bolt
+      port: {{ .Values.portNeo4jBolt }}
+      protocol: TCP
+      targetPort: {{ .Values.portNeo4jBolt }}
+---
+apiVersion: networking.gke.io/v1
+kind: ServiceAttachment
+metadata:
+ name: haproxy-ilb-attachment
+ namespace: {{ .Values.nameSpace }}
+spec:
+ connectionPreference: ACCEPT_AUTOMATIC
+ natSubnets:
+ - {{ .Values.pscProducerNatSubnetname }}
+ proxyProtocol: false
+ resourceRef:
+   kind: Service
+   name: haproxy-ilb
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: haproxy
+  namespace: {{ .Values.nameSpace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: haproxy
+  template:
+    metadata:
+      labels:
+        app: haproxy
+    spec:
+      containers:
+      - name: haproxy
+        image: haproxy:latest
+        ports:
+        - containerPort: {{ .Values.portNeo4jHttp }}
+        - containerPort: {{ .Values.portNeo4jHttps }}
+        - containerPort: {{ .Values.portNeo4jBolt }}
+        volumeMounts:
+        - name: tls-secret
+          mountPath: /etc/ssl/certs
+          readOnly: true
+        - name: haproxy-config
+          mountPath: /usr/local/etc/haproxy/haproxy.cfg
+          subPath: haproxy.cfg
+      volumes:
+      - name: tls-secret
+        secret:
+          secretName: "{{ .Values.nameSpace }}-tls"
+      - name: haproxy-config
+        configMap:
+          name: haproxy-config
+---
