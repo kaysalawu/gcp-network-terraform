@@ -10,15 +10,16 @@ logger = logging.getLogger(__name__)
 This module sets up a PodManager class that is used to interact with
 external kubernetes clusters. It sets the context using args received from
 custom resource for each external cluster. The context must be reset back
-to the python in_cluster_config or kube_config after the operation is done.
+to the in_cluster_config or local (kube_config) after the operation is done.
 =========================================================================
 """
 
 
 class PodManager:
-    def __init__(self, name, cluster, project, region=None, zone=None):
+    def __init__(self, orchestra_name, cluster, project, region=None, zone=None):
         if not zone and not region:
             raise ValueError("Either zone or region must be specified.")
+        self.orchestra_name = orchestra_name
         self.cluster = cluster
         self.project = project
         self.zone = zone
@@ -43,16 +44,16 @@ class PodManager:
         context = subprocess.check_output(
             ["kubectl", "config", "current-context"], text=True
         ).strip()
-        logger.info(f"Switched to context: {context}")
+        logger.info(f"Context switch: -> {context}")
 
     def unset_context(self):
         subprocess.run(["kubectl", "config", "unset", "current-context"], check=True)
         try:
             config.load_incluster_config()
-            logger.info("Switched to in-cluster context")
+            logger.info("Context switch: -> in-cluster")
         except:
             config.load_kube_config()
-            logger.info("Switched to local context")
+            logger.info("Context switch: -> local")
 
     def get_pods(self):
         cmd = ["kubectl", "get", "pods", "-o", "json"]

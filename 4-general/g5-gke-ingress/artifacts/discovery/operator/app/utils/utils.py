@@ -31,37 +31,81 @@ def get_dns_zone(project_id, search_string):
     return filtered_zones
 
 
-def create_private_dns_a_record(project_id, private_dns_zone, pod_name, pod_ip):
+def create_private_dns_a_record(
+    project_id, private_dns_zone, orchestra_name, pod_name, pod_ip
+):
     if not private_dns_zone:
-        logger.error("No private DNS zone found.")
+        logger.error("Create DNS: No private DNS zone found.")
         return
 
     zone_name = private_dns_zone[0]["name"]
     dns_name = private_dns_zone[0]["dns_name"]
+    record_name = f"{pod_name}-{orchestra_name}.{dns_name}"
 
     client = dns.Client(project=project_id)
     zone = client.zone(zone_name)
-
-    record_name = f"{pod_name}.{dns_name}"
 
     # Fetch existing records
     existing_records = list(zone.list_resource_record_sets())
     for record in existing_records:
         if record.name == record_name and record.record_type == "A":
             logger.info(
-                f"Already exists: {record_name} -> {record.rrdatas} in zone {zone_name}, skipping creation."
+                f"Create DNS: Already exists! {record_name} -> {record.rrdatas}, skipping."
             )
             return
 
     # Create new record if it doesn't exist
     record_set = zone.resource_record_set(
-        name=record_name,
-        record_type="A",
-        ttl=300,
-        rrdatas=[pod_ip],
+        name=record_name, record_type="A", ttl=300, rrdatas=[pod_ip]
     )
     changes = zone.changes()
     changes.add_record_set(record_set)
     changes.create()
 
-    logger.info(f"Created DNS record {record_name} -> {pod_ip} in zone {zone_name}")
+    logger.info(f"Create DNS: Success! {record_name} -> {pod_ip}")
+
+
+def delete_private_dns_a_record(
+    project_id, private_dns_zone, orchestra_name, pod_name, pod_ip
+):
+    if not private_dns_zone:
+        logger.error("Delete DNS: No private DNS zone found.")
+        return
+
+    zone_name = private_dns_zone[0]["name"]
+    dns_name = private_dns_zone[0]["dns_name"]
+    record_name = f"{pod_name}-{orchestra_name}.{dns_name}"
+
+    client = dns.Client(project=project_id)
+    zone = client.zone(zone_name)
+
+    for record in zone.list_resource_record_sets():
+        if (
+            record.record_type == "A"
+            and orchestra_name in record.name
+            and record_name not in record.name
+        ):
+            # Pod absent but record exists, delete it.
+            changes = zone.changes()
+            changes.delete_record_set(record)
+            changes.create()
+            logger.info(f"Delete DNS: Success! {record.name} -> {record.rrdatas}")
+            return
+    logger.info(f"Delete DNS: Aborted! {record_name}")
+
+
+def get_existing_dns_a_records(project_id, private_dns_zone, orchestra_name):
+    if not private_dns_zone:
+        logger.error("Get DNS: No private DNS zone found.")
+        return []
+
+    zone_name = private_dns_zone[0]["name"]
+    client = dns.Client(project=project_id)
+    zone = client.zone(zone_name)
+
+    existing_records = []
+    for record in zone.list_resource_record_sets():
+        if record.record_type == "A" and orchestra_name in record.name:
+            existing_records.append({"name": record.name, "rrdatas": record.rrdatas})
+
+    return existing_records
