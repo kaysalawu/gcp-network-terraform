@@ -29,15 +29,6 @@ pip install kopf fastapi kubernetes uvicorn
 # create ping_operator-local.py
 kopf run ping_operator-local.py
 
-# (ping-venv) ping-operator$ kopf run ping_operator-local.py
-# /home/salawu/CLOUDTUPLE/platforms/neo4j-gcp-v2/ping-operator/ping-venv/lib/python3.11/site-packages/kopf/_core/reactor/running.py:179: FutureWarning: Absence of either namespaces or cluster-wide flag will become an error soon. For now, switching to the cluster-wide mode for backward compatibility.
-#   warnings.warn("Absence of either namespaces or cluster-wide flag will become an error soon."
-# [2024-11-07 12:39:57,029] kopf._core.engines.a [INFO    ] Initial authentication has been initiated.
-# [2024-11-07 12:39:57,054] kopf.activities.auth [INFO    ] Activity 'login_via_client' succeeded.
-# [2024-11-07 12:39:57,055] kopf._core.engines.a [INFO    ] Initial authentication has finished.
-# [2024-11-07 12:40:07,282] kopf.objects         [INFO    ] [default/test-ping] Handler 'on_create_pingresource' succeeded.
-# [2024-11-07 12:40:07,283] kopf.objects         [INFO    ] [default/test-ping] Creation is processed: 1 succeeded; 0 failed.
-
 # open another terminal and run
 
 cd $CURRENT_DIR

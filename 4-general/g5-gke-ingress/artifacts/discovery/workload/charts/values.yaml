@@ -1,9 +1,7 @@
 
-imageNeo4jHttp: europe-west2-docker.pkg.dev/prj-c-artifacts-e2y1/neo4j/http
-imageNeo4jHttps: europe-west2-docker.pkg.dev/prj-c-artifacts-e2y1/neo4j/https
-imageNeo4jBolt: europe-west2-docker.pkg.dev/prj-c-artifacts-e2y1/neo4j/bolt
-dnsProject: prj-c-dns-hub-8lsn
-loadBalancerIP: 34.142.112.212
+imageNeo4jHttp: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/http
+imageNeo4jHttps: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/https
+imageNeo4jBolt: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/bolt
 portNeo4jHttp: 7474
 portNeo4jHttps: 7473
 portNeo4jBolt: 7687
@@ -12,14 +10,14 @@ portGraphiteMonitoring: 2003
 portPrometheusMetrics: 2004
 pscProducerNatSubnetname: gke-nat-subnet
 email: salawu@cloudtuple.com
-defaultHost: neo4j.cloudtuple.com
-nameSpace: neo4j
+defaultHost: graphz.cloudtuple.com
+nameSpace: graphz
 # letsencryptIssuerRef: letsencrypt-prod
 # letsencrpytAcmeServer: https://acme-v02.api.letsencrypt.org/directory
-letsencryptIssuerRef: letsencrypt-staging
-letsencrpytAcmeServer: https://acme-staging-v02.api.letsencrypt.org/directory
-bolt_use_sni: false
-trafficGeneratorLoopCount: 15
+# letsencryptIssuerRef: letsencrypt-staging
+# letsencrpytAcmeServer: https://acme-staging-v02.api.letsencrypt.org/directory
+# bolt_use_sni: false
+# trafficGeneratorLoopCount: 15
 users:
   - name: user1
     host: user1.cloudtuple.com
@@ -33,23 +31,23 @@ users:
     k6_traffic_url: http://user2.cloudtuple.com:7474
     scale: 2
     rate_limit: 50
-  - name: user3
-    host: user3.cloudtuple.com
-    k6_traffic_profile: normal
-    k6_traffic_url: http://user3.cloudtuple.com:7474
-    scale: 1
-  - name: user4
-    host: user4.cloudtuple.com
-    k6_traffic_profile: low
-    k6_traffic_url: http://user4.cloudtuple.com:7474
-    scale: 1
-  - name: user5
-    host: user5.cloudtuple.com
-    k6_traffic_profile: low
-    k6_traffic_url: http://user5.cloudtuple.com:7474
-    scale: 1
-  - name: user6
-    host: user6.cloudtuple.com
-    k6_traffic_profile: error
-    k6_traffic_url: http://neo4j.cloudtuple.com:7474
-    scale: 1
+  # - name: user3
+  #   host: user3.cloudtuple.com
+  #   k6_traffic_profile: normal
+  #   k6_traffic_url: http://user3.cloudtuple.com:7474
+  #   scale: 1
+  # - name: user4
+  #   host: user4.cloudtuple.com
+  #   k6_traffic_profile: low
+  #   k6_traffic_url: http://user4.cloudtuple.com:7474
+  #   scale: 1
+  # - name: user5
+  #   host: user5.cloudtuple.com
+  #   k6_traffic_profile: low
+  #   k6_traffic_url: http://user5.cloudtuple.com:7474
+  #   scale: 1
+  # - name: user6
+  #   host: user6.cloudtuple.com
+  #   k6_traffic_profile: error
+  #   k6_traffic_url: http://graphz.cloudtuple.com:7474
+  #   scale: 1

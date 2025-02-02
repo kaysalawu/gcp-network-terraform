@@ -7,7 +7,6 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-helm_chart_name="neo4j-native"
 base_dir="charts"
 templates_dirs=(
 "$base_dir/0-system"

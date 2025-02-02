@@ -59,7 +59,7 @@ profiles:
         paths:
           - discovery/orchestras/manifests/kustomize/base
 
-  - name: apps
+  - name: workload
     build:
       tagPolicy:
         envTemplate:
@@ -75,19 +75,24 @@ profiles:
     deploy:
       helm:
         releases:
-          - name: system
-            chartPath: discovery/apps/charts/0-system
-            valuesFiles:
-              - discovery/apps/charts/values.yaml
           - name: users
-            chartPath: discovery/apps/charts/1-apps
+            chartPath: discovery/workload/charts/1-apps
             valuesFiles:
-              - discovery/apps/charts/values.yaml
-          - name: haproxy
-            chartPath: discovery/apps/charts/2-haproxy
-            valuesFiles:
-              - discovery/apps/charts/values.yaml
+              - discovery/workload/charts/values.yaml
           - name: test
-            chartPath: discovery/apps/charts/3-k6
+            chartPath: discovery/workload/charts/2-k6
             valuesFiles:
-              - discovery/apps/charts/values.yaml
+              - discovery/workload/charts/values.yaml
+
+  - name: haproxy
+    deploy:
+      helm:
+        releases:
+          - name: system
+            chartPath: discovery/haproxy/charts/0-system
+            valuesFiles:
+              - discovery/haproxy/charts/values.yaml
+          - name: haproxy
+            chartPath: discovery/haproxy/charts/1-haproxy
+            valuesFiles:
+              - discovery/haproxy/charts/values.yaml

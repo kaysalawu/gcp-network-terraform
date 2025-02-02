@@ -1,7 +1,8 @@
 
-imageNeo4jHttp: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/neo4j/http
-imageNeo4jHttps: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/neo4j/https
-imageNeo4jBolt: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/neo4j/bolt
+imageNeo4jHttp: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/http
+imageNeo4jHttps: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/https
+imageNeo4jBolt: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/bolt
+dnsProject: prj-c-dns-hub-8lsn
 portNeo4jHttp: 7474
 portNeo4jHttps: 7473
 portNeo4jBolt: 7687
@@ -10,8 +11,8 @@ portGraphiteMonitoring: 2003
 portPrometheusMetrics: 2004
 pscProducerNatSubnetname: gke-nat-subnet
 email: salawu@cloudtuple.com
-defaultHost: neo4j.cloudtuple.com
-nameSpace: neo4j
+defaultHost: graphz.cloudtuple.com
+nameSpace: graphz
 letsencryptIssuerRef: letsencrypt-staging
 letsencrpytAcmeServer: https://acme-staging-v02.api.letsencrypt.org/directory
 bolt_use_sni: false
