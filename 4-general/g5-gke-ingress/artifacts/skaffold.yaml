@@ -80,7 +80,7 @@ profiles:
             valuesFiles:
               - discovery/apps/charts/values.yaml
           - name: users
-            chartPath: discovery/apps/charts/1-users
+            chartPath: discovery/apps/charts/1-apps
             valuesFiles:
               - discovery/apps/charts/values.yaml
           - name: haproxy

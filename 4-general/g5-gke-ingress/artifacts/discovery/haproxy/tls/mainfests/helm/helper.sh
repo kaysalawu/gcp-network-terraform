@@ -11,7 +11,7 @@ helm_chart_name="neo4j-native"
 base_dir="charts"
 templates_dirs=(
 "$base_dir/0-system"
-"$base_dir/1-users"
+"$base_dir/1-apps"
 "$base_dir/2-haproxy"
 "$base_dir/3-k6"
 )
