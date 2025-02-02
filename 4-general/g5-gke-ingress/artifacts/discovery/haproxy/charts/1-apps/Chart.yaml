@@ -1,5 +1,0 @@
-apiVersion: v2
-name: workload
-description: A Helm chart for deploying app workloads
-version: 1.0.0
-appVersion: "1.0"
