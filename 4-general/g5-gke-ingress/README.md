@@ -653,7 +653,7 @@ kubectl auth can-i get orchestras --as=$USER
 kubectl config view --minify
 gcloud auth print-access-token | kubectl auth can-i get pods --all-namespaces --token=$(cat)
 
-kubectl patch orch orch-001 --type=json -p '[{"op": "remove", "path": "/metadata/finalizers"}]'
+kubectl patch orch orchestra-001 --type=json -p '[{"op": "remove", "path": "/metadata/finalizers"}]'
 kubectl patch orch orch-002 --type=json -p '[{"op": "remove", "path": "/metadata/finalizers"}]
 ```
 

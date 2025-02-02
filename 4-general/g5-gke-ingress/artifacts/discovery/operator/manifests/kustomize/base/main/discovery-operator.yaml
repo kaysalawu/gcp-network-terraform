@@ -1,15 +1,22 @@
 # The `discovery-operator` Deployment is responsible for
 # service discovery (of pods) for all orchestra custom resources under its control.
-apiVersion: v1
-kind: Pod
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: discovery-operator
   namespace: default
-  labels:
-    app: discovery-operator
 spec:
-  serviceAccountName: cluster-ksa
-  containers:
-    - name: discovery-operator
-      image: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/discovery-operator:latest
-      imagePullPolicy: Always
+  replicas: 1
+  selector:
+    matchLabels:
+      app: discovery-operator
+  template:
+    metadata:
+      labels:
+        app: discovery-operator
+    spec:
+      serviceAccountName: cluster-ksa
+      containers:
+        - name: discovery-operator
+          image: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/discovery-operator:latest
+          imagePullPolicy: Always

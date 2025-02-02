@@ -9,4 +9,4 @@ ENV PATH="/opt/venv/bin:$PATH"
 COPY ping_operator.py /app/ping_operator.py
 WORKDIR /app
 
-CMD ["kopf", "run", "/app/ping_operator.py"]
+CMD ["kopf", "run", "--all-namespaces", "/app/ping_operator.py"]

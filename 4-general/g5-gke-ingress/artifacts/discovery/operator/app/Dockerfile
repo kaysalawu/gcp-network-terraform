@@ -15,4 +15,4 @@ RUN python3 -m venv /opt/venv && \
 
 COPY main.py _PodManager.py utils/ /app/
 
-CMD ["kopf", "run", "/app/main.py"]
+CMD ["kopf", "run", "--all-namespaces", "/app/main.py"]

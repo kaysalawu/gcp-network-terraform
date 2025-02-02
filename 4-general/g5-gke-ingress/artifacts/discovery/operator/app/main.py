@@ -57,55 +57,102 @@ def scan_pods(orchestra_name, cluster, project, region=None, zone=None):
     formatted_pods = pod_manager.format_pod_info(pods)
     pod_count = len(formatted_pods)
     timestamp = datetime.utcnow().strftime("%d/%m/%Y %H:%M:%S")
-    logger.info(f"Endpoints: Found {pod_count} ({timestamp})")
+    logger.info(f"Endpoints: Found [{pod_count}] -> {cluster}")
     pod_manager.unset_context()
     return formatted_pods
 
 
 # Reconcile DNS records to ensure only active pods have DNS entries.
 def reconcile_dns(orchestra_name, pod_info):
-    # Fetch all existing A records in the private DNS zone.
     existing_records = get_existing_dns_a_records(
         project_id, private_dns_zone, orchestra_name
     )
 
-    # Create or update DNS for active pods, and track active records.
     active_pod_dns_records = set()
-    for pod in pod_info:
-        pod_name = pod["podName"]
-        pod_ip = pod["podIp"]
-        create_private_dns_a_record(
-            project_id, private_dns_zone, orchestra_name, pod_name, pod_ip
-        )
-        active_pod_dns_records.add(
-            f"{pod_name}-{orchestra_name}.{private_dns_zone[0]['dns_name']}"
-        )
 
-    # Delete stale records (records that exist but aren't in the active pod list).
+    try:
+        for pod in pod_info:
+            pod_name = pod["podName"]
+            pod_ip = pod["podIp"]
+            create_private_dns_a_record(
+                project_id, private_dns_zone, orchestra_name, pod_name, pod_ip
+            )
+            active_pod_dns_records.add(
+                f"{pod_name}-{orchestra_name}.{private_dns_zone[0]['dns_name']}"
+            )
+    except (KeyError, TypeError) as e:
+        logger.error(f"Error processing pod info for {orchestra_name}: {e}")
+
+    records_to_delete = []
     for record in existing_records:
         record_name = record["name"]
         if orchestra_name in record_name and record_name not in active_pod_dns_records:
-            logger.info(f"DNS Reconcile: Delete -> {record_name}")
+            records_to_delete.append(record)
+
+    if records_to_delete:
+        logger.info(
+            f"DNS Reconcile: Deleting {len(records_to_delete)} stale records for {orchestra_name}"
+        )
+        for record in records_to_delete:
             delete_private_dns_a_record(
                 project_id,
                 private_dns_zone,
                 orchestra_name,
-                pod_name,
+                record["name"].split(".")[0],
                 record["rrdatas"][0],
             )
-        logger.info(f"DNS Reconcile: Skip -> {record_name}")
 
 
+# Delete all DNS records associated with a deleted orchestra CR.
+def delete_dns_for_orchestra(orchestra_name):
+    existing_records = get_existing_dns_a_records(
+        project_id, private_dns_zone, orchestra_name
+    )
+
+    for record in existing_records:
+        record_name = record["name"]
+        logger.info(f"DNS Cleanup: Deleting -> {record_name}")
+        delete_private_dns_a_record(
+            project_id,
+            private_dns_zone,
+            orchestra_name,
+            record["name"].split(".")[0].split("-")[0],
+            record["rrdatas"][0],
+        )
+
+
+# Process a single orchestra CR
+def process_orchestra(orchestra_name, cluster, project, region, zone):
+    api_instance = client.CustomObjectsApi()
+    pod_info = scan_pods(orchestra_name, cluster, project, region, zone)
+    status_update = {"state": "Updated", "endpoints": pod_info}
+
+    # Update the CR status with pod information
+    try:
+        api_instance.patch_namespaced_custom_object(
+            group="example.com",
+            version="v1",
+            namespace="default",
+            plural="orchestras",
+            name=orchestra_name,
+            body={"status": status_update},
+        )
+        logger.info(f"CR Update: Success! {orchestra_name}")
+    except client.exceptions.ApiException as e:
+        logger.error(f"CR Update: Failed! {orchestra_name}: {e}")
+
+    # Reconcile DNS based on updated pod information.
+    reconcile_dns(orchestra_name, pod_info)
+
+
+# Process all orchestra CRs
 def process_all_orchestras():
-    logger.info("[LOG] Fetching orchestras CRs...")
     cmd = ["kubectl", "get", "orchestras.example.com", "-o", "json"]
     result = subprocess.check_output(cmd, text=True)
     crs = json.loads(result).get("items", [])
 
     cr_names = [cr.get("metadata", {}).get("name") for cr in crs]
-    logger.info(f"[LOG] CRs found: {cr_names}")
-
-    api_instance = client.CustomObjectsApi()
+    logger.info(f"CRs Found: {cr_names}")
 
     threads = []
     for cr in crs:
@@ -119,30 +166,10 @@ def process_all_orchestras():
         if not project or not cluster:
             continue
 
-        logger.info(f"[LOG] Processing CR: {orchestra_name}")
-
-        def process_cr():
-            pod_info = scan_pods(orchestra_name, cluster, project, region, zone)
-            status_update = {"state": "Updated", "endpoints": pod_info}
-
-            # Update the CR status with pod information
-            try:
-                api_instance.patch_namespaced_custom_object(
-                    group="example.com",
-                    version="v1",
-                    namespace="default",
-                    plural="orchestras",
-                    name=orchestra_name,
-                    body={"status": status_update},
-                )
-                logger.info(f"CR Update: Success! {orchestra_name}")
-            except client.exceptions.ApiException as e:
-                logger.error(f"CR Update: Failed! {orchestra_name}: {e}")
-
-            # Reconcile DNS based on updated pod information.
-            reconcile_dns(orchestra_name, pod_info)
-
-        thread = threading.Thread(target=process_cr)
+        thread = threading.Thread(
+            target=process_orchestra,
+            args=(orchestra_name, cluster, project, region, zone),
+        )
         threads.append(thread)
         thread.start()
 
@@ -160,22 +187,33 @@ def endpoints_scanner():
 @kopf.on.create("example.com", "v1", "orchestras")
 def on_orchestra_create(spec, meta, **kwargs):
     orchestra_name = meta.get("name", "unknown")
-    logger.info(f"Orchestra {orchestra_name} has been **created**.")
-    process_all_orchestras()
+    cluster = spec.get("cluster")
+    project = spec.get("project")
+    region = spec.get("region")
+    zone = spec.get("zone")
+
+    logger.info(f"Orchestra CREATE: {orchestra_name}.")
+    process_orchestra(orchestra_name, cluster, project, region, zone)
 
 
 @kopf.on.update("example.com", "v1", "orchestras")
 def on_orchestra_update(spec, meta, **kwargs):
     orchestra_name = meta.get("name", "unknown")
-    logger.info(f"Orchestra {orchestra_name} has been **updated**.")
-    process_all_orchestras()
+    cluster = spec.get("cluster")
+    project = spec.get("project")
+    region = spec.get("region")
+    zone = spec.get("zone")
+
+    logger.info(f"Orchestra UPDATE: {orchestra_name}")
+    process_orchestra(orchestra_name, cluster, project, region, zone)
 
 
 @kopf.on.delete("example.com", "v1", "orchestras")
 def on_orchestra_delete(meta, **kwargs):
     orchestra_name = meta.get("name")
-    logger.info(f"Orchestra {orchestra_name} has been deleted.")
-    process_all_orchestras()
+
+    logger.info(f"Orchestra DELETE: {orchestra_name}")
+    delete_dns_for_orchestra(orchestra_name)
 
 
 @kopf.on.startup()
