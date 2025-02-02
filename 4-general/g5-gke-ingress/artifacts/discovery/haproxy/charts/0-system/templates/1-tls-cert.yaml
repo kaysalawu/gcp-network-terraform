@@ -4,18 +4,6 @@ metadata:
   name: {{ .Values.letsencryptIssuerRef }}
 spec:
   selfSigned: {}
-  # acme:
-  #   server: {{ .Values.letsencrpytAcmeServer }}
-  #   email: {{ .Values.email }}
-  #   privateKeySecretRef:
-  #     name: {{ .Values.letsencryptIssuerRef }}
-  #   solvers:
-  #   - dns01:
-  #       cloudDNS:
-  #         project: {{ .Values.dnsProject }}
-  #         serviceAccountSecretRef:
-  #           name: clouddns-service-account
-  #           key: key.json
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
