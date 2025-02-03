@@ -9,21 +9,6 @@ profiles:
       kustomize:
         paths:
           - tools/manifests/kustomize/base
-  - name: endpoints
-    build:
-      tagPolicy:
-        envTemplate:
-          template: "{{.VERSION}}"
-      artifacts:
-        - image: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/endpoints
-          context: discovery/endpoints/app
-          docker:
-            dockerfile: Dockerfile
-    deploy:
-      kustomize:
-        paths:
-          - discovery/endpoints/manifests/kustomize/base
-          - discovery/endpoints/manifests/kustomize/overlays
   - name: operator
     build:
       tagPolicy:
@@ -65,12 +50,12 @@ profiles:
         envTemplate:
           template: "{{.VERSION}}"
       artifacts:
-      - image: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/http
-        context: discovery/apps/src/fastapi/http
-      - image: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/https
-        context: discovery/apps/src/fastapi/https
-      - image: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/bolt
-        context: discovery/apps/src/fastapi/bolt
+      - image: europe-west2-docker.pkg.dev/prj-spoke2-lab/g5-spoke2-eu-repo/http
+        context: discovery/workload/src/fastapi/http
+      - image: europe-west2-docker.pkg.dev/prj-spoke2-lab/g5-spoke2-eu-repo/https
+        context: discovery/workload/src/fastapi/https
+      - image: europe-west2-docker.pkg.dev/prj-spoke2-lab/g5-spoke2-eu-repo/bolt
+        context: discovery/workload/src/fastapi/bolt
 
     deploy:
       helm:
@@ -79,10 +64,10 @@ profiles:
             chartPath: discovery/workload/charts/1-apps
             valuesFiles:
               - discovery/workload/charts/values.yaml
-          - name: test
-            chartPath: discovery/workload/charts/2-k6
-            valuesFiles:
-              - discovery/workload/charts/values.yaml
+          # - name: test
+          #   chartPath: discovery/workload/charts/2-k6
+          #   valuesFiles:
+          #     - discovery/workload/charts/values.yaml
 
   - name: haproxy
     deploy:

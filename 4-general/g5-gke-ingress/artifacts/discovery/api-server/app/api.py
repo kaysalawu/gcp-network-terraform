@@ -29,17 +29,17 @@ class OrchestraRequest(BaseModel):
         "json_schema_extra": {
             "examples": [
                 {
-                    "name": "orchestra-001",
+                    "name": "orch01",
                     "cluster": "g5-spoke2-eu-cluster",
-                    "ingress": "ingress-001",
+                    "ingress": "ingress01",
                     "project": "prj-spoke2-lab",
                     "region": None,
                     "zone": "europe-west2-b",
                 },
                 {
-                    "name": "orchestra-002",
+                    "name": "orch02",
                     "cluster": "g5-spoke2-us-cluster",
-                    "ingress": "ingress-001",
+                    "ingress": "ingress01",
                     "project": "prj-spoke2-lab",
                     "region": None,
                     "zone": "us-west2-b",

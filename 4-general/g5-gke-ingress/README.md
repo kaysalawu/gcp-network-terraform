@@ -7,8 +7,9 @@ Contents
 - [Deploy the Lab](#deploy-the-lab)
 - [Troubleshooting](#troubleshooting)
 - [Initial Setup](#initial-setup)
-- [(Optional) Testing the Operator (locally)](#optional-testing-the-operator-locally)
-- [Testing the Operator (GKE)](#testing-the-operator-gke)
+- [Deploy the Spoke Cluster](#deploy-the-spoke-cluster)
+- [Deploy the Hub Cluster](#deploy-the-hub-cluster)
+- [Deploy the Custom Resource (CR)](#deploy-the-custom-resource-cr)
   - [SORT](#sort)
 - [Cleanup](#cleanup)
 - [Useful Commands](#useful-commands)
@@ -21,35 +22,41 @@ Contents
 
 This lab deploys a GKE ingress pattern to allow access from a hub to spoke clusters. The hub ingress, haproxy, performs service discovery and routing to the spoke clusters. The ingress uses host names in SNI to route traffic to the correct cluster.
 
+Service discovery is implemented using a simple Kubernetes custom resource (CR) and operator. The operator watches for the custom resource and updates the Cloud DNS with pod IP addresses when the custom resource is created or deleted. In this example, the CR represents a kubernetes cluster. The CR has a status field that is updated with the cluster's pod IP addresses.
+
 <img src="images/image.png" alt="FastAPI Web Interface" width="900"/>
+
+The lab infrastructure is a hub and spoke model. The hub cluster is in a separate project from the spoke clusters. The spoke clusters are in different regions. The hub cluster has a haproxy ingress that routes traffic to the spoke clusters based on the host name in the SNI.
 
 ## Prerequisites
 
 1. Ensure you meet all requirements in the [prerequisites](../../prerequisites/README.md) before proceeding.
 2. [Install skaffold](https://skaffold.dev/docs/install/) for deploying the operator to the GKE cluster.
 3. Install kubectx to switch between kubernetes contexts. [Install kubectx](https://github.com/ahmetb/kubectx?tab=readme-ov-file#installation)
+4. Install [skaffold](https://skaffold.dev/docs/install/#standalone-binary), the tool we'll use for building and deploying to Kubernetes.
+5. Create two GCP projects, one for the hub and the other for the spoke clusters.
 
 ## Deploy the Lab
 
-1\. Clone the Git Repository for the Labs
+1. Clone the Git Repository for the Labs
 
- ```sh
- git clone https://github.com/kaysalawu/gcp-network-terraform.git
- ```
+    ```sh
+    git clone https://github.com/kaysalawu/gcp-network-terraform.git
+    ```
 
-2\. Navigate to the lab directory
+2. Navigate to the lab directory
 
-```sh
-cd gcp-network-terraform/4-general/g5-gke-ingress
-```
+   ```sh
+   cd gcp-network-terraform/4-general/g5-gke-ingress
+   ```
 
-3\. Run the following terraform commands and type ***yes*** at the prompt:
+3. Run the following terraform commands and type ***yes*** at the prompt:
 
- ```sh
- terraform init
- terraform plan
- terraform apply -parallelism=50
- ```
+    ```sh
+    terraform init
+    terraform plan
+    terraform apply -auto-approve
+    ```
 
  ## Troubleshooting
 
@@ -58,290 +65,46 @@ See the [troubleshooting](../../troubleshooting/README.md) section for tips on h
 
 ## Initial Setup
 
-1\. Set some environment variables
+1. Set some environment variables
 
 ```sh
-PROJECT_ID=<your-project-id>
-LOCATION=europe-west2
-INGRESS_CLUSTER_NAME=g5-ingress-cluster
-SPOKE1_CLUSTER_NAME=g5-spoke1-cluster
-SPOKE2_CLUSTER_NAME=g5-spoke2-cluster
+export PROJECT_ID_HUB=<your-hub-project-id>
+export PROJECT_ID_SPOKE=<your-spoke-project-id>
+export LOCATION=europe-west2
+export HUB_CLUSTER_NAME=g5-hub-eu-cluster
+export SPOKE_CLUSTER1_NAME=g5-spoke2-eu-cluster
 ```
 
-2\. Get the GKE cluster credentials
+1. Get the GKE cluster credentials
 
 ```sh
-gcloud container clusters get-credentials $CLUSTER_NAME --region "$LOCATION-b" --project=$PROJECT_ID
+gcloud container clusters get-credentials $SPOKE_CLUSTER1_NAME --region "$LOCATION-b" --project=$PROJECT_ID_SPOKE
+gcloud container clusters get-credentials $HUB_CLUSTER_NAME --region "$LOCATION-b" --project=$PROJECT_ID_HUB
 ```
 
-3\. Create the python virtual environment
+## Deploy the Spoke Cluster
 
-```sh
-cd $APP_PATH
-python3 -m venv ping-venv
-source ping-venv/bin/activate
-pip install kopf fastapi kubernetes uvicorn
-pip freeze > requirements.txt
-```
+A skaffold file is located at [artifacts/skaffold.yaml](./artifacts/skaffold.yaml) with different profiles for deploying various components.
 
-## (Optional) Testing the Operator (locally)
-
-1\. Create the PingResource Custom Resource Definition (CRD)
-
-```sh
-cd ../manifests/kustomize/base/main
-kubectl apply -f pingresource-crd.yaml
-```
-
-2\. Confirm the CRD is created
-
-```sh
-kubectl get crd pingresources.example.com
-```
-
-Sample Output:
-
-```sh
-(ping-venv) base$ kubectl get crd pingresources.example.com
-NAME                        CREATED AT
-pingresources.example.com   2025-01-08T06:56:17Z
-(ping-venv) base$
-```
-
-3\. Run the operator locally
-
-```sh
-cd ../../../app/operator/
-kopf run ping_operator-local.py
-```
-
-<details>
-
-<summary>Sample output</summary>
-
-```sh
-(ping-venv) operator$ kopf run ping_operator-local.py
-/home/salawu/GCP/gcp-network-terraform/4-general/g5-k8s-custom-resource/artifacts/ping/app/ping-venv/lib/python3.11/site-packages/kopf/_core/reactor/running.py:179: FutureWarning: Absence of either namespaces or cluster-wide flag will become an error soon. For now, switching to the cluster-wide mode for backward compatibility.
-  warnings.warn("Absence of either namespaces or cluster-wide flag will become an error soon."
-[2025-01-08 07:05:26,490] kopf._core.engines.a [INFO    ] Initial authentication has been initiated.
-[2025-01-08 07:05:26,515] kopf.activities.auth [INFO    ] Activity 'login_via_client' succeeded.
-[2025-01-08 07:05:26,515] kopf._core.engines.a [INFO    ] Initial authentication has finished.
-```
-
-</details>
-<p>
-
-4\. In a new terminal in the same directory, create a PingResource custom resource
-
-```sh
-kubectl apply -f ../../manifests/kustomize/overlays/ping-resources/pingresource-sample.yaml
-```
-
-5\. Confirm the custom resource is created
-
-```sh
-kubectl get pingresource test-ping -o yaml
-```
-
-<details>
-
-<summary>Sample output</summary>
-
-```sh
-operator$ kubectl get pingresource test-ping -o yaml
-apiVersion: example.com/v1
-kind: PingResource
-metadata:
-  annotations:
-    kopf.zalando.org/last-handled-configuration: |
-      {"spec":{"message":"Ping"}}
-    kubectl.kubernetes.io/last-applied-configuration: |
-      {"apiVersion":"example.com/v1","kind":"PingResource","metadata":{"annotations":{},"name":"test-ping","namespace":"default"},"spec":{"message":"Ping"}}
-  creationTimestamp: "2025-01-08T07:06:19Z"
-  finalizers:
-  - kopf.zalando.org/KopfFinalizerMarker
-  generation: 2
-  name: test-ping
-  namespace: default
-  resourceVersion: "122393"
-  uid: 18a5fe69-5e64-45a0-ae1c-dbb7e64f19fd
-spec:
-  message: Ping
-status:
-  response: Ping - Pong
-```
-
-</details>
-<p  >
-
-We can see that the message is `ping` and the response is `ping - pong` which is the expected output.
-
-😎 For the fun of it, let's create an almost useless control plane that watches the custom resource and prints a message when a custom resource is created or deleted.
-
-
-6\. In the current (second) terminal, run the control plane locally
-
-```sh
-cd ../control-plane/
-source ../ping-venv/bin/activate
-python -m uvicorn control_plane-local:app --reload --host 0.0.0.0 --port 9000
-```
-
-<details>
-
-<summary>Sample output</summary>
-
-```sh
-(ping-venv) control-plane$ python -m uvicorn control_plane-local:app --reload --host 0.0.0.0 --port 9000
-INFO:     Will watch for changes in these directories: ['/home/salawu/GCP/gcp-network-terraform/4-general/g5-k8s-custom-resource/artifacts/ping/app/control-plane']
-INFO:     Uvicorn running on http://0.0.0.0:9000 (Press CTRL+C to quit)
-INFO:     Started reloader process [73643] using statreload
-Started monitoring PingResource events...
-INFO:     Started server process [73645]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-Resource test-ping added.
-```
-
-</details>
-<p>
-
-7\. In a new (third) terminal, check the control plane for CRD events
-
-```sh
-curl -X GET "http://127.0.0.1:9000/resources" -H "Content-Type: application/json"
-```
-
-Sample Output:
-
-```json
-{"resources":{"test-ping":"created"}}
-```
-
-In step 4, we created the custom resource using **kubectl**. We will now create the custom resource programatically using an API server implemented in FastAPI.
-
-8\. In a new (fourth) terminal, run the API server
-
-```sh
-cd ../api-server/
-source ../ping-venv/bin/activate
-python -m uvicorn ping_api:app --reload --host 0.0.0.0 --port 8000
-```
-
-<details>
-
-<summary>Sample output</summary>
-
-```sh
-(ping-venv) api-server$ python -m uvicorn ping_api-local:app --reload --host 0.0.0.0 --port 8000
-INFO:     Will watch for changes in these directories: ['/home/salawu/GCP/gcp-network-terraform/4-general/g5-k8s-custom-resource/artifacts/ping/app/api-server']
-INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     Started reloader process [74140] using statreload
-INFO:     Started server process [74142]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-```
-
-</details>
-<p>
-
-9\. Back in the third terminal, run various tests on the API endpoint and verify that the control plane receives the events
-
-- 9.1 Create `test-ping1` resource
-
-   ```sh
-   curl -X POST "http://127.0.0.1:8000/api/create_ping" -H "Content-Type: application/json" -d '{"name": "test-ping1", "message": "Hello from FastAPI"}'
-   curl -X GET "http://127.0.0.1:9000/resources" -H "Content-Type: application/json"
-   ```
-
-  Sample output
-
-  ```json
-  {"status":"success","name":"test-ping1"}
-  {"resources":{"test-ping":"created","test-ping1":"created"}}
-  ```
-
-  We can see that the API server returned **success** for teh creation of test-ping1 resource and teh control plane registered the event.
-
-- 9.2 Add `test-ping2` resource
-
-  ```sh
-  curl -X POST "http://127.0.0.1:8000/api/create_ping" -H "Content-Type: application/json" -d '{"name": "test-ping2", "message": "Hello from FastAPI"}'
-  curl -X GET "http://127.0.0.1:9000/resources" -H "Content-Type: application/json"
-  ```
-
-  Sample output
-
-  ```json
-  {"status":"success","name":"test-ping2"}
-  {"resources":{"test-ping":"created","test-ping1":"created","test-ping2":"created"}}
-  ```
-
-- 9.3 Use kubectl to verify the custom resources
-
-  ```sh
-  kubectl get pingresources
-  ```
-
-  Sample output
-
-  ```sh
-  python$ kubectl get pingresources
-  NAME         AGE
-  test-ping    37m
-  test-ping1   9m
-  test-ping2   4m5s
-  ```
-
-- 9.4 Delete `test-ping1` resource using kubectl and verify control plane events
-
-  ```sh
-  kubectl delete pingresource test-ping2
-  curl -X GET "http://127.0.0.1:9000/resources" -H "Content-Type: application/json"
-  ```
-
-  Sample output
-
-  ```json
-  pingresource.example.com "test-ping2" deleted
-  {"resources":{"test-ping":"created","test-ping1":"created"}}
-  ```
-
-- 9.5 Delete `test-ping1` resource using the API server and verify control plane events
-
-  ```sh
-  curl -X DELETE "http://127.0.0.1:8000/api/delete_ping/test-ping1"
-  curl -X GET "http://127.0.0.1:9000/resources" -H "Content-Type: application/json"
-  ```
-
-  Sample output
-
-  ```json
-  {"status":"success","message":"Resource test-ping1 deleted"}
-  {"resources":{"test-ping":"created"}}
-  ```
-
-  We have successfully tested the operator locally.
-
-10\.   Delete the CRD and pingresource sample
-
-  ```sh
-  kubectl delete -f ../../manifests/kustomize/overlays/ping-resources/pingresource-sample.yaml
-  kubectl delete -f ../../manifests/kustomize/base/main/pingresource-crd.yaml
-  ```
-
-11\.   Stop the control plane and API server by pressing `Ctrl+C` in the respective terminals.
-
-## Testing the Operator (GKE)
-
-1\. Deploy the operator, control plane and API server using skaffold
+1. Navigate to the artifacts directory
 
 ```sh
 cd artifacts
-skaffold run
 ```
 
-2\. Confirm the operator is running
+1. Switch to the spoke cluster context
+
+```sh
+kubectx gke_${PROJECT_ID_SPOKE}_${LOCATION}-b_${SPOKE_CLUSTER1_NAME}
+```
+
+1. Deploy the spoke workload
+
+```sh
+skaffold run -p workload
+```
+
+1. Confirm the pods are running
 
 ```sh
 kubectl get pods
@@ -351,102 +114,209 @@ Sample output
 
 ```sh
 artifacts$ kubectl get pods
-NAME                             READY   STATUS    RESTARTS   AGE
-api-server-5ff4d7b6cb-7ndh8      1/1     Running   0          56s
-control-plane-6b98d95f97-s64rt   1/1     Running   0          56s
-ping-operator-64fcffb9d8-2sdv4   1/1     Running   0          56s
+NAME    READY   STATUS    RESTARTS   AGE
+user1   3/3     Running   0          35s
+user2   3/3     Running   0          35s
 ```
 
-3\. Confirm the CRD is created
+## Deploy the Hub Cluster
+
+Let's deploy the operator and API server to the hub cluster.
+
+1. Switch to the hub cluster context
 
 ```sh
-kubectl get crd pingresources.example.com
+kubectx gke_${PROJECT_ID_HUB}_${LOCATION}-b_${HUB_CLUSTER_NAME}
+```
+
+1. Deploy the operator
+
+```sh
+skaffold run -p operator
+```
+
+Check the operator logs to verify it is running
+
+```sh
+kubectx gke_${PROJECT_ID_HUB}_${LOCATION}-b_${HUB_CLUSTER_NAME} && \
+kubectl logs $(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep operator)
+```
+
+<Details>
+
+<summary>Sample Output</summary>
+
+```sh
+artifacts$ kubectl logs $(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep operator)
+[2025-02-03 08:39:47,012] root                 [INFO    ] Project ID: prj-hub-lab
+[2025-02-03 08:39:47,790] root                 [INFO    ] Private DNS zone: [{'name': 'g5-hub-private', 'dns_name': 'hub.g.corp.', 'description': 'local data'}]
+[2025-02-03 08:39:47,793] __kopf_script_0__/ap [INFO    ] [LOG] Initializing pod scanner...
+[2025-02-03 08:39:47,794] kopf.activities.star [INFO    ] Activity 'start_scanner' succeeded.
+[2025-02-03 08:39:47,795] kopf._core.engines.a [INFO    ] Initial authentication has been initiated.
+[2025-02-03 08:39:47,797] kopf.activities.auth [INFO    ] Activity 'login_via_client' succeeded.
+[2025-02-03 08:39:47,798] kopf._core.engines.a [INFO    ] Initial authentication has finished.
+[2025-02-03 08:39:48,116] __kopf_script_0__/ap [INFO    ] CRs Found: []
+[2025-02-03 08:40:08,281] __kopf_script_0__/ap [INFO    ] CRs Found: []
+```
+
+</Details>
+<p>
+
+The oprator is running and watching for custom resources. Currently, there are no custom resources in the cluster. We will deploy the CR later.
+
+1. Deploy the API server
+
+```sh
+skaffold run -p api-server
+```
+
+Check the API server logs to verify it is running
+
+```sh
+kubectl logs $(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep api-server)
+```
+
+<Details>
+
+<summary>Sample Output</summary>
+
+```sh
+artifacts$ kubectl logs $(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep api-server)
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
+```
+
+</Details>
+<p>
+
+The API server (FastAPI) is running. The API server is also exposed on external load balancer.
+
+1. Get the external IP address of the API server
+
+```sh
+API_SERVER_IP=$(kubectl get svc api-server-elb -o jsonpath='{.status.loadBalancer.ingress[0].ip}') && echo $API_SERVER_IP
+```
+
+You can use the web interface to test the API server. Go to `http://$API_SERVER_IP/docs` in your browser. However, we will use curl to test the API server in the next steps.
+
+1. Deploy tool pods to the hub cluster. These are general purpose pods that can be used to test access to services.
+
+```sh
+skaffold run -p tools
+```
+
+1. Verify all pods deployed
+
+```sh
+kubectl get pods
 ```
 
 Sample output
 
 ```sh
-artifacts$ kubectl get crd pingresources.example.com
-NAME                        CREATED AT
-pingresources.example.com   2025-01-08T08:45:51Z
+artifacts$ kubectl get pods
+NAME                                  READY   STATUS    RESTARTS   AGE
+api-server-6968d74f8b-vmqqc           1/1     Running   0          69m
+discovery-operator-854c895fb4-6rnxb   1/1     Running   0          72m
+gcloud                                1/1     Running   0          159m
+netshoot                              1/1     Running   0          159m
 ```
 
-4\. Confirm the load balancer IP addresses
+## Deploy the Custom Resource (CR)
+
+The customer rsource is `Orchestra` is a simple CR that represents a kubernetes cluster. The CR has a status field that is updated with the cluster's pod IP addresses. This can be deployed via a manifest file or using the API server.
+
+1. Deploy the CR using the API server
 
 ```sh
-kubectl get svc
+curl -X 'POST' \
+  'http://34.147.231.21/api/create_orchestra' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "cluster": "g5-spoke2-eu-cluster",
+  "ingress": "ingress-001",
+  "name": "orchestra-001",
+  "project": "prj-spoke2-lab",
+  "zone": "europe-west2-b"
+}'
 ```
 
-Sample output
+Check the operator logs to verify the CR was created
 
 ```sh
-artifacts$ kubectl get svc
-NAME                 TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)        AGE
-api-server-elb       LoadBalancer   10.1.102.123   34.142.15.176    80:30889/TCP   76m
-api-server-service   ClusterIP      10.1.102.125   <none>           8080/TCP       99m
-control-plane        ClusterIP      10.1.102.32    <none>           9000/TCP       70m
-control-plane-elb    LoadBalancer   10.1.102.176   35.197.246.167   80:30298/TCP   74m
-kubernetes           ClusterIP      10.1.102.1     <none>           443/TCP        6h26m
+[2025-02-03 13:01:19,741] __kopf_script_0__/ap [INFO    ] CRs Found: []
+[2025-02-03 13:01:39,922] __kopf_script_0__/ap [INFO    ] CRs Found: []
+[2025-02-03 13:01:46,359] __kopf_script_0__/ap [INFO    ] Orchestra CREATE: orchestra-001.
+[2025-02-03 13:01:46,360] __kopf_script_0__/ap [INFO    ] Endpoints: Scanning... orchestra-001
+Fetching cluster endpoint and auth data.
+kubeconfig entry generated for g5-spoke2-eu-cluster.
+[2025-02-03 13:01:48,159] _PodManager          [INFO    ] Context switch: -> gke_prj-spoke2-lab_europe-west2-b_g5-spoke2-eu-cluster
+[2025-02-03 13:01:48,330] __kopf_script_0__/ap [INFO    ] Endpoints: Found [2] -> g5-spoke2-eu-cluster
+Property "current-context" unset.
+[2025-02-03 13:01:48,445] _PodManager          [INFO    ] Context switch: -> in-cluster
+[2025-02-03 13:01:48,462] __kopf_script_0__/ap [INFO    ] CR Update: Success! orchestra-001
+[2025-02-03 13:01:48,462] __kopf_script_0__/ap [INFO    ] DNS Reconcile: Starting... orchestra-001
+[2025-02-03 13:01:49,127] utils                [INFO    ] DNS CREATE: Success! user1-orchestra-001.hub.g.corp. -> 10.22.100.14
+[2025-02-03 13:01:49,533] utils                [INFO    ] DNS CREATE: Success! user2-orchestra-001.hub.g.corp. -> 10.22.100.15
+[2025-02-03 13:01:49,535] kopf.objects         [INFO    ] [default/orchestra-001] Handler 'on_orchestra_create' succeeded.
+[2025-02-03 13:01:49,536] kopf.objects         [INFO    ] [default/orchestra-001] Creation is processed: 1 succeeded; 0 failed.
 ```
 
-5\. Extract the external IP addresses and create `test-ping1` resource
+Once the CR is created, th eoperator runs the following tasks:
+- Detects the spoke cluster pods `user1` and `user2`
+- Fetches the pod IP addresses
+- Updates the CR status with the pod IP addresses
+- Updates the Cloud DNS with the pod IP addresses
+
+The operator indefinitely loops through the CRs and performs the same tasks in 20s intervals.
+
+
+
+
+
+
+Now let's delete a pod on spoke2 cluster and check the operator logs
+
+1. Switch to the spoke cluster context
 
 ```sh
-API_SERVER_IP=$(kubectl get svc api-server-elb -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-curl -X POST "http://$API_SERVER_IP/api/create_ping" -H "Content-Type: application/json" -d '{"name": "test-ping1", "message": "Hello from FastAPI"}'
+kubectx gke_${PROJECT_ID_SPOKE}_${LOCATION}-b_${SPOKE_CLUSTER1_NAME} &&\
+kubectl delete pod user1
 ```
 
-Sample output
-
-```json
-{"status":"success","name":"test-ping1"}
-```
-
-6\. Confirm the control plane events
+1. Verify the operator logs
 
 ```sh
-CONTROL_PLANE_IP=$(kubectl get svc control-plane-elb -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-curl -X GET "http://$CONTROL_PLANE_IP/resources" -H "Content-Type: application/json"
+kubectx gke_${PROJECT_ID_HUB}_${LOCATION}-b_${HUB_CLUSTER_NAME} && \
+kubectl logs $(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep operator)
 ```
-
-Sample output
-
-```json
-{"resources":{"test-ping1":"created"}}
-```
-
-7\. Create `test-ping2` resource
 
 ```sh
-curl -X POST "http://$API_SERVER_IP/api/create_ping" \
--H "Content-Type: application/json" \
--d '{"name": "test-ping2", "message": "Hello from FastAPI"}'
+[2025-02-03 13:08:54,384] __kopf_script_0__/ap [INFO    ] CRs Found: ['orchestra-001']
+[2025-02-03 13:08:54,386] __kopf_script_0__/ap [INFO    ] Endpoints: Scanning... orchestra-001
+Fetching cluster endpoint and auth data.
+kubeconfig entry generated for g5-spoke2-eu-cluster.
+[2025-02-03 13:08:56,169] _PodManager          [INFO    ] Context switch: -> gke_prj-spoke2-lab_europe-west2-b_g5-spoke2-eu-cluster
+[2025-02-03 13:08:56,314] __kopf_script_0__/ap [INFO    ] Endpoints: Found [1] -> g5-spoke2-eu-cluster
+Property "current-context" unset.
+[2025-02-03 13:08:56,430] _PodManager          [INFO    ] Context switch: -> in-cluster
+[2025-02-03 13:08:56,449] __kopf_script_0__/ap [INFO    ] CR Update: Success! orchestra-001
+[2025-02-03 13:08:56,449] __kopf_script_0__/ap [INFO    ] DNS Reconcile: Starting... orchestra-001
+[2025-02-03 13:08:56,901] __kopf_script_0__/ap [INFO    ] DNS Reconcile: Deleting 1 stale records for orchestra-001
+[2025-02-03 13:08:57,321] utils                [INFO    ] DNS DELETE: Success! user1-orchestra-001.hub.g.corp. -> ['10.22.100.14']
 ```
 
-Sample output
 
-```json
-{"status":"success","name":"test-ping2"}
-```
 
-8\. (Optional) Test API server using FastApi web interface
 
-Go to `http://$API_SERVER_IP/docs` in your browser and test the API server.
-
-<img src="images/fastapi-api-server.png" alt="FastAPI Web Interface" width="800"/>
-
-9\. (Optional) Test control plane using FastApi web interface
-
-Go to `http://$CONTROL_PLANE_IP/docs` in your browser and test the control plane.
-
-<img src="images/fastapi-control-plane.png" alt="FastAPI Web Interface" width="800"/>
-
-10\. Delete the resources
 
 ```sh
-curl -X DELETE "http://$API_SERVER_IP/api/delete_ping/test-ping1"
-curl -X DELETE "http://$API_SERVER_IP/api/delete_ping/test-ping2"
-skaffold delete
+curl -X 'DELETE' \
+  'http://34.147.231.21/api/delete_orchestra/orchestra-001' \
+  -H 'accept: application/json'
 ```
 
 ### SORT
@@ -654,7 +524,15 @@ kubectl config view --minify
 gcloud auth print-access-token | kubectl auth can-i get pods --all-namespaces --token=$(cat)
 
 kubectl patch orch orchestra-001 --type=json -p '[{"op": "remove", "path": "/metadata/finalizers"}]'
-kubectl patch orch orch-002 --type=json -p '[{"op": "remove", "path": "/metadata/finalizers"}]
+kubectl patch orch orch-002 --type=json -p '[{"op": "remove", "path": "/metadata/finalizers"}]'
+
+
+# WORKLOADS
+#------------------------------------------------
+
+kubectl create namespace default
+
+
 ```
 
 

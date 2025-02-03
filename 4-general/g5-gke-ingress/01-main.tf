@@ -5,8 +5,6 @@
 locals {
   eu_ar_host   = "eu-docker.pkg.dev"
   us_ar_host   = "us-docker.pkg.dev"
-  eu_repo_name = google_artifact_registry_repository.eu_repo.name
-  us_repo_name = google_artifact_registry_repository.us_repo.name
   httpbin_port = 80
 
   hub_psc_api_secure    = false
@@ -26,17 +24,35 @@ data "google_client_config" "current" {}
 
 # artifacts registry
 
-resource "google_artifact_registry_repository" "eu_repo" {
+## hub
+
+resource "google_artifact_registry_repository" "hub_eu_repo" {
   project       = var.project_id_hub
   location      = local.hub_eu_region
   repository_id = "${local.hub_prefix}eu-repo"
   format        = "DOCKER"
 }
 
-resource "google_artifact_registry_repository" "us_repo" {
+resource "google_artifact_registry_repository" "hub_us_repo" {
   project       = var.project_id_hub
   location      = local.hub_us_region
   repository_id = "${local.hub_prefix}us-repo"
+  format        = "DOCKER"
+}
+
+## spoke2
+
+resource "google_artifact_registry_repository" "spoke2_eu_repo" {
+  project       = var.project_id_spoke2
+  location      = local.spoke2_eu_region
+  repository_id = "${local.spoke2_prefix}eu-repo"
+  format        = "DOCKER"
+}
+
+resource "google_artifact_registry_repository" "spoke2_us_repo" {
+  project       = var.project_id_spoke2
+  location      = local.spoke2_us_region
+  repository_id = "${local.spoke2_prefix}us-repo"
   format        = "DOCKER"
 }
 

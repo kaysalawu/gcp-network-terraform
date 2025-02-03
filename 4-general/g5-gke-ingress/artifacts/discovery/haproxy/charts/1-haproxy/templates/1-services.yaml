@@ -118,6 +118,7 @@ spec:
       labels:
         app: haproxy
     spec:
+      serviceAccountName: {{ $.Values.serviceAccountName }}
       containers:
       - name: haproxy
         image: haproxy:latest

@@ -20,65 +20,59 @@ spec:
     targetPort: {{ $.Values.portNeo4jBolt }}
     name: bolt
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Pod
 metadata:
   name: {{ .name }}
   namespace: {{ $.Values.nameSpace }}
+  labels:
+    app: {{ .name }}
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: {{ .name }}
-  template:
-    metadata:
-      labels:
-        app: {{ .name }}
-    spec:
-      containers:
-      - name: {{ .name }}-container-http
-        image: {{ $.Values.imageNeo4jHttp }}
-        ports:
-        - containerPort: {{ $.Values.portNeo4jHttp }}
-          name: http
-        livenessProbe:
-          tcpSocket:
-            port: {{ $.Values.portNeo4jHttp }}
-          initialDelaySeconds: 10
-          periodSeconds: 5
-        readinessProbe:
-          tcpSocket:
-            port: {{ $.Values.portNeo4jHttp }}
-          initialDelaySeconds: 5
-          periodSeconds: 5
-      - name: {{ .name }}-container-https
-        image: {{ $.Values.imageNeo4jHttps }}
-        ports:
-        - containerPort: {{ $.Values.portNeo4jHttps }}
-          name: https
-        livenessProbe:
-          tcpSocket:
-            port: {{ $.Values.portNeo4jHttps }}
-          initialDelaySeconds: 10
-          periodSeconds: 5
-        readinessProbe:
-          tcpSocket:
-            port: {{ $.Values.portNeo4jHttps }}
-          initialDelaySeconds: 5
-          periodSeconds: 5
-      - name: {{ .name }}-container-bolt
-        image: {{ $.Values.imageNeo4jBolt }}
-        ports:
-        - containerPort: {{ $.Values.portNeo4jBolt }}
-          name: bolt
-        livenessProbe:
-          tcpSocket:
-            port: {{ $.Values.portNeo4jBolt }}
-          initialDelaySeconds: 10
-          periodSeconds: 5
-        readinessProbe:
-          tcpSocket:
-            port: {{ $.Values.portNeo4jBolt }}
-          initialDelaySeconds: 5
-          periodSeconds: 5
+  serviceAccountName: {{ $.Values.serviceAccountName }}
+  containers:
+  - name: {{ .name }}-container-http
+    image: {{ $.Values.imageNeo4jHttp }}
+    ports:
+    - containerPort: {{ $.Values.portNeo4jHttp }}
+      name: http
+    livenessProbe:
+      tcpSocket:
+        port: {{ $.Values.portNeo4jHttp }}
+      initialDelaySeconds: 10
+      periodSeconds: 5
+    readinessProbe:
+      tcpSocket:
+        port: {{ $.Values.portNeo4jHttp }}
+      initialDelaySeconds: 5
+      periodSeconds: 5
+  - name: {{ .name }}-container-https
+    image: {{ $.Values.imageNeo4jHttps }}
+    ports:
+    - containerPort: {{ $.Values.portNeo4jHttps }}
+      name: https
+    livenessProbe:
+      tcpSocket:
+        port: {{ $.Values.portNeo4jHttps }}
+      initialDelaySeconds: 10
+      periodSeconds: 5
+    readinessProbe:
+      tcpSocket:
+        port: {{ $.Values.portNeo4jHttps }}
+      initialDelaySeconds: 5
+      periodSeconds: 5
+  - name: {{ .name }}-container-bolt
+    image: {{ $.Values.imageNeo4jBolt }}
+    ports:
+    - containerPort: {{ $.Values.portNeo4jBolt }}
+      name: bolt
+    livenessProbe:
+      tcpSocket:
+        port: {{ $.Values.portNeo4jBolt }}
+      initialDelaySeconds: 10
+      periodSeconds: 5
+    readinessProbe:
+      tcpSocket:
+        port: {{ $.Values.portNeo4jBolt }}
+      initialDelaySeconds: 5
+      periodSeconds: 5
 {{- end }}

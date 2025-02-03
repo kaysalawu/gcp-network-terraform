@@ -1,4 +1,5 @@
 
+serviceAccountName: cluster-ksa
 imageNeo4jHttp: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/http
 imageNeo4jHttps: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/https
 imageNeo4jBolt: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/bolt
@@ -11,8 +12,8 @@ portGraphiteMonitoring: 2003
 portPrometheusMetrics: 2004
 pscProducerNatSubnetname: gke-nat-subnet
 email: salawu@cloudtuple.com
-defaultHost: graphz.cloudtuple.com
-nameSpace: graphz
+defaultHost: default.cloudtuple.com
+nameSpace: default
 letsencryptIssuerRef: letsencrypt-staging
 letsencrpytAcmeServer: https://acme-staging-v02.api.letsencrypt.org/directory
 bolt_use_sni: false

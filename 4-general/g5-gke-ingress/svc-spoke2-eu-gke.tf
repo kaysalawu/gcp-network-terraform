@@ -9,6 +9,19 @@ locals {
 }
 
 ####################################################
+# provider
+####################################################
+
+# kubernetes
+
+provider "kubernetes" {
+  alias                  = "spoke2_eu"
+  host                   = "https://${data.google_container_cluster.spoke2_eu_cluster.endpoint}"
+  token                  = data.google_client_config.current.access_token
+  cluster_ca_certificate = base64decode(google_container_cluster.spoke2_eu_cluster.master_auth.0.cluster_ca_certificate)
+}
+
+####################################################
 # gke cluster
 ####################################################
 
@@ -147,15 +160,6 @@ resource "google_container_node_pool" "spoke2_eu_cluster" {
 # kubernetes
 ####################################################
 
-# provider
-
-provider "kubernetes" {
-  alias                  = "spoke2_eu"
-  host                   = "https://${data.google_container_cluster.spoke2_eu_cluster.endpoint}"
-  token                  = data.google_client_config.current.access_token
-  cluster_ca_certificate = base64decode(google_container_cluster.spoke2_eu_cluster.master_auth.0.cluster_ca_certificate)
-}
-
 # service account
 
 resource "kubernetes_service_account" "spoke2_eu_sa_gke" {
@@ -169,6 +173,7 @@ resource "kubernetes_service_account" "spoke2_eu_sa_gke" {
   }
   # token: used by k8s to authenticate to the api server
   automount_service_account_token = true
+
   # secrets: used by pods to pull images from private repo (artifact registry)
   image_pull_secret {
     name = "artifact-registry-secret"

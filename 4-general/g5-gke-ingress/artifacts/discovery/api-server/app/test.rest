@@ -4,7 +4,7 @@ Content-Type: application/json
 
 {
   "name": "test-orchestra",
-  "ingress": "ingress-001",
+  "ingress": "ingress01",
   "project": "prj-spoke2-lab",
   "region": "europe-west2"
 }

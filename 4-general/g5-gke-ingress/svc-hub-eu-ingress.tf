@@ -9,6 +9,19 @@ locals {
 }
 
 ####################################################
+# provider
+####################################################
+
+# kubernetes
+
+provider "kubernetes" {
+  alias                  = "hub_eu"
+  host                   = "https://${data.google_container_cluster.hub_eu_cluster.endpoint}"
+  token                  = data.google_client_config.current.access_token
+  cluster_ca_certificate = base64decode(google_container_cluster.hub_eu_cluster.master_auth.0.cluster_ca_certificate)
+}
+
+####################################################
 # gke cluster
 ####################################################
 
@@ -146,15 +159,6 @@ resource "google_container_node_pool" "hub_eu_cluster" {
 ####################################################
 # kubernetes
 ####################################################
-
-# provider
-
-provider "kubernetes" {
-  alias                  = "hub_eu"
-  host                   = "https://${data.google_container_cluster.hub_eu_cluster.endpoint}"
-  token                  = data.google_client_config.current.access_token
-  cluster_ca_certificate = base64decode(google_container_cluster.hub_eu_cluster.master_auth.0.cluster_ca_certificate)
-}
 
 # service account
 

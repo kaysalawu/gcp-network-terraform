@@ -9,3 +9,4 @@ bin/
 include/
 lib/
 lib64/
+venv

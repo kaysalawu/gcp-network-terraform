@@ -1,23 +1,13 @@
 
-imageNeo4jHttp: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/http
-imageNeo4jHttps: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/https
-imageNeo4jBolt: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/bolt
+serviceAccountName: cluster-ksa
+imageNeo4jHttp: europe-west2-docker.pkg.dev/prj-spoke2-lab/g5-spoke2-eu-repo/http
+imageNeo4jHttps: europe-west2-docker.pkg.dev/prj-spoke2-lab/g5-spoke2-eu-repo/https
+imageNeo4jBolt: europe-west2-docker.pkg.dev/prj-spoke2-lab/g5-spoke2-eu-repo/bolt
 portNeo4jHttp: 7474
 portNeo4jHttps: 7473
 portNeo4jBolt: 7687
 portNeo4jBackup: 6362
-portGraphiteMonitoring: 2003
-portPrometheusMetrics: 2004
-pscProducerNatSubnetname: gke-nat-subnet
-email: salawu@cloudtuple.com
-defaultHost: graphz.cloudtuple.com
-nameSpace: graphz
-# letsencryptIssuerRef: letsencrypt-prod
-# letsencrpytAcmeServer: https://acme-v02.api.letsencrypt.org/directory
-# letsencryptIssuerRef: letsencrypt-staging
-# letsencrpytAcmeServer: https://acme-staging-v02.api.letsencrypt.org/directory
-# bolt_use_sni: false
-# trafficGeneratorLoopCount: 15
+nameSpace: default
 users:
   - name: user1
     host: user1.cloudtuple.com
@@ -49,5 +39,5 @@ users:
   # - name: user6
   #   host: user6.cloudtuple.com
   #   k6_traffic_profile: error
-  #   k6_traffic_url: http://graphz.cloudtuple.com:7474
+  #   k6_traffic_url: http://default.cloudtuple.com:7474
   #   scale: 1
