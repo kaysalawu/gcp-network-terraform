@@ -31,9 +31,7 @@ def get_dns_zone(project_id, search_string):
     return filtered_zones
 
 
-def create_private_dns_a_record(
-    project_id, private_dns_zone, orchestra_name, pod_name, pod_ip
-):
+def create_dns_a_record(project_id, private_dns_zone, orchestra_name, pod_name, pod_ip):
     if not private_dns_zone:
         logger.error("DNS CREATE: No private DNS zone found.")
         return
@@ -63,9 +61,7 @@ def create_private_dns_a_record(
     logger.info(f"DNS CREATE: Success! {record_name} -> {pod_ip}")
 
 
-def delete_private_dns_a_record(
-    project_id, private_dns_zone, orchestra_name, pod_name, pod_ip
-):
+def delete_dns_a_record(project_id, private_dns_zone, orchestra_name, pod_name, pod_ip):
     if not private_dns_zone:
         logger.error("DNS DELETE: No private DNS zone found.")
         return

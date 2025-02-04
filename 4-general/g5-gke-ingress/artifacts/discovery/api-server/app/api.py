@@ -176,6 +176,3 @@ async def delete_orchestra(name: str):
     except client.exceptions.ApiException as e:
         raise HTTPException(status_code=500, detail=f"Error deleting resource: {e}")
 
-
-# To run the app:
-# uvicorn orchestra_api:app --host 0.0.0.0 --port 8000

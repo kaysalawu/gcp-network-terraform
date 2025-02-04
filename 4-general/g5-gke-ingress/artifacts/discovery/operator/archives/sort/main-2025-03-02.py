@@ -76,7 +76,7 @@ def reconcile_dns(orchestra_name, pod_info):
         for pod in pod_info:
             pod_name = pod["podName"]
             pod_ip = pod["podIp"]
-            create_private_dns_a_record(
+            create_dns_a_record(
                 project_id, private_dns_zone, orchestra_name, pod_name, pod_ip
             )
             active_pod_dns_records.add(
@@ -96,7 +96,7 @@ def reconcile_dns(orchestra_name, pod_info):
             f"DNS Reconcile: Deleting {len(records_to_delete)} stale records for {orchestra_name}"
         )
         for record in records_to_delete:
-            delete_private_dns_a_record(
+            delete_dns_a_record(
                 project_id,
                 private_dns_zone,
                 orchestra_name,
@@ -115,7 +115,7 @@ def delete_dns_for_orchestra(orchestra_name):
     for record in existing_records:
         record_name = record["name"]
         logger.info(f"DNS Cleanup: Deleting -> {record_name}")
-        delete_private_dns_a_record(
+        delete_dns_a_record(
             project_id,
             private_dns_zone,
             orchestra_name,

@@ -106,21 +106,29 @@ class OrchestraStateMachine:
 
     def scan_pods(self):
         self.start_scan()
-        logger.info(f"[{self.orchestra_name}] State: {self.state} -> Scanning pods")
+        # logger.info(f"[{self.orchestra_name}] {self.state} -> scan_pods() -> Start")
         pod_manager = PodManager(
-            self.orchestra_name, self.cluster, self.project, self.zone, self.region
+            self.state,
+            self.orchestra_name,
+            self.cluster,
+            self.project,
+            self.zone,
+            self.region,
         )
         pod_manager.set_context()
         pods = pod_manager.get_pods()
         self.pod_info = pod_manager.format_pod_info(pods)
         pod_manager.unset_context()
         logger.info(
-            f"[{self.orchestra_name}] State: {self.state} -> Found [{len(self.pod_info)}] pods"
+            f"[{self.orchestra_name}] {self.state} -> scan_pods() -> Found [{len(self.pod_info)}] pods"
         )
         self.finish_scan()
 
+    # TODO: Upadte only if there is a change in the pod_info
     def update_custom_resource(self):
-        logger.info(f"[{self.orchestra_name}] State: {self.state} -> Updating CR")
+        logger.info(
+            f"[{self.orchestra_name}] {self.state} -> update_custom_resource() -> Start"
+        )
 
         status_update = {
             "state": "Updated",
@@ -138,21 +146,23 @@ class OrchestraStateMachine:
                 name=self.orchestra_name,
                 body={"status": status_update},
             )
-            logger.info(f"[{self.orchestra_name}] State: {self.state} CR updated")
+            logger.info(
+                f"[{self.orchestra_name}] {self.state} -> update_custom_resource() -> Success!"
+            )
             self.update_cr()
         except client.exceptions.ApiException as e:
-            logger.error(f"[{self.orchestra_name}] Failed to update CR: {e}")
+            logger.error(
+                f"[{self.orchestra_name}] {self.state} -> update_custom_resource() -> {e}"
+            )
             self.error_occurred()
 
     def reconcile_dns(self):
-        logger.info(
-            f"[{self.orchestra_name}] State: {self.state} -> Checking existing DNS records"
-        )
+        # logger.info(f"[{self.orchestra_name}] {self.state} -> reconcile_dns() -> Start")
         existing_records = get_existing_dns_a_records(
-            project_id, private_dns_zone, self.orchestra_name
+            self.state, project_id, private_dns_zone, self.orchestra_name
         )
         logger.info(
-            f"[{self.orchestra_name}] Found [{len(existing_records)}] DNS records"
+            f"[{self.orchestra_name}] {self.state} -> reconcile_dns() -> Found [{len(existing_records)}] records"
         )
 
         active_pod_dns_records = set()
@@ -160,50 +170,53 @@ class OrchestraStateMachine:
             for pod in self.pod_info:
                 pod_name = pod["podName"]
                 pod_ip = pod["podIp"]
-                create_private_dns_a_record(
-                    project_id, private_dns_zone, self.orchestra_name, pod_name, pod_ip
+                create_dns_a_record(
+                    self.state,
+                    project_id,
+                    private_dns_zone,
+                    self.orchestra_name,
+                    pod_name,
+                    pod_ip,
                 )
                 active_pod_dns_records.add(
                     f"{pod_name}-{self.orchestra_name}.{private_dns_zone[0]['dns_name']}"
                 )
         except (KeyError, TypeError) as e:
-            logger.error(f"Error processing pod info for {self.orchestra_name}: {e}")
+            logger.error(f"[{self.orchestra_name}] {self.state} reconcile_dns() -> {e}")
             self.error_occurred()
             return
 
         for record in existing_records:
             if record["name"] not in active_pod_dns_records:
-                delete_private_dns_a_record(
+                delete_dns_a_record(
+                    self.state,
                     project_id,
                     private_dns_zone,
                     self.orchestra_name,
-                    record["name"].split(".")[0],
+                    record["name"].split("-")[0],
                     record["rrdatas"][0],
                 )
                 logger.info(
-                    f"[{self.orchestra_name}] Deleted stale DNS record: {record['name']}"
+                    f"[{self.orchestra_name}] {self.state} -> reconcile_dns() -> Deleted {record['name']}"
                 )
 
         self.finish_reconcile()
 
     def delete_dns_records(self):
         self.start_delete()
-        logger.info(
-            f"[{self.orchestra_name}] State: {self.state} -> Deleting DNS records"
-        )
         existing_records = get_existing_dns_a_records(
-            project_id, private_dns_zone, self.orchestra_name
+            self.state, project_id, private_dns_zone, self.orchestra_name
         )
 
         for record in existing_records:
-            delete_private_dns_a_record(
+            delete_dns_a_record(
+                self.state,
                 project_id,
                 private_dns_zone,
                 self.orchestra_name,
-                record["name"].split(".")[0],
+                record["name"].split("-")[0],
                 record["rrdatas"][0],
             )
-            logger.info(f"[{self.orchestra_name}] Deleted DNS record: {record['name']}")
 
         self.finish_delete()
 
@@ -232,8 +245,9 @@ def process_all_orchestras():
     crs = json.loads(result).get("items", [])
 
     cr_names = [cr.get("metadata", {}).get("name") for cr in crs]
-    logger.info(f"CRs Found: {cr_names}")
+    logger.info(f"[IDLE] Registered CRs: {cr_names}")
 
+    # TODO: Test stability with multiple threads
     threads = []
     for cr in crs:
         spec = cr.get("spec", {})
@@ -258,7 +272,6 @@ def process_all_orchestras():
 
 
 def endpoints_scanner():
-    logger.info("Initializing pod scanner...")
     while True:
         process_all_orchestras()
         time.sleep(20)
@@ -271,11 +284,29 @@ def on_orchestra_create(spec, meta, **kwargs):
     project = spec.get("project")
     region = spec.get("region")
     zone = spec.get("zone")
-
-    logger.info(f"Orchestra CREATE: {orchestra_name}.")
+    if "finalizers" not in meta or "orchestra.finalizer.example.com" not in meta.get(
+        "finalizers", []
+    ):
+        patch = {
+            "metadata": {
+                "finalizers": meta.get("finalizers", [])
+                + ["orchestra.finalizer.example.com"]
+            }
+        }
+        client.CustomObjectsApi().patch_namespaced_custom_object(
+            group="example.com",
+            version="v1",
+            namespace=meta.get("namespace", "default"),
+            plural="orchestras",
+            name=orchestra_name,
+            body=patch,
+        )
+        logger.info(f"[{orchestra_name}] kopf.on.create() +finalizer")
+    logger.info(f"[{orchestra_name}] ***** CREATE *****")
     process_orchestra(orchestra_name, cluster, project, region, zone)
 
 
+# TODO: Implement the update handler
 @kopf.on.update("example.com", "v1", "orchestras")
 def on_orchestra_update(spec, meta, **kwargs):
     orchestra_name = meta.get("name", "unknown")
@@ -283,18 +314,25 @@ def on_orchestra_update(spec, meta, **kwargs):
     project = spec.get("project")
     region = spec.get("region")
     zone = spec.get("zone")
-
-    logger.info(f"Orchestra UPDATE: {orchestra_name}")
+    logger.info(f"[{orchestra_name}] ***** UPDATE *****")
     process_orchestra(orchestra_name, cluster, project, region, zone)
 
 
 @kopf.on.delete("example.com", "v1", "orchestras")
-def on_orchestra_delete(meta, **kwargs):
+def on_orchestra_delete(spec, meta, **kwargs):
     orchestra_name = meta.get("name")
-
-    logger.info(f"Orchestra DELETE: {orchestra_name}")
+    logger.info(f"[{orchestra_name}] ***** DELETE *****")
     orchestra = OrchestraStateMachine(orchestra_name, "", "", "", "")
     orchestra.delete_dns_records()
+    patch = {"metadata": {"finalizers": []}}
+    client.CustomObjectsApi().patch_namespaced_custom_object(
+        group="example.com",
+        version="v1",
+        namespace=meta.get("namespace", "default"),
+        plural="orchestras",
+        name=orchestra_name,
+        body=patch,
+    )
 
 
 @kopf.on.startup()

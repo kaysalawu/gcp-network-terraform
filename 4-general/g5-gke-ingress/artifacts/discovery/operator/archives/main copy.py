@@ -65,7 +65,7 @@ class OrchestraStateMachine:
         )
 
     def scan_pods(self):
-        logger.info(f"[{self.orchestra_name}] State: {self.state} -> Scanning pods")
+        logger.info(f"[{self.orchestra_name}] [{self.state}] -> Scanning pods")
         time.sleep(1)
         self.pod_info = [
             {"name": "pod1", "ip": "10.1.1.1"},
@@ -74,21 +74,19 @@ class OrchestraStateMachine:
         self.finish_scan()
 
     def update_custom_resource(self):
-        logger.info(f"[{self.orchestra_name}] State: {self.state} -> Updating CR")
+        logger.info(f"[{self.orchestra_name}] [{self.state}] -> Updating CR")
         time.sleep(1)
         logger.info(f"[{self.orchestra_name}] Updated CR with pods: {self.pod_info}")
         self.update_cr()
 
     def reconcile_dns(self):
-        logger.info(f"[{self.orchestra_name}] State: {self.state} -> Reconciling DNS")
+        logger.info(f"[{self.orchestra_name}] [{self.state}] -> Reconciling DNS")
         time.sleep(1)
         logger.info(f"[{self.orchestra_name}] DNS reconciliation complete")
         self.finish_reconcile()
 
     def delete_dns_records(self):
-        logger.info(
-            f"[{self.orchestra_name}] State: {self.state} -> Deleting DNS records"
-        )
+        logger.info(f"[{self.orchestra_name}] [{self.state}] -> Deleting DNS records")
         time.sleep(1)
         logger.info(f"[{self.orchestra_name}] DNS records deleted")
         self.finish_delete()

@@ -1,7 +1,7 @@
 apiVersion: example.com/v1
 kind: Orchestra
 metadata:
-  name: orch-001
+  name: orch02
 spec:
   cluster: g5-spoke2-eu-cluster
   zone: europe-west2-b

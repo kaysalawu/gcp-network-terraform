@@ -31,11 +31,11 @@ def get_dns_zone(project_id, search_string):
     return filtered_zones
 
 
-def create_private_dns_a_record(
-    project_id, private_dns_zone, orchestra_name, pod_name, pod_ip
+def create_dns_a_record(
+    state, project_id, private_dns_zone, orchestra_name, pod_name, pod_ip
 ):
     if not private_dns_zone:
-        logger.error("DNS CREATE: No private DNS zone found.")
+        logger.error("[create_dns_a_record] No private DNS zone found.")
         return
 
     zone_name = private_dns_zone[0]["name"]
@@ -49,7 +49,6 @@ def create_private_dns_a_record(
     existing_records = list(zone.list_resource_record_sets())
     for record in existing_records:
         if record.name == record_name and record.record_type == "A":
-            # logger.info(f"DNS CREATE: Exists! {record_name} -> {record.rrdatas}, skip.")
             return
 
     # Create new record if it doesn't exist
@@ -60,14 +59,16 @@ def create_private_dns_a_record(
     changes.add_record_set(record_set)
     changes.create()
 
-    logger.info(f"DNS CREATE: Success! {record_name} -> {pod_ip}")
+    logger.info(
+        f"[{orchestra_name}] {state} -> create_dns_a_record() -> Added {record_name} = {pod_ip}"
+    )
 
 
-def delete_private_dns_a_record(
-    project_id, private_dns_zone, orchestra_name, pod_name, pod_ip
+def delete_dns_a_record(
+    state, project_id, private_dns_zone, orchestra_name, pod_name, pod_ip
 ):
     if not private_dns_zone:
-        logger.error("DNS DELETE: No private DNS zone found.")
+        logger.error()
         return
 
     zone_name = private_dns_zone[0]["name"]
@@ -78,23 +79,21 @@ def delete_private_dns_a_record(
     zone = client.zone(zone_name)
 
     for record in zone.list_resource_record_sets():
-        if (
-            record.record_type == "A"
-            and orchestra_name in record.name
-            and record_name not in record.name
-        ):
-            # Pod absent but record exists, delete it.
+        if record.record_type == "A" and record.name == record_name:
             changes = zone.changes()
             changes.delete_record_set(record)
             changes.create()
-            logger.info(f"DNS DELETE: Success! {record.name} -> {record.rrdatas}")
+            logger.info(
+                f"[{orchestra_name}] {state} -> delete_dns_a_record() -> Deleted {record.name} = {record.rrdatas}"
+            )
             return
-    logger.info(f"DNS DELETE: Aborted! {record_name}")
 
 
-def get_existing_dns_a_records(project_id, private_dns_zone, orchestra_name):
+def get_existing_dns_a_records(state, project_id, private_dns_zone, orchestra_name):
     if not private_dns_zone:
-        logger.error("Get DNS: No private DNS zone found.")
+        logger.error(
+            f"[{orchestra_name}] {state} -> get_existing_dns_a_records: No zone supplied!"
+        )
         return []
 
     zone_name = private_dns_zone[0]["name"]
