@@ -4,7 +4,6 @@
 Contents
 - [Overview](#overview)
 - [Prerequisites](#prerequisites)
-- [Deploy the Lab](#deploy-the-lab)
 - [Troubleshooting](#troubleshooting)
 - [Initial Setup](#initial-setup)
 - [Deploy the Spoke Cluster](#deploy-the-spoke-cluster)
@@ -35,6 +34,12 @@ The lab infrastructure is a hub and spoke model. The hub cluster is in a separat
 3. Install kubectx to switch between kubernetes contexts. [Install kubectx](https://github.com/ahmetb/kubectx?tab=readme-ov-file#installation)
 4. Install [skaffold](https://skaffold.dev/docs/install/#standalone-binary), the tool we'll use for building and deploying to Kubernetes.
 5. Create two GCP projects, one for the hub and the other for the spoke clusters.
+6. (Optional) Install graphviz for visualizing the state machine. [Install graphviz](https://graphviz.gitlab.io/download/)
+
+```sh
+sudo apt update
+sudo apt install graphviz graphviz-dev
+
 
 ## Deploy the Lab
 

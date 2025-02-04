@@ -1,7 +1,7 @@
 FROM google/cloud-sdk:latest
 
 RUN apt-get update && \
-    apt-get install -y python3-venv && \
+    apt-get install -y python3-venv graphviz graphviz-dev && \
     rm -rf /var/lib/apt/lists/*
 
 ENV PATH="/opt/venv/bin:$PATH"
@@ -15,4 +15,4 @@ RUN python3 -m venv /opt/venv && \
 
 COPY main.py _PodManager.py utils/ /app/
 
-CMD ["kopf", "run", "/app/main.py"]
+CMD ["kopf", "run", "--all-namespaces", "/app/main.py"]
