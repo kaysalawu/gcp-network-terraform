@@ -71,20 +71,12 @@ We are simulating user applications that run in the spoke cluster. The applicati
 3. Install kubectx to switch between kubernetes contexts. [Install kubectx](https://github.com/ahmetb/kubectx?tab=readme-ov-file#installation)
 4. Install [skaffold](https://skaffold.dev/docs/install/#standalone-binary), the tool we'll use for building and deploying to Kubernetes.
 5. Create two GCP projects, one for the hub and the other for the spoke clusters.
-6. (Optional) Install graphviz for visualizing the operator's state machine. [Install graphviz](https://graphviz.gitlab.io/download/)
-
-   ```sh
-   sudo apt update
-   sudo apt install graphviz graphviz-dev
-   ```
-7. Install `netcat` for testing TCP traffic.
+6. Install `netcat` for testing TCP traffic.
    ```sh
    sudo apt update
    sudo apt install netcat
    ```
-
-8. Set the environment variables for the lab
-
+7. Set the environment variables for the lab
    ```sh
    export TF_VAR_project_id_hub=<PLACEHOLDER_FOR_HUB_PROJECT_ID>
    export TF_VAR_project_id_spoke2=<PLACEHOLDER_FOR_SPOKE_PROJECT_ID>
@@ -92,8 +84,7 @@ We are simulating user applications that run in the spoke cluster. The applicati
    export HUB_CLUSTER_NAME=g5-hub-eu-cluster
    export SPOKE_CLUSTER_NAME=g5-spoke2-eu-cluster
    ```
-
-9. Replace all occurences of project IDs in the manifests with the environment variables.
+8. Replace all occurences of project IDs in the manifests with the environment variables.
 
    ```sh
    for i in $(find artifacts -name '*.yaml'); do sed -i'' -e "s/YOUR_HUB_PROJECT_ID/${TF_VAR_project_id_hub}/g" "$i"; done && \
