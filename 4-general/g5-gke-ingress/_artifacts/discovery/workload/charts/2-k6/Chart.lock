@@ -1,0 +1,6 @@
+dependencies:
+- name: apps
+  repository: file://../1-apps
+  version: 1.0.0
+digest: sha256:123bba19337348cd1876e10756bb464d2b2188b6e6c88ff3bb963c195b40481e
+generated: "2025-02-02T18:26:29.937521503Z"
