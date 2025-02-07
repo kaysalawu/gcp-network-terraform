@@ -5,5 +5,5 @@ metadata:
 spec:
   cluster: g5-spoke2-eu-cluster
   zone: europe-west2-b
-  project: prj-spoke2-lab
-  ingress: "ingress-001"
+  project: YOUR_SPOKE_PROJECT_ID
+  ingress: "ingress01"

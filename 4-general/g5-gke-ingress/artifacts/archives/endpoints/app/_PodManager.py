@@ -5,7 +5,7 @@ import json
 class PodManager:
     cluster_name = "g5-spoke2-eu-cluster"
     zone = "europe-west2-b"
-    project = "prj-spoke2-lab"
+    project = "YOUR_SPOKE_PROJECT_ID"
 
     @classmethod
     def get_context(cls):

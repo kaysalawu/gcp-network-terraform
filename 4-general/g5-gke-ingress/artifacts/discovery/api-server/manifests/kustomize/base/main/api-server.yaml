@@ -16,7 +16,7 @@ spec:
       serviceAccountName: cluster-ksa
       containers:
         - name: api-server
-          image: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/api-server:latest
+          image: europe-west2-docker.pkg.dev/YOUR_HUB_PROJECT_ID/g5-hub-eu-repo/api-server:latest
           ports:
             - containerPort: 8080
 

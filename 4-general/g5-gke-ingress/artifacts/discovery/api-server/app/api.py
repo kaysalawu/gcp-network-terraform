@@ -32,7 +32,7 @@ class OrchestraRequest(BaseModel):
                     "name": "orch01",
                     "cluster": "g5-spoke2-eu-cluster",
                     "ingress": "ingress01",
-                    "project": "prj-spoke2-lab",
+                    "project": "YOUR_SPOKE_PROJECT_ID",
                     "region": None,
                     "zone": "europe-west2-b",
                 },
@@ -40,7 +40,7 @@ class OrchestraRequest(BaseModel):
                     "name": "orch02",
                     "cluster": "g5-spoke2-us-cluster",
                     "ingress": "ingress01",
-                    "project": "prj-spoke2-lab",
+                    "project": "YOUR_SPOKE_PROJECT_ID",
                     "region": None,
                     "zone": "us-west2-b",
                 },
@@ -175,4 +175,3 @@ async def delete_orchestra(name: str):
         return {"status": "success", "message": f"Resource {name} deleted"}
     except client.exceptions.ApiException as e:
         raise HTTPException(status_code=500, detail=f"Error deleting resource: {e}")
-

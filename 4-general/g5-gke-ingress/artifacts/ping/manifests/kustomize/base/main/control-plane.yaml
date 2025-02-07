@@ -20,7 +20,7 @@ spec:
       serviceAccountName: control-plane-sa
       containers:
         - name: control-plane
-          image: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/control-plane
+          image: europe-west2-docker.pkg.dev/YOUR_HUB_PROJECT_ID/g5-hub-eu-repo/control-plane
           ports:
             - containerPort: 9000
 

@@ -116,5 +116,5 @@ spec:
       serviceAccountName: ping-operator-sa
       containers:
         - name: ping-operator
-          image: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/ping-operator:latest
+          image: europe-west2-docker.pkg.dev/YOUR_HUB_PROJECT_ID/g5-hub-eu-repo/ping-operator:latest
           imagePullPolicy: Always

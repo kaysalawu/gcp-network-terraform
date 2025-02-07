@@ -15,7 +15,7 @@ profiles:
         envTemplate:
           template: "{{.VERSION}}"
       artifacts:
-        - image: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/discovery-operator
+        - image: europe-west2-docker.pkg.dev/YOUR_HUB_PROJECT_ID/g5-hub-eu-repo/discovery-operator
           context: discovery/operator/app
           docker:
             dockerfile: Dockerfile
@@ -29,7 +29,7 @@ profiles:
         envTemplate:
           template: "{{.VERSION}}"
       artifacts:
-        - image: europe-west2-docker.pkg.dev/prj-hub-lab/g5-hub-eu-repo/api-server
+        - image: europe-west2-docker.pkg.dev/YOUR_HUB_PROJECT_ID/g5-hub-eu-repo/api-server
           context: discovery/api-server/app
           docker:
             dockerfile: Dockerfile
@@ -50,11 +50,11 @@ profiles:
         envTemplate:
           template: "{{.VERSION}}"
       artifacts:
-      - image: europe-west2-docker.pkg.dev/prj-spoke2-lab/g5-spoke2-eu-repo/http
+      - image: europe-west2-docker.pkg.dev/YOUR_SPOKE_PROJECT_ID/g5-spoke2-eu-repo/http
         context: discovery/workload/src/fastapi/http
-      - image: europe-west2-docker.pkg.dev/prj-spoke2-lab/g5-spoke2-eu-repo/https
+      - image: europe-west2-docker.pkg.dev/YOUR_SPOKE_PROJECT_ID/g5-spoke2-eu-repo/https
         context: discovery/workload/src/fastapi/https
-      - image: europe-west2-docker.pkg.dev/prj-spoke2-lab/g5-spoke2-eu-repo/bolt
+      - image: europe-west2-docker.pkg.dev/YOUR_SPOKE_PROJECT_ID/g5-spoke2-eu-repo/bolt
         context: discovery/workload/src/fastapi/bolt
 
     deploy:

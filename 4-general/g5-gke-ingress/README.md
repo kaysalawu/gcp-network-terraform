@@ -85,11 +85,18 @@ We are simulating user applications that run in the spoke cluster. The applicati
 8. Set the environment variables for the lab
 
    ```sh
-   export TF_VAR_project_id_hub=<your-hub-project-id>
-   export TF_VAR_project_id_spoke2=<your-spoke-project-id>
+   export TF_VAR_project_id_hub=<YOUR_HUB_PROJECT_ID>
+   export TF_VAR_project_id_spoke2=<YOUR_SPOKE_PROJECT_ID>
    export LOCATION=europe-west2
    export HUB_CLUSTER_NAME=g5-hub-eu-cluster
-   export SPOKE_CLUSTER1_NAME=g5-spoke2-eu-cluster
+   export SPOKE_CLUSTER_NAME=g5-spoke2-eu-cluster
+   ```
+
+9. Replace all occurences of project IDs in the manifests with the environment variables.
+
+   ```sh
+   for i in $(find artifacts -name '*.yaml'); do sed -i'' -e "s/YOUR_HUB_PROJECT_ID/${TF_VAR_project_id_hub}/g" "$i"; done && \
+   for i in $(find artifacts -name '*.yaml'); do sed -i'' -e "s/YOUR_SPOKE_PROJECT_ID/${TF_VAR_project_id_spoke2}/g" "$i"; done
    ```
 
 ## 3. Deploy the Lab
@@ -117,7 +124,7 @@ We are simulating user applications that run in the spoke cluster. The applicati
 4. Get the GKE cluster credentials for the spoke and hub clusters
 
    ```sh
-   gcloud container clusters get-credentials $SPOKE_CLUSTER1_NAME --region "$LOCATION-b" --project=$TF_VAR_project_id_spoke2 && \
+   gcloud container clusters get-credentials $SPOKE_CLUSTER_NAME --region "$LOCATION-b" --project=$TF_VAR_project_id_spoke2 && \
    gcloud container clusters get-credentials $HUB_CLUSTER_NAME --region "$LOCATION-b" --project=$TF_VAR_project_id_hub
    ```
 
@@ -164,7 +171,7 @@ A skaffold file is located at [artifacts/skaffold.yaml](./artifacts/skaffold.yam
 2. Deploy the spoke workload using Skaffold and Helm
 
    ```sh
-   kubectx gke_${TF_VAR_project_id_spoke2}_${LOCATION}-b_${SPOKE_CLUSTER1_NAME} && \
+   kubectx gke_${TF_VAR_project_id_spoke2}_${LOCATION}-b_${SPOKE_CLUSTER_NAME} && \
    skaffold run -p workload
    ```
 
@@ -222,7 +229,7 @@ Let's create the following components to the hub cluster:
 
    ```sh
    artifacts$    kubectl logs $(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep operator)
-   [2025-02-06 13:50:56,962] __kopf_script_0__/ap [INFO    ] Project ID: prj-hub-lab
+   [2025-02-06 13:50:56,962] __kopf_script_0__/ap [INFO    ] Project ID: YOUR_HUB_PROJECT_ID
    [2025-02-06 13:50:57,382] __kopf_script_0__/ap [INFO    ] Private DNS zone: [{'name': 'g5-hub-private', 'dns_name': 'hub.g.corp.', 'description': 'local data'}]
    [2025-02-06 13:50:57,384] kopf.activities.star [INFO    ] Activity 'start_scanner' succeeded.
    [2025-02-06 13:50:57,385] kopf._core.engines.a [INFO    ] Initial authentication has been initiated.
@@ -319,7 +326,7 @@ In a real world scenario, when a new kubernetes cluster is created, an automated
      -H 'Content-Type: application/json' \
      -d '{
      "cluster": "g5-spoke2-eu-cluster",
-     "ingress": "ingress-001",
+     "ingress": "ingress01",
      "name": "orch01",
      "project": "prj-spoke2-lab",
      "zone": "europe-west2-b"
@@ -384,9 +391,9 @@ In a real world scenario, when a new kubernetes cluster is created, an automated
    ```sh
    artifacts$    kubectx gke_${TF_VAR_project_id_hub}_${LOCATION}-b_${HUB_CLUSTER_NAME} && \
    kubectl get orchestras
-   Switched to context "gke_prj-hub-lab_europe-west2-b_g5-hub-eu-cluster".
+   Switched to context "gke_YOUR_HUB_PROJECT_ID_europe-west2-b_g5-hub-eu-cluster".
    NAME     CLUSTER                INGRESS       ZONE             REGION       PROJECT
-   orch01   g5-spoke2-eu-cluster   ingress-001   europe-west2-b   <no value>   prj-spoke2-lab
+   orch01   g5-spoke2-eu-cluster   ingress01   europe-west2-b   <no value>   prj-spoke2-lab
    ```
 
 3. Verify the CR status is updated with the pod IP addresses
@@ -403,7 +410,7 @@ In a real world scenario, when a new kubernetes cluster is created, an automated
    metadata:
      annotations:
        kopf.zalando.org/last-handled-configuration: |
-         {"spec":{"cluster":"g5-spoke2-eu-cluster","ingress":"ingress-001","project":"prj-spoke2-lab","region":null,"zone":"europe-west2-b"}}
+         {"spec":{"cluster":"g5-spoke2-eu-cluster","ingress":"ingress01","project":"prj-spoke2-lab","region":null,"zone":"europe-west2-b"}}
      creationTimestamp: "2025-02-06T13:53:31Z"
      finalizers:
      - kopf.zalando.org/KopfFinalizerMarker
@@ -415,7 +422,7 @@ In a real world scenario, when a new kubernetes cluster is created, an automated
      uid: 880caec4-8317-4602-a381-ba4807c742ac
    spec:
      cluster: g5-spoke2-eu-cluster
-     ingress: ingress-001
+     ingress: ingress01
      project: prj-spoke2-lab
      region: null
      zone: europe-west2-b
@@ -466,7 +473,7 @@ Now let's delete a pod in spoke2 cluster and confirm the operator updates the CR
 1. Delete `user1` pod on spoke2 cluster and check the operator logs
 
    ```sh
-   kubectx gke_${TF_VAR_project_id_spoke2}_${LOCATION}-b_${SPOKE_CLUSTER1_NAME} &&\
+   kubectx gke_${TF_VAR_project_id_spoke2}_${LOCATION}-b_${SPOKE_CLUSTER_NAME} &&\
    kubectl delete pod user1 && \
    kubectl get pods && \
    kubectx gke_${TF_VAR_project_id_hub}_${LOCATION}-b_${HUB_CLUSTER_NAME} && \
@@ -517,7 +524,7 @@ Now let's delete a pod in spoke2 cluster and confirm the operator updates the CR
    metadata:
      annotations:
        kopf.zalando.org/last-handled-configuration: |
-         {"spec":{"cluster":"g5-spoke2-eu-cluster","ingress":"ingress-001","project":"prj-spoke2-lab","region":null,"zone":"europe-west2-b"}}
+         {"spec":{"cluster":"g5-spoke2-eu-cluster","ingress":"ingress01","project":"prj-spoke2-lab","region":null,"zone":"europe-west2-b"}}
      creationTimestamp: "2025-02-06T13:53:31Z"
      finalizers:
      - kopf.zalando.org/KopfFinalizerMarker
@@ -529,7 +536,7 @@ Now let's delete a pod in spoke2 cluster and confirm the operator updates the CR
      uid: 880caec4-8317-4602-a381-ba4807c742ac
    spec:
      cluster: g5-spoke2-eu-cluster
-     ingress: ingress-001
+     ingress: ingress01
      project: prj-spoke2-lab
      region: null
      zone: europe-west2-b
@@ -618,7 +625,7 @@ CR manfiest for `orch01`
     cluster: g5-spoke2-eu-cluster
     zone: europe-west2-b
     project: prj-spoke2-lab
-    ingress: "ingress-001"
+    ingress: "ingress01"
   ```
 
 CR manifest for `orch02`
@@ -633,7 +640,7 @@ CR manifest for `orch02`
     cluster: g5-spoke2-eu-cluster
     zone: europe-west2-b
     project: prj-spoke2-lab
-    ingress: "ingress-001"
+    ingress: "ingress01"
   ```
 
 Now let's deploy the CRs.
@@ -705,9 +712,9 @@ Now let's deploy the CRs.
    metadata:
      annotations:
        kopf.zalando.org/last-handled-configuration: |
-         {"spec":{"cluster":"g5-spoke2-eu-cluster","ingress":"ingress-001","project":"prj-spoke2-lab","zone":"europe-west2-b"}}
+         {"spec":{"cluster":"g5-spoke2-eu-cluster","ingress":"ingress01","project":"prj-spoke2-lab","zone":"europe-west2-b"}}
        kubectl.kubernetes.io/last-applied-configuration: |
-         {"apiVersion":"example.com/v1","kind":"Orchestra","metadata":{"annotations":{},"name":"orch02","namespace":"default"},"spec":{"cluster":"g5-spoke2-eu-cluster","ingress":"ingress-001","project":"prj-spoke2-lab","zone":"europe-west2-b"}}
+         {"apiVersion":"example.com/v1","kind":"Orchestra","metadata":{"annotations":{},"name":"orch02","namespace":"default"},"spec":{"cluster":"g5-spoke2-eu-cluster","ingress":"ingress01","project":"prj-spoke2-lab","zone":"europe-west2-b"}}
      creationTimestamp: "2025-02-06T14:07:05Z"
      finalizers:
      - kopf.zalando.org/KopfFinalizerMarker
@@ -719,7 +726,7 @@ Now let's deploy the CRs.
      uid: 3e0c143d-d09b-4b29-832b-8cb68fcc3239
    spec:
      cluster: g5-spoke2-eu-cluster
-     ingress: ingress-001
+     ingress: ingress01
      project: prj-spoke2-lab
      zone: europe-west2-b
    status:
@@ -734,7 +741,7 @@ Now let's deploy the CRs.
    1. Deploy all pods again in the spoke cluster and check the CR status
 
    ```sh
-   kubectx gke_${TF_VAR_project_id_spoke2}_${LOCATION}-b_${SPOKE_CLUSTER1_NAME} && \
+   kubectx gke_${TF_VAR_project_id_spoke2}_${LOCATION}-b_${SPOKE_CLUSTER_NAME} && \
    skaffold run -p workload && \
    kubectl get pods -o wide
    ```
@@ -863,7 +870,7 @@ Now let's deploy the HAProxy.
    HAPROXY_EXTERNAL_LOAD_BALANCER_IP=$(kubectl get svc haproxy-elb -o jsonpath='{.status.loadBalancer.ingress[0].ip}') &&  \
 
    HAPROXY_POD_IP=$(kubectl get pods -l app=haproxy -o jsonpath='{.items[0].status.podIP}') && \
-   kubectx gke_${TF_VAR_project_id_spoke2}_${LOCATION}-b_${SPOKE_CLUSTER1_NAME} && \
+   kubectx gke_${TF_VAR_project_id_spoke2}_${LOCATION}-b_${SPOKE_CLUSTER_NAME} && \
    USER1_POD_IP=$(kubectl get pods -l app=user1 -o jsonpath='{.items[0].status.podIP}') && \
    echo "HAPROXY_PUBLIC_IP: $HAPROXY_PUBLIC_IP" && \
    echo "HAPROXY_POD_IP: $HAPROXY_POD_IP" && \
@@ -955,7 +962,7 @@ Now let's deploy the HAProxy.
 1. Delete `user1` pod and confirm operator updates the CR status and DNS records
 
    ```sh
-   kubectx gke_${TF_VAR_project_id_spoke2}_${LOCATION}-b_${SPOKE_CLUSTER1_NAME} && \
+   kubectx gke_${TF_VAR_project_id_spoke2}_${LOCATION}-b_${SPOKE_CLUSTER_NAME} && \
    kubectl delete pod user1 && \
    kubectx gke_${TF_VAR_project_id_hub}_${LOCATION}-b_${HUB_CLUSTER_NAME} && \
    kubectl logs -f $(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep operator)
@@ -1037,7 +1044,7 @@ We have successfully deployed a hub and spoke ingress pattern where the hub clus
 1. Delete all kubernetes deployments and srvices
 
    ```sh
-   kubectx gke_${TF_VAR_project_id_spoke2}_${LOCATION}-b_${SPOKE_CLUSTER1_NAME} && \
+   kubectx gke_${TF_VAR_project_id_spoke2}_${LOCATION}-b_${SPOKE_CLUSTER_NAME} && \
    skaffold delete -p workload && \
    kubectx gke_${TF_VAR_project_id_hub}_${LOCATION}-b_${HUB_CLUSTER_NAME} && \
    skaffold delete -p haproxy && \
