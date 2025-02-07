@@ -87,13 +87,13 @@ We are simulating user applications that run in the spoke cluster. The applicati
     git clone https://github.com/kaysalawu/gcp-network-terraform.git
     ```
 
-1. Navigate to the lab directory
+2. Navigate to the lab directory
 
    ```sh
    cd gcp-network-terraform/4-general/g5-gke-ingress
    ```
 
-1. Set the environment variables for the lab
+3. Set the environment variables for the lab
    ```sh
    export TF_VAR_project_id_hub=<PLACEHOLDER_FOR_HUB_PROJECT_ID>
    export TF_VAR_project_id_spoke2=<PLACEHOLDER_FOR_SPOKE_PROJECT_ID>
@@ -104,7 +104,7 @@ We are simulating user applications that run in the spoke cluster. The applicati
    export SPOKE_CONTEXT=gke_${TF_VAR_project_id_spoke2}_${LOCATION}-b_${SPOKE_CLUSTER_NAME}
    ```
 
-1. Deploy the terraform configuration:
+4. Deploy the terraform configuration:
 
     ```sh
     terraform init
@@ -114,21 +114,21 @@ We are simulating user applications that run in the spoke cluster. The applicati
 
     This creates the VPC network, subnets, GKE clusters and the artifacts and kubernetes service accounts required to deploy the applications to the GKE clusters.
 
-1. Get the GKE cluster credentials for the spoke and hub clusters
+5. Get the GKE cluster credentials for the spoke and hub clusters
 
    ```sh
    gcloud container clusters get-credentials $SPOKE_CLUSTER_NAME --region "$LOCATION-b" --project=$TF_VAR_project_id_spoke2 && \
    gcloud container clusters get-credentials $HUB_CLUSTER_NAME --region "$LOCATION-b" --project=$TF_VAR_project_id_hub
    ```
 
-1. Replace all occurences of project IDs in the manifests with the environment variables.
+6. Replace all occurences of project IDs in the manifests with the environment variables.
 
    ```sh
    for i in $(find artifacts -name '*.yaml'); do sed -i'' -e "s/YOUR_HUB_PROJECT_ID/${TF_VAR_project_id_hub}/g" "$i"; done && \
    for i in $(find artifacts -name '*.yaml'); do sed -i'' -e "s/YOUR_SPOKE_PROJECT_ID/${TF_VAR_project_id_spoke2}/g" "$i"; done
    ```
 
-1. Install cert-manager in the hub cluster in order to use Let's Encrypt certificates for our custom ingress.
+7. Install cert-manager in the hub cluster in order to use Let's Encrypt certificates for our custom ingress.
 
    ```sh
    kubectx ${HUB_CONTEXT} && \
@@ -193,7 +193,7 @@ Let's create the following components to the hub cluster:
 3. HAProxy as our ingress reverse proxy for HTTP and TCP traffic
 
 
-1. Deploy the CRD and Operator and wait a few minutes to complete
+2. Deploy the CRD and Operator and wait a few minutes to complete
 
    ```sh
    kubectx ${HUB_CONTEXT} && \
@@ -235,7 +235,7 @@ Let's create the following components to the hub cluster:
 
    The operator is running and watching for CRs. Currently, there are no CRs in the cluster.
 
-2. Deploy the API server
+3. Deploy the API server
 
    ```sh
    kubectx ${HUB_CONTEXT} && \
@@ -271,7 +271,7 @@ Let's create the following components to the hub cluster:
    <img src="images/fastapi-api-server.png" alt="Ingress Operator State Machine" width="650"/>
 
 
-3. Verify that the operator and api-server pods are running
+4. Verify that the operator and api-server pods are running
 
    ```sh
    kubectl get pods
@@ -300,9 +300,11 @@ In a real world scenario, when a new kubernetes cluster is created, an automated
 4. Update the CR status with the pod IP addresses
 5. Check the existing DNS records for reconciliation
 6. Create the DNS records for the pods if they do not exist
-7. Update the CR status with the DNS records
+7. Update the HAProxy with frontend and backend configurations for the new pods
 8. Repeat the above steps every 20 seconds
 <p>
+
+Let's create the required resources in the hub cluster.
 
 1. Deploy the CR using the API server
 
@@ -820,7 +822,7 @@ Now let's deploy the HAProxy.
    kubectl logs $(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep haproxy)
    ```
 
-1. Get the HAPProxy external load balancer IP, HAProxy pod IP, and `user1` pod IP addresses
+2. Get the HAPProxy external load balancer IP, HAProxy pod IP, and `user1` pod IP addresses
 
    ```sh
    kubectx ${SPOKE_CONTEXT} && \
@@ -841,7 +843,7 @@ Now let's deploy the HAProxy.
    USER1_POD_IP: 10.22.100.12
    ```
 
-2. Test HTTP endpoint `user1-orch01.hub.g.corp` and verify the response
+3. Test HTTP endpoint `user1-orch01.hub.g.corp` and verify the response
 
    ```sh
    curl -H "Host: user1-orch01.hub.g.corp" http://${HAPROXY_EXTERNAL_LOAD_BALANCER_IP}:7474
@@ -867,7 +869,7 @@ Now let's deploy the HAProxy.
    We can see that traffic reached the HTTP service of `user1` pod on `server-ipv4` **10.22.100.12**. The request was proxied via the HAPRoxy as seen from `remote-addr` **10.1.100.17**.
 
 
-3. Connect to the HTTPS application for `user1-orch01.hub.g.corp` and verify the response
+4. Connect to the HTTPS application for `user1-orch01.hub.g.corp` and verify the response
 
    ```sh
    curl -k -H "Host: user1-orch01.hub.g.corp" https://${HAPROXY_EXTERNAL_LOAD_BALANCER_IP}:7473
@@ -890,7 +892,7 @@ Now let's deploy the HAProxy.
    }
    ```
 
-4. Connect to all other endpoints for `user2` and `orch02` and verify the response
+5. Connect to all other endpoints for `user2` and `orch02` and verify the response
 
    ```sh
    curl -H "Host: user2-orch01.hub.g.corp" http://${HAPROXY_EXTERNAL_LOAD_BALANCER_IP}:7474 && \
@@ -901,7 +903,7 @@ Now let's deploy the HAProxy.
 
    Similarly, we can see that traffic reached the HTTPS service of `user1` via the HAProxy.
 
-5. Test the TCP endpoint using netcat on port **7687**
+6. Test the TCP endpoint using netcat on port **7687**
 
    ```sh
    nc ${HAPROXY_EXTERNAL_LOAD_BALANCER_IP} 7687
@@ -915,7 +917,7 @@ Now let's deploy the HAProxy.
 
    The TCP connection was successful and the traffic reached the `user1` pod via the HAProxy.
 
-6. Delete `user1` pod again, and confirm operator updates the CR status and DNS records
+7. Delete `user1` pod again, and confirm operator updates the CR status and DNS records
 
    ```sh
    kubectx ${SPOKE_CONTEXT} && \
@@ -961,7 +963,7 @@ Now let's deploy the HAProxy.
     Press **Ctrl+C** to exit the logs.
 
 
-7. Test the HTTP endpoint `user1-orch01.hub.g.corp` and verify the response
+8. Test the HTTP endpoint `user1-orch01.hub.g.corp` and verify the response
 
     ```sh
     curl -H "Host: user1-orch01.hub.g.corp" http://${HAPROXY_EXTERNAL_LOAD_BALANCER_IP}:7474
@@ -975,7 +977,7 @@ Now let's deploy the HAProxy.
    </body></html>
    ```
 
-8. We should still be able to reach the `user2` pod via the HAProxy
+9. We should still be able to reach the `user2` pod via the HAProxy
 
    ```sh
    curl -H "Host: user2-orch01.hub.g.corp" http://${HAPROXY_EXTERNAL_LOAD_BALANCER_IP}:7474
