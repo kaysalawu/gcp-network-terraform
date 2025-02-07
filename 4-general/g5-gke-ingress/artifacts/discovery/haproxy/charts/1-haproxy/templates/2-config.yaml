@@ -57,16 +57,16 @@ data:
     backend be_{{ $user.name }}_http
       mode http
       option forwardfor
-      server {{ $user.name }} {{ $user.name }}.{{ $.Values.nameSpace }}.svc.cluster.local:{{ $.Values.portNeo4jHttp }} check
+      server {{ $user.name }} {{ $user.host }}:{{ $.Values.portNeo4jHttp }} check
 
     backend be_{{ $user.name }}_https
       mode http
       option forwardfor
-      server {{ $user.name }} {{ $user.name }}.{{ $.Values.nameSpace }}.svc.cluster.local:{{ $.Values.portNeo4jHttps }} check
+      server {{ $user.name }} {{ $user.host }}:{{ $.Values.portNeo4jHttps }} check
 
     backend be_{{ $user.name }}_bolt
       mode tcp
-      server {{ $user.name }} {{ $user.name }}.{{ $.Values.nameSpace }}.svc.cluster.local:{{ $.Values.portNeo4jBolt }} check
+      server {{ $user.name }} {{ $user.host }}:{{ $.Values.portNeo4jBolt }} check
 
     {{- end }}
 

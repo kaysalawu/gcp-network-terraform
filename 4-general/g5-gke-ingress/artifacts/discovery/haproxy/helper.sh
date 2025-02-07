@@ -10,9 +10,7 @@ fi
 base_dir="charts"
 templates_dirs=(
 "$base_dir/0-system"
-"$base_dir/1-apps"
-"$base_dir/2-haproxy"
-"$base_dir/3-k6"
+"$base_dir/1-haproxy"
 )
 
 substitute_separate_templates() {
@@ -21,6 +19,7 @@ substitute_separate_templates() {
         mkdir -p "$output_dir"
         for template in "$templates_dir/templates"/*.yaml; do
             output_file="$output_dir/$(basename "$template")"
+            helm dependency build "$templates_dir"
             helm template "$(basename "$templates_dir")" "$templates_dir" -f "$base_dir/values.yaml" --show-only "templates/$(basename "$template")" >"$output_file"
         done
     done
@@ -30,6 +29,7 @@ substitue_into_one_template() {
     for templates_dir in "${templates_dirs[@]}"; do
         output_file="${base_dir}_rendered/$(basename "$templates_dir")/templates/combined.yaml"
         mkdir -p "${base_dir}_rendered/$(basename "$templates_dir")/templates"
+        helm dependency build "$templates_dir"
         helm template "$(basename "$templates_dir")" "$templates_dir" -f "$base_dir/values.yaml" >"$output_file"
     done
 }

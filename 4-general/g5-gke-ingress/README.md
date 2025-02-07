@@ -1,43 +1,70 @@
 
-# An Approach to Kubernetes Centralised Ingress <!-- omit from toc -->
+# Centralised Kubernetes Ingress on GCP <!-- omit from toc -->
 
 Contents
-- [Overview](#overview)
-- [Prerequisites](#prerequisites)
-- [Deploy the Lab](#deploy-the-lab)
-- [Troubleshooting](#troubleshooting)
-- [Initial Setup](#initial-setup)
-- [Deploy the Spoke Cluster](#deploy-the-spoke-cluster)
-- [Deploy the Hub Cluster](#deploy-the-hub-cluster)
-- [Deploy Custom Resource (CR) in the Hub using API Server](#deploy-custom-resource-cr-in-the-hub-using-api-server)
-- [Delete a Pod in Spoke Cluster](#delete-a-pod-in-spoke-cluster)
-- [Deploy Custom Resource (CR) in the Hub using Manifest](#deploy-custom-resource-cr-in-the-hub-using-manifest)
-  - [SORT](#sort)
-- [Cleanup](#cleanup)
-- [Useful Commands](#useful-commands)
+- [1. Overview](#1-overview)
+  - [Hub and Spoke GKE Ingress](#hub-and-spoke-gke-ingress)
+  - [Service Discovery Operator State Machine](#service-discovery-operator-state-machine)
+  - [HAProxy](#haproxy)
+  - [User Application](#user-application)
+- [2. Prerequisites](#2-prerequisites)
+- [3. Deploy the Lab](#3-deploy-the-lab)
+- [4. Troubleshooting](#4-troubleshooting)
+- [5. Deploy the Spoke Cluster](#5-deploy-the-spoke-cluster)
+- [6. Deploy the Hub (Ingress) Cluster](#6-deploy-the-hub-ingress-cluster)
+- [7. Deploy Custom Resource (CR) in the Hub using API Server](#7-deploy-custom-resource-cr-in-the-hub-using-api-server)
+- [8. Delete a Pod in Spoke Cluster](#8-delete-a-pod-in-spoke-cluster)
+- [9. Deploy Custom Resource (CR) in the Hub using Manifest](#9-deploy-custom-resource-cr-in-the-hub-using-manifest)
+- [10. Create HAProxy in the Hub Cluster](#10-create-haproxy-in-the-hub-cluster)
 - [Requirements](#requirements)
 - [Inputs](#inputs)
 - [Outputs](#outputs)
 
 
-## Overview
+## 1. Overview
 
-This lab deploys a GKE ingress pattern to allow access from a hub to spoke clusters. The hub ingress, haproxy, performs service discovery and routing to the spoke clusters. The ingress uses host names in SNI to route traffic to the correct cluster.
+Many organisations use a [hub and spoke](https://cloud.google.com/architecture/deploy-hub-spoke-vpc-network-topology) network architecture to connect their cloud infrastructure together. The hub typically hosts shared services which might include network ingress and network egress solutions. The spokes are typically connected to the hub using VPC peering.
 
-<img src="images/image.png" alt="Hub and Spoke GKE Ingress" width="900"/>
+The ingress receives internal and external traffic and forwards to the spokes. The ingress layer typically comprises of resources such as network firewalls, network load balancers, application load balancers or a combination of any these. In other cases, customers need a custom ingress solution to handle specific business logic that regular cloud load balancers cannot manage. In such situations, the ingress could be a Google Kubernetes Engine (GKE) cluster that routes traffic to the spoke clusters - that are also GKE clusters. This is what this lab is about.
+
+<img src="images/centralised-ingress.png" alt="Hub and Spoke GKE Ingress" width="700"/>
+
+
+### Hub and Spoke GKE Ingress
+
+This lab deploys a GKE ingress pattern to allow access from a hub to spoke clusters. The custom hub ingress, a haproxy deployment, performs service discovery via Cloud DNS to route traffic to the spoke cluster that hosts the target pod.
+
+Assumptions made for this design:
+
+1. The hub reverse proxy can reach all pods in the spoke clusters directly.
+2. Kubernetes headless services are used and requests are sent directly to pods.
+3. The hub cluster has a private DNS zone for the internal domain name resolution.
+<p>
+
+<img src="images/image.png" alt="Hub and Spoke GKE Ingress" width="750"/>
+<p>
+
+In this lab, the ingress will rote both HTTP and TCP traffic. For HTTP traffic, the ingress forwards to a backend based on the host name header. The ingress uses host names in SNI to route TCP traffic to the target pod.
+
+### Service Discovery Operator State Machine
 
 Service discovery is implemented using a simple Kubernetes custom resource (CR) and operator. The operator watches for the custom resource and updates the Cloud DNS with pod IP addresses when the custom resource is created or deleted. In this example, the CR represents a kubernetes cluster. The CR has a status field that is updated with the cluster's pod IP addresses.
 
 <img src="artifacts/discovery/operator/app/state_diagram.png" alt="Ingress Operator State Machine" width="650"/>
 
-The lab infrastructure is a hub and spoke model. The hub cluster is in a separate project from the spoke clusters. The spoke clusters are in different regions. The hub cluster has a haproxy ingress that routes traffic to the spoke clusters based on the host name in the SNI.
+### HAProxy
 
-Assumptions for this design:
-- The hub network is connected to all spoke networks
-- A pod in the hub can reach all pods in the spoke clusters directly. This means the kubernetes network configuration needs to expose the pod IP addresses within the VPC.
-- The hub cluster has a private DNS zone for the internal domain name resolution.
+The HAProxy has a [ConfigMap](artifacts/discovery/haproxy/charts_rendered/1-haproxy/templates/2-config.yaml) that routes traffic in two modes - HTTP and TCP. The HAProxy forwards HTTP(S) traffic to the user applications based on the host name header. We are using [LetsEncrypt certificates](artifacts/discovery/haproxy/charts_rendered/0-system/templates/1-tls-cert.yaml) for the TLS termination. The HAProxy forwards TCP traffic to the user applications based on the SNI host received during TLS handshake.
 
-## Prerequisites
+
+### User Application
+
+We are simulating user applications that run in the spoke cluster. The application is simply a pod with containers configured as follows:
+- HTTP server on port **7474**
+- HTTPS server on port **7473**
+- TCP server on port **7687**
+
+## 2. Prerequisites
 
 1. Ensure you meet all requirements in the [prerequisites](../../prerequisites/README.md) before proceeding.
 2. [Install skaffold](https://skaffold.dev/docs/install/) for deploying the operator to the GKE cluster.
@@ -45,13 +72,27 @@ Assumptions for this design:
 4. Install [skaffold](https://skaffold.dev/docs/install/#standalone-binary), the tool we'll use for building and deploying to Kubernetes.
 5. Create two GCP projects, one for the hub and the other for the spoke clusters.
 6. (Optional) Install graphviz for visualizing the operator's state machine. [Install graphviz](https://graphviz.gitlab.io/download/)
+   ```sh
+   sudo apt update
+   sudo apt install graphviz graphviz-dev
+   ```
+7. Install `netcat` for testing TCP traffic.
+   ```sh
+   sudo apt update
+   sudo apt install netcat
+   ```
 
-```sh
-sudo apt update
-sudo apt install graphviz graphviz-dev
-```
+8. Set the environment variables for the lab
 
-## Deploy the Lab
+   ```sh
+   export TF_VAR_project_id_hub=<your-hub-project-id>
+   export TF_VAR_project_id_spoke2=<your-spoke-project-id>
+   export LOCATION=europe-west2
+   export HUB_CLUSTER_NAME=g5-hub-eu-cluster
+   export SPOKE_CLUSTER1_NAME=g5-spoke2-eu-cluster
+   ```
+
+## 3. Deploy the Lab
 
 1. Clone the Git Repository for the Labs
 
@@ -73,324 +114,348 @@ sudo apt install graphviz graphviz-dev
     terraform apply -auto-approve
     ```
 
- ## Troubleshooting
+4. Get the GKE cluster credentials for the spoke and hub clusters
+
+   ```sh
+   gcloud container clusters get-credentials $SPOKE_CLUSTER1_NAME --region "$LOCATION-b" --project=$TF_VAR_project_id_spoke2 && \
+   gcloud container clusters get-credentials $HUB_CLUSTER_NAME --region "$LOCATION-b" --project=$TF_VAR_project_id_hub
+   ```
+
+5. Install cert-manager in the hub cluster in order to use Let's Encrypt certificates for the ingress.
+
+   ```sh
+   kubectx gke_${TF_VAR_project_id_hub}_${LOCATION}-b_${HUB_CLUSTER_NAME} && \
+   helm repo add jetstack https://charts.jetstack.io && \
+   helm repo update && \
+   helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --version v1.15.1 --set crds.enabled=true || true && \
+   kubectl get pods -n cert-manager
+   ```
+
+   <Details>
+
+   <summary>🟢 Sample output (cert-manager installed):</summary>
+
+   ```sh
+   NAME                                       READY   STATUS    RESTARTS   AGE
+   cert-manager-5d45994f57-d798l              1/1     Running   0          17s
+   cert-manager-cainjector-5d69455fd6-gmqdc   1/1     Running   0          17s
+   cert-manager-webhook-56f4567ccb-7llcg      1/1     Running   0          17s
+   ```
+
+   </Details>
+   <p>
+
+
+## 4. Troubleshooting
 
 See the [troubleshooting](../../troubleshooting/README.md) section for tips on how to resolve common issues that may occur during the deployment of the lab.
 
 
-## Initial Setup
-
-1. Set some environment variables
-
-```sh
-export PROJECT_ID_HUB=<your-hub-project-id>
-export PROJECT_ID_SPOKE=<your-spoke-project-id>
-export LOCATION=europe-west2
-export HUB_CLUSTER_NAME=g5-hub-eu-cluster
-export SPOKE_CLUSTER1_NAME=g5-spoke2-eu-cluster
-```
-
-1. Get the GKE cluster credentials
-
-```sh
-gcloud container clusters get-credentials $SPOKE_CLUSTER1_NAME --region "$LOCATION-b" --project=$PROJECT_ID_SPOKE && \
-gcloud container clusters get-credentials $HUB_CLUSTER_NAME --region "$LOCATION-b" --project=$PROJECT_ID_HUB
-```
-
-## Deploy the Spoke Cluster
+## 5. Deploy the Spoke Cluster
 
 A skaffold file is located at [artifacts/skaffold.yaml](./artifacts/skaffold.yaml) with different profiles for deploying various components.
 
 1. Navigate to the artifacts directory
 
-```sh
-cd artifacts
-```
+   ```sh
+   cd artifacts
+   ```
 
-1. Deploy the spoke workload
+2. Deploy the spoke workload using Skaffold and Helm
 
-```sh
-kubectx gke_${PROJECT_ID_SPOKE}_${LOCATION}-b_${SPOKE_CLUSTER1_NAME} && \
-skaffold run -p workload
-```
+   ```sh
+   kubectx gke_${TF_VAR_project_id_spoke2}_${LOCATION}-b_${SPOKE_CLUSTER1_NAME} && \
+   skaffold run -p workload
+   ```
 
-1. Confirm the pods are running
+   Confirm the pods are running
 
-```sh
-kubectl get pods
-```
+   ```sh
+   kubectl get pods
+   ```
 
-Sample output:
+   Sample output:
 
-```sh
-artifacts$ kubectl get pods
-NAME    READY   STATUS    RESTARTS   AGE
-user1   3/3     Running   0          35s
-user2   3/3     Running   0          35s
-```
+   ```sh
+   artifacts$ kubectl get pods
+   NAME    READY   STATUS    RESTARTS   AGE
+   user1   3/3     Running   0          35s
+   user2   3/3     Running   0          35s
+   ```
 
-## Deploy the Hub Cluster
+## 6. Deploy the Hub (Ingress) Cluster
 
-Let's deploy the operator and API server to the hub cluster.
+Let's create the following components to the hub cluster:
+1. [Customer Resource Definition](artifacts/discovery/operator/manifests/kustomize/base/main/orchestra-crd.yaml) (CRD) and [Operator](artifacts/discovery/operator/manifests/kustomize/base/main/discovery-operator.yaml) deployment to manage the `Orchestra` Custom Resource (CR)
+2. [API gateway](artifacts/discovery/api-server/manifests/kustomize/base/main/api-server.yaml) (FastAPI) to manage the `Orchestra` CR via REST API
+3. HAProxy as our ingress reverse proxy for HTTP and TCP traffic
 
 
-1. Deploy the operator
+1. Create the CRD and Operator
 
-```sh
-kubectx gke_${PROJECT_ID_HUB}_${LOCATION}-b_${HUB_CLUSTER_NAME} && \
-skaffold run -p operator
-```
+   ```sh
+   kubectx gke_${TF_VAR_project_id_hub}_${LOCATION}-b_${HUB_CLUSTER_NAME} && \
+   skaffold run -p operator
+   ```
+   Confirm the CRD was created
 
-Check the operator logs to verify it is running
+   ```sh
+   kubectl get crd orchestras.example.com
+   ```
 
-```sh
-kubectl logs $(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep operator)
-```
+   Sample output:
 
-<Details>
+   ```sh
+   NAME                     CREATED AT
+   orchestras.example.com   2025-02-05T10:06:26Z
+   ```
 
-<summary>Sample Output</summary>
+   Check the operator logs to verify it is running
 
-```sh
-artifacts$ kubectl logs -f $(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep operator)
-[2025-02-04 09:33:56,379] __kopf_script_0__/ap [INFO    ] Project ID: prj-hub-lab
-[2025-02-04 09:33:56,783] __kopf_script_0__/ap [INFO    ] Private DNS zone: [{'name': 'g5-hub-private', 'dns_name': 'hub.g.corp.', 'description': 'local data'}]
-[2025-02-04 09:33:56,784] __kopf_script_0__/ap [INFO    ] Initializing pod scanner...
-[2025-02-04 09:33:56,785] kopf.activities.star [INFO    ] Activity 'start_scanner' succeeded.
-[2025-02-04 09:33:56,787] kopf._core.engines.a [INFO    ] Initial authentication has been initiated.
-[2025-02-04 09:33:56,790] kopf.activities.auth [INFO    ] Activity 'login_via_client' succeeded.
-[2025-02-04 09:33:56,790] kopf._core.engines.a [INFO    ] Initial authentication has finished.
-[2025-02-04 09:33:57,039] __kopf_script_0__/ap [INFO    ] CRs Found: []
-[2025-02-04 09:34:17,226] __kopf_script_0__/ap [INFO    ] CRs Found: []
-```
+   ```sh
+   kubectl logs $(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep operator)
+   ```
 
-</Details>
-<p>
+   <Details>
 
-The oprator is running and watching for custom resources. Currently, there are no custom resources in the cluster. We will deploy the CR later.
+   <summary>🟢 Sample logs (Operator created):</summary>
 
-1. Deploy the API server
+   ```sh
+   artifacts$    kubectl logs $(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep operator)
+   [2025-02-06 13:50:56,962] __kopf_script_0__/ap [INFO    ] Project ID: prj-hub-lab
+   [2025-02-06 13:50:57,382] __kopf_script_0__/ap [INFO    ] Private DNS zone: [{'name': 'g5-hub-private', 'dns_name': 'hub.g.corp.', 'description': 'local data'}]
+   [2025-02-06 13:50:57,384] kopf.activities.star [INFO    ] Activity 'start_scanner' succeeded.
+   [2025-02-06 13:50:57,385] kopf._core.engines.a [INFO    ] Initial authentication has been initiated.
+   [2025-02-06 13:50:57,388] kopf.activities.auth [INFO    ] Activity 'login_via_client' succeeded.
+   [2025-02-06 13:50:57,388] kopf._core.engines.a [INFO    ] Initial authentication has finished.
+   [2025-02-06 13:50:57,651] __kopf_script_0__/ap [INFO    ] [IDLE] Registered CRs: []
+   ```
 
-```sh
-kubectx gke_${PROJECT_ID_HUB}_${LOCATION}-b_${HUB_CLUSTER_NAME} && \
-skaffold run -p api-server
-```
+   </Details>
+   <p>
 
-Check the API server logs to verify it is running
+   The operator is running and watching for CRs. Currently, there are no CRs in the cluster.
 
-```sh
-kubectl logs $(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep api-server)
-```
+2. Deploy the API server
 
-<Details>
+   ```sh
+   kubectx gke_${TF_VAR_project_id_hub}_${LOCATION}-b_${HUB_CLUSTER_NAME} && \
+   skaffold run -p api-server
+   ```
 
-<summary>Sample Output</summary>
+   Check the API server logs to verify it is running
 
-```sh
-artifacts$ kubectl logs $(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep api-server)
-INFO:     Started server process [1]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
-```
+   ```sh
+   kubectl logs $(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep api-server)
+   ```
 
-</Details>
-<p>
+   <Details>
 
-The API server (FastAPI) is running. The API server is also exposed on external load balancer.
+   <summary>🟢 Sample logs (API server running):</summary>
 
-1. Get the external IP address of the API server
+   ```sh
+   artifacts$ kubectl logs $(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep api-server)
+   INFO:     Started server process [1]
+   INFO:     Waiting for application startup.
+   INFO:     Application startup complete.
+   INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
+   ```
 
-```sh
-API_SERVER_IP=$(kubectl get svc api-server-elb -o jsonpath='{.status.loadBalancer.ingress[0].ip}') && echo $API_SERVER_IP
-```
+   </Details>
+   <p>
 
-You can use the web interface to test the API server. Go to `http://$API_SERVER_IP/docs` in your browser. However, we will use curl to test the API server in the next steps.
+   The API server (FastAPI) is now running. The API server is also exposed on external load balancer.
 
-1. Deploy tool pods to the hub cluster. These are general purpose pods that can be used to test access to services.
+   Get the external IP address of the API server
 
-```sh
-kubectx gke_${PROJECT_ID_HUB}_${LOCATION}-b_${HUB_CLUSTER_NAME} && \
-skaffold run -p tools
-```
+   ```sh
+   API_SERVER_IP=$(kubectl get svc api-server-elb -o jsonpath='{.status.loadBalancer.ingress[0].ip}') && echo $API_SERVER_IP
+   ```
 
-1. Verify all pods deployed
+   You can use the web interface to test the API server. Go to `http://$API_SERVER_IP/docs` in your browser. However, we will use curl to test the API server in the next steps.
 
-```sh
-kubectl get pods
-```
+   <img src="images/fastapi-api-server.png" alt="Ingress Operator State Machine" width="650"/>
 
-Sample output:
 
-```sh
-artifacts$ kubectl get pods
-NAME                                  READY   STATUS    RESTARTS   AGE
-api-server-6968d74f8b-vmqqc           1/1     Running   0          69m
-discovery-operator-854c895fb4-6rnxb   1/1     Running   0          72m
-gcloud                                1/1     Running   0          159m
-netshoot                              1/1     Running   0          159m
-```
+3. Verify all pods deployed
 
-## Deploy Custom Resource (CR) in the Hub using API Server
+   ```sh
+   kubectl get pods
+   ```
+
+   Sample output:
+
+   ```sh
+   artifacts$    kubectl get pods
+   NAME                                  READY   STATUS    RESTARTS   AGE
+   api-server-6c55dfb9c6-gzfhg           1/1     Running   0          25s
+   discovery-operator-5b8bcdddd7-9lfkq   1/1     Running   0          86s
+   ```
+
+## 7. Deploy Custom Resource (CR) in the Hub using API Server
 
 The customer resource `Orchestra` is a simple CR that represents a kubernetes cluster. The CR has a status field that is updated with the cluster's pod IP addresses.
 
 In a real world scenario, when a new kubernetes cluster is created, an automated process should create the CR for that orchestra - and then the operator will detect the CR and run the state machine logic. To make things simple, we are manually creating the CR using the API server.
 
+**Service Discovery Operator workflow (CR creation):**
+
+1. Fetch the cluster endpoint and auth data
+2. Switch the context to the spoke cluster
+3. Scan the pods in the spoke cluster
+4. Update the CR status with the pod IP addresses
+5. Check the existing DNS records for reconciliation
+6. Create the DNS records for the pods if they do not exist
+7. Update the CR status with the DNS records
+8. Repeat the above steps every 20 seconds
+<p>
+
 1. Deploy the CR using the API server
 
-```sh
-curl -X 'POST' \
-  "http://${API_SERVER_IP}/api/create_orchestra" \
-  -H "accept: application/json" \
-  -H 'Content-Type: application/json' \
-  -d '{
-  "cluster": "g5-spoke2-eu-cluster",
-  "ingress": "ingress-001",
-  "name": "orch01",
-  "project": "prj-spoke2-lab",
-  "zone": "europe-west2-b"
-}'
-```
+   ```sh
+   curl -X 'POST' \
+     "http://${API_SERVER_IP}/api/create_orchestra" \
+     -H "accept: application/json" \
+     -H 'Content-Type: application/json' \
+     -d '{
+     "cluster": "g5-spoke2-eu-cluster",
+     "ingress": "ingress-001",
+     "name": "orch01",
+     "project": "prj-spoke2-lab",
+     "zone": "europe-west2-b"
+   }'
+   ```
 
-Check the operator logs to verify the CR was created
+   Check the operator logs to verify the CR was created
 
-<Details>
+   ```sh
+   kubectx gke_${TF_VAR_project_id_hub}_${LOCATION}-b_${HUB_CLUSTER_NAME} && \
+   kubectl logs -f $(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep operator)
+   ```
 
-<summary>Operator logs:</summary>
+   <Details>
 
-```sh
-[2025-02-04 10:39:43,677] __kopf_script_0__/ap [INFO    ] CRs Found: []
-[2025-02-04 10:40:03,873] __kopf_script_0__/ap [INFO    ] CRs Found: []
-[2025-02-04 10:40:21,965] __kopf_script_0__/ap [INFO    ] Orchestra CREATE: orch01.
-[2025-02-04 10:40:21,968] __kopf_script_0__/ap [INFO    ] [orch01] State: scanning -> Scanning pods
-Fetching cluster endpoint and auth data.
-kubeconfig entry generated for g5-spoke2-eu-cluster.
-[2025-02-04 10:40:24,290] _PodManager          [INFO    ] Context switch: -> gke_prj-spoke2-lab_europe-west2-b_g5-spoke2-eu-cluster
-Property "current-context" unset.
-[2025-02-04 10:40:24,804] _PodManager          [INFO    ] Context switch: -> in-cluster
-[2025-02-04 10:40:24,805] __kopf_script_0__/ap [INFO    ] [orch01] State: scanning -> Found [2] pods
-[2025-02-04 10:40:24,808] __kopf_script_0__/ap [INFO    ] [orch01] State: updating_cr -> Updating CR
-[2025-02-04 10:40:24,836] __kopf_script_0__/ap [INFO    ] [orch01] State: updating_cr CR updated
-[2025-02-04 10:40:24,837] __kopf_script_0__/ap [INFO    ] [orch01] State: reconciling_dns -> Checking existing DNS records
-[2025-02-04 10:40:25,186] __kopf_script_0__/ap [INFO    ] [orch01] Found [0] DNS records
-[2025-02-04 10:40:25,193] __kopf_script_0__/ap [INFO    ] CRs Found: ['orch01']
-[2025-02-04 10:40:25,197] __kopf_script_0__/ap [INFO    ] [orch01] State: scanning -> Scanning pods
-[2025-02-04 10:40:25,640] utils                [INFO    ] DNS CREATE: Success! user1-orch01.hub.g.corp. -> 10.22.100.11
-[2025-02-04 10:40:26,016] utils                [INFO    ] DNS CREATE: Success! user2-orch01.hub.g.corp. -> 10.22.100.9
-[2025-02-04 10:40:26,018] kopf.objects         [INFO    ] [default/orch01] Handler 'on_orchestra_create' succeeded.
-[2025-02-04 10:40:26,018] kopf.objects         [INFO    ] [default/orch01] Creation is processed: 1 succeeded; 0 failed.
-Fetching cluster endpoint and auth data.
-kubeconfig entry generated for g5-spoke2-eu-cluster.
-[2025-02-04 10:40:27,353] _PodManager          [INFO    ] Context switch: -> gke_prj-spoke2-lab_europe-west2-b_g5-spoke2-eu-cluster
-Property "current-context" unset.
-[2025-02-04 10:40:27,691] _PodManager          [INFO    ] Context switch: -> in-cluster
-[2025-02-04 10:40:27,691] __kopf_script_0__/ap [INFO    ] [orch01] State: scanning -> Found [2] pods
-[2025-02-04 10:40:27,691] __kopf_script_0__/ap [INFO    ] [orch01] State: updating_cr -> Updating CR
-[2025-02-04 10:40:27,710] __kopf_script_0__/ap [INFO    ] [orch01] State: updating_cr CR updated
-[2025-02-04 10:40:27,710] __kopf_script_0__/ap [INFO    ] [orch01] State: reconciling_dns -> Checking existing DNS records
-[2025-02-04 10:40:27,941] __kopf_script_0__/ap [INFO    ] [orch01] Found [2] DNS records
-```
+   <summary>🟢 Operator logs (CR created):</summary>
 
-</Details>
-<p>
+   ```sh
+   [2025-02-06 13:52:58,944] __kopf_script_0__/ap [INFO    ] [IDLE] Registered CRs: []
+   [2025-02-06 13:53:19,158] __kopf_script_0__/ap [INFO    ] [IDLE] Registered CRs: []
+   [2025-02-06 13:53:32,074] __kopf_script_0__/ap [INFO    ] [orch01] kopf.on.create() +finalizer
+   [2025-02-06 13:53:32,074] __kopf_script_0__/ap [INFO    ] [orch01] ***** CREATE *****
+   Fetching cluster endpoint and auth data.
+   kubeconfig entry generated for g5-spoke2-eu-cluster.
+   [2025-02-06 13:53:34,232] _PodManager          [INFO    ] [orch01] scanning -> set_context() -> gke_prj-spoke2-lab_europe-west2-b_g5-spoke2-eu-cluster
+   Property "current-context" unset.
+   [2025-02-06 13:53:34,593] _PodManager          [INFO    ] [orch01] scanning -> unset_context() (in_cluster_config)
+   [2025-02-06 13:53:34,593] __kopf_script_0__/ap [INFO    ] [orch01] scanning -> scan_pods() -> Found [2] pods
+   [2025-02-06 13:53:34,594] __kopf_script_0__/ap [INFO    ] [orch01] updating_cr -> update_custom_resource() -> Start
+   [2025-02-06 13:53:34,628] __kopf_script_0__/ap [INFO    ] [orch01] updating_cr -> update_custom_resource() -> Success!
+   [2025-02-06 13:53:34,858] __kopf_script_0__/ap [INFO    ] [orch01] reconciling_dns -> reconcile_dns() -> Found [0] records
+   [2025-02-06 13:53:35,289] utils                [INFO    ] [orch01] reconciling_dns -> create_dns_a_record() -> Added user1-orch01.hub.g.corp. = 10.22.100.10
+   [2025-02-06 13:53:35,671] utils                [INFO    ] [orch01] reconciling_dns -> create_dns_a_record() -> Added user2-orch01.hub.g.corp. = 10.22.100.4
+   [2025-02-06 13:53:35,671] kopf.objects         [INFO    ] [default/orch01] Handler 'on_orchestra_create' succeeded.
+   [2025-02-06 13:53:35,672] kopf.objects         [INFO    ] [default/orch01] Creation is processed: 1 succeeded; 0 failed.
+   [2025-02-06 13:53:39,368] __kopf_script_0__/ap [INFO    ] [IDLE] Registered CRs: ['orch01']
+   Fetching cluster endpoint and auth data.
+   kubeconfig entry generated for g5-spoke2-eu-cluster.
+   [2025-02-06 13:53:41,349] _PodManager          [INFO    ] [orch01] scanning -> set_context() -> gke_prj-spoke2-lab_europe-west2-b_g5-spoke2-eu-cluster
+   Property "current-context" unset.
+   [2025-02-06 13:53:41,663] _PodManager          [INFO    ] [orch01] scanning -> unset_context() (in_cluster_config)
+   [2025-02-06 13:53:41,663] __kopf_script_0__/ap [INFO    ] [orch01] scanning -> scan_pods() -> Found [2] pods
+   [2025-02-06 13:53:41,663] __kopf_script_0__/ap [INFO    ] [orch01] updating_cr -> update_custom_resource() -> Start
+   [2025-02-06 13:53:41,689] __kopf_script_0__/ap [INFO    ] [orch01] updating_cr -> update_custom_resource() -> Success!
+   [2025-02-06 13:53:41,920] __kopf_script_0__/ap [INFO    ] [orch01] reconciling_dns -> reconcile_dns() -> Found [2] records
+   ```
 
-**Summary of the operator CR creation workflow:**
+   </Details>
+   <p>
 
-- Fetches the cluster endpoint and auth data
-- Switches the context to the spoke cluster
-- Scans the pods in the spoke cluster
-- Updates the CR status with the pod IP addresses
-- Checks the existing DNS records for reconciliation
-- Creates the DNS records for the pods if they do not exist
-- Updates the CR status with the DNS records
-- Repeat the above steps every 20 seconds
+   Press **Ctrl+C** to exit the logs.
 
-1. Verify the CR was created
+2. Verify the CR was created
 
-```sh
-kubectx gke_${PROJECT_ID_HUB}_${LOCATION}-b_${HUB_CLUSTER_NAME} && \
-kubectl get orchestras
-```
+   ```sh
+   kubectx gke_${TF_VAR_project_id_hub}_${LOCATION}-b_${HUB_CLUSTER_NAME} && \
+   kubectl get orchestras
+   ```
 
-Sample output:
+   Sample output:
 
-```sh
-NAME     CLUSTER                INGRESS       ZONE             REGION       PROJECT
-orch01   g5-spoke2-eu-cluster   ingress-001   europe-west2-b   <no value>   prj-spoke2-lab
-```
+   ```sh
+   artifacts$    kubectx gke_${TF_VAR_project_id_hub}_${LOCATION}-b_${HUB_CLUSTER_NAME} && \
+   kubectl get orchestras
+   Switched to context "gke_prj-hub-lab_europe-west2-b_g5-hub-eu-cluster".
+   NAME     CLUSTER                INGRESS       ZONE             REGION       PROJECT
+   orch01   g5-spoke2-eu-cluster   ingress-001   europe-west2-b   <no value>   prj-spoke2-lab
+   ```
 
-1. Verify the CR status is updated with the pod IP addresses
+3. Verify the CR status is updated with the pod IP addresses
 
-```sh
-kubectl get orchestras orch01 -o yaml
-```
+   ```sh
+   kubectl get orchestras orch01 -o yaml
+   ```
 
-<Details>
+   Sample output:
 
-<summary>Custom Resource YAML output:</summary>
+   ```yaml
+   apiVersion: example.com/v1
+   kind: Orchestra
+   metadata:
+     annotations:
+       kopf.zalando.org/last-handled-configuration: |
+         {"spec":{"cluster":"g5-spoke2-eu-cluster","ingress":"ingress-001","project":"prj-spoke2-lab","region":null,"zone":"europe-west2-b"}}
+     creationTimestamp: "2025-02-06T13:53:31Z"
+     finalizers:
+     - kopf.zalando.org/KopfFinalizerMarker
+     - orchestra.finalizer.example.com
+     generation: 2
+     name: orch01
+     namespace: default
+     resourceVersion: "1230708"
+     uid: 880caec4-8317-4602-a381-ba4807c742ac
+   spec:
+     cluster: g5-spoke2-eu-cluster
+     ingress: ingress-001
+     project: prj-spoke2-lab
+     region: null
+     zone: europe-west2-b
+   status:
+     endpoints:
+     - hostIp: 10.22.12.4
+       phase: Running
+       podIp: 10.22.100.10
+       podName: user1
+     - hostIp: 10.22.12.4
+       phase: Running
+       podIp: 10.22.100.4
+       podName: user2
+     state: Updated
+   ```
 
-```yaml
-apiVersion: example.com/v1
-kind: Orchestra
-metadata:
-  annotations:
-    kopf.zalando.org/last-handled-configuration: |
-      {"spec":{"cluster":"g5-spoke2-eu-cluster","ingress":"ingress-001","project":"prj-spoke2-lab","region":null,"zone":"europe-west2-b"}}
-  creationTimestamp: "2025-02-04T10:40:21Z"
-  finalizers:
-  - kopf.zalando.org/KopfFinalizerMarker
-  generation: 2
-  name: orch01
-  namespace: default
-  resourceVersion: "1184556"
-  uid: f72dc76e-7b4a-4fa1-a383-9ba98e89ba05
-spec:
-  cluster: g5-spoke2-eu-cluster
-  ingress: ingress-001
-  project: prj-spoke2-lab
-  region: null
-  zone: europe-west2-b
-status:
-  endpoints:
-  - hostIp: 10.22.12.4
-    phase: Running
-    podIp: 10.22.100.11
-    podName: user1
-  - hostIp: 10.22.12.4
-    phase: Running
-    podIp: 10.22.100.9
-    podName: user2
-  state: Updated
-```
+   At this point, the operator has updated the CR status and configured Cloud DNS with the pod IP addresses.
 
-</Details>
-<p>
+4. Verify the DNS records were created
 
-At this point, the oprator has updated the CR status and configured Cloud DNS with the pod IP addresses.
+   ```sh
+   gcloud dns record-sets list --zone=g5-hub-private --project=$TF_VAR_project_id_hub
+   ```
 
-1. Verify the DNS records were created
+   Sample output:
 
-```sh
-gcloud dns record-sets list --zone=g5-hub-private --project=$PROJECT_ID_HUB
-```
+   ```sh
+   artifacts$ gcloud dns record-sets list --zone=g5-hub-private --project=$TF_VAR_project_id_hub
+   NAME                      TYPE  TTL    DATA
+   hub.g.corp.               NS    21600  ns-gcp-private.googledomains.com.
+   hub.g.corp.               SOA   21600  ns-gcp-private.googledomains.com. cloud-dns-hostmaster.google.com. 1 21600 3600 259200 300
+   vm.eu.hub.g.corp.         A     300    10.1.11.9
+   vm.eu.hub.g.corp.         AAAA  300    fd20:f27:1388:4000::
+   user1-orch01.hub.g.corp.  A     300    10.22.100.10
+   user2-orch01.hub.g.corp.  A     300    10.22.100.4
+   ```
 
-Sample output:
+## 8. Delete a Pod in Spoke Cluster
 
-```sh
-artifacts$ gcloud dns record-sets list --zone=g5-hub-private --project=$PROJECT_ID_HUB
-NAME                      TYPE  TTL    DATA
-hub.g.corp.               NS    21600  ns-gcp-private.googledomains.com.
-hub.g.corp.               SOA   21600  ns-gcp-private.googledomains.com. cloud-dns-hostmaster.google.com. 1 21600 3600 259200 300
-vm.eu.hub.g.corp.         A     300    10.1.11.9
-vm.eu.hub.g.corp.         AAAA  300    fd20:876:80d9:4000::
-user1-orch01.hub.g.corp.  A     300    10.22.100.11
-user2-orch01.hub.g.corp.  A     300    10.22.100.9
-```
-
-## Delete a Pod in Spoke Cluster
-
-Now let's delete a pod in spoke2 cluster and confirm the operator updates the CR status and DNS records. This simulates a situation where a pod is no longer available in the spoke cluster. We expect the operator to detect the change and remove the all references to the pod.
+Now let's delete a pod in spoke2 cluster and confirm the operator updates the CR status and DNS records. This simulates a situation where a pod is no longer available in the spoke cluster. We expect the operator to detect the change and remove the all references to the deleted pod.
 
 **Summary of the operator CR deletion workflow:**
 
@@ -398,125 +463,144 @@ Now let's delete a pod in spoke2 cluster and confirm the operator updates the CR
 - Deletes the CR
 - Continutes running the operator loop
 
-1. Delete `user1` pod on spoke2 cluster
+1. Delete `user1` pod on spoke2 cluster and check the operator logs
 
-```sh
-kubectx gke_${PROJECT_ID_SPOKE}_${LOCATION}-b_${SPOKE_CLUSTER1_NAME} &&\
-kubectl delete pod user1 && \
-kubectl get pods
-```
+   ```sh
+   kubectx gke_${TF_VAR_project_id_spoke2}_${LOCATION}-b_${SPOKE_CLUSTER1_NAME} &&\
+   kubectl delete pod user1 && \
+   kubectl get pods && \
+   kubectx gke_${TF_VAR_project_id_hub}_${LOCATION}-b_${HUB_CLUSTER_NAME} && \
+   kubectl logs -f $(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep operator)
+   ```
 
-This might take up to two operator loops to detect the change and update the CR status. You can check the operator logs to verify the update.
+   This might take up to two operator loops to detect the change and update the CR status. You can check the operator logs to verify the update.
 
+   <Details>
 
-1. Verify the operator logs
+   <summary>🟢 Operator logs (Pod deleted):</summary>
 
-```sh
-kubectx gke_${PROJECT_ID_HUB}_${LOCATION}-b_${HUB_CLUSTER_NAME} && \
-kubectl logs $(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep operator)
-```
+   ```sh
+   [2025-02-06 14:02:57,774] __kopf_script_0__/ap [INFO    ] [IDLE] Registered CRs: ['orch01']
+   Fetching cluster endpoint and auth data.
+   kubeconfig entry generated for g5-spoke2-eu-cluster.
+   [2025-02-06 14:02:59,910] _PodManager          [INFO    ] [orch01] scanning -> set_context() -> gke_prj-spoke2-lab_europe-west2-b_g5-spoke2-eu-cluster
+   Property "current-context" unset.
+   [2025-02-06 14:03:00,228] _PodManager          [INFO    ] [orch01] scanning -> unset_context() (in_cluster_config)
+   [2025-02-06 14:03:00,228] __kopf_script_0__/ap [INFO    ] [orch01] scanning -> scan_pods() -> Found [1] pods
+   [2025-02-06 14:03:00,228] __kopf_script_0__/ap [INFO    ] [orch01] updating_cr -> update_custom_resource() -> Start
+   [2025-02-06 14:03:00,248] __kopf_script_0__/ap [INFO    ] [orch01] updating_cr -> update_custom_resource() -> Success!
+   [2025-02-06 14:03:00,459] __kopf_script_0__/ap [INFO    ] [orch01] reconciling_dns -> reconcile_dns() -> Found [2] records
+   [2025-02-06 14:03:01,085] utils                [INFO    ] [orch01] reconciling_dns -> delete_dns_a_record() -> Deleted user1-orch01.hub.g.corp. = ['10.22.100.10']
+   [2025-02-06 14:03:01,085] __kopf_script_0__/ap [INFO    ] [orch01] reconciling_dns -> reconcile_dns() -> Deleted user1-orch01.hub.g.corp.
+   ```
 
-<Details>
+   </Details>
+   <p>
 
-<summary>Operator log:</summary>
+   The DNS record for `user1` was deleted.
 
-```sh
-[2025-02-04 10:43:57,289] __kopf_script_0__/ap [INFO    ] CRs Found: ['orch01']
-[2025-02-04 10:43:57,296] __kopf_script_0__/ap [INFO    ] [orch01] State: scanning -> Scanning pods
-Fetching cluster endpoint and auth data.
-kubeconfig entry generated for g5-spoke2-eu-cluster.
-[2025-02-04 10:43:59,473] _PodManager          [INFO    ] Context switch: -> gke_prj-spoke2-lab_europe-west2-b_g5-spoke2-eu-cluster
-Property "current-context" unset.
-[2025-02-04 10:43:59,805] _PodManager          [INFO    ] Context switch: -> in-cluster
-[2025-02-04 10:43:59,805] __kopf_script_0__/ap [INFO    ] [orch01] State: scanning -> Found [1] pods
-[2025-02-04 10:43:59,805] __kopf_script_0__/ap [INFO    ] [orch01] State: updating_cr -> Updating CR
-[2025-02-04 10:43:59,829] __kopf_script_0__/ap [INFO    ] [orch01] State: updating_cr CR updated
-[2025-02-04 10:43:59,829] __kopf_script_0__/ap [INFO    ] [orch01] State: reconciling_dns -> Checking existing DNS records
-[2025-02-04 10:44:00,060] __kopf_script_0__/ap [INFO    ] [orch01] Found [2] DNS records
-[2025-02-04 10:44:00,694] utils                [INFO    ] DNS DELETE: Success! user1-orch01.hub.g.corp. -> ['10.22.100.11']
-[2025-02-04 10:44:00,694] __kopf_script_0__/ap [INFO    ] [orch01] Deleted stale DNS record: user1-orch01.hub.g.corp.
-[2025-02-04 10:44:20,912] __kopf_script_0__/ap [INFO    ] CRs Found: ['orch01']
-[2025-02-04 10:44:20,914] __kopf_script_0__/ap [INFO    ] [orch01] State: scanning -> Scanning pods
-```
+   Press **Ctrl+C** to exit the logs.
 
-</Details>
-<p>
+2. Check the CR status to verify the update
 
-The DNS record for `user1` was deleted.
+   ```sh
+   kubectl get orchestras orch01 -o yaml
+   ```
 
-1. Check the CR status to verify the update
+   <Details>
 
-```sh
-kubectl get orchestras orch01 -o yaml
-```
+   <summary>🟢 CR YAML (Pod deleted):</summary>
 
-<Details>
+   ```yaml
+   apiVersion: example.com/v1
+   kind: Orchestra
+   metadata:
+     annotations:
+       kopf.zalando.org/last-handled-configuration: |
+         {"spec":{"cluster":"g5-spoke2-eu-cluster","ingress":"ingress-001","project":"prj-spoke2-lab","region":null,"zone":"europe-west2-b"}}
+     creationTimestamp: "2025-02-06T13:53:31Z"
+     finalizers:
+     - kopf.zalando.org/KopfFinalizerMarker
+     - orchestra.finalizer.example.com
+     generation: 3
+     name: orch01
+     namespace: default
+     resourceVersion: "1237460"
+     uid: 880caec4-8317-4602-a381-ba4807c742ac
+   spec:
+     cluster: g5-spoke2-eu-cluster
+     ingress: ingress-001
+     project: prj-spoke2-lab
+     region: null
+     zone: europe-west2-b
+   status:
+     endpoints:
+     - hostIp: 10.22.12.4
+       phase: Running
+       podIp: 10.22.100.4
+       podName: user2
+     state: Updated
+   ```
 
-<summary>Custom Resource YAML output:</summary>
+   </Details>
+   <p>
 
-```yaml
-apiVersion: example.com/v1
-kind: Orchestra
-metadata:
-  annotations:
-    kopf.zalando.org/last-handled-configuration: |
-      {"spec":{"cluster":"g5-spoke2-eu-cluster","ingress":"ingress-001","project":"prj-spoke2-lab","region":null,"zone":"europe-west2-b"}}
-  creationTimestamp: "2025-02-04T10:40:21Z"
-  finalizers:
-  - kopf.zalando.org/KopfFinalizerMarker
-  generation: 3
-  name: orch01
-  namespace: default
-  resourceVersion: "1187093"
-  uid: f72dc76e-7b4a-4fa1-a383-9ba98e89ba05
-spec:
-  cluster: g5-spoke2-eu-cluster
-  ingress: ingress-001
-  project: prj-spoke2-lab
-  region: null
-  zone: europe-west2-b
-status:
-  endpoints:
-  - hostIp: 10.22.12.4
-    phase: Running
-    podIp: 10.22.100.9
-    podName: user2
-  state: Updated
-```
+3. Now let's delete the CR and wait for the operator to detect the change
 
-</Details>
-<p>
+   ```sh
+   curl -X 'DELETE' \
+     "http://${API_SERVER_IP}/api/delete_orchestra/orch01" \
+     -H 'accept: application/json' && \
+   kubectx gke_${TF_VAR_project_id_hub}_${LOCATION}-b_${HUB_CLUSTER_NAME} && \
+   kubectl logs -f $(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep operator)
+   ```
 
-1. Now let's delete the CR
+   **(Optional)** Delete the finalizer from the CR to force the deletion in case the operator fails to delete the CR.
 
-```sh
-curl -X 'DELETE' \
-  "http://${API_SERVER_IP}/api/delete_orchestra/orch01" \
-  -H 'accept: application/json'
-```
+   ```sh
+   kubectl patch orch orch01 --type=json -p '[{"op": "remove", "path": "/metadata/finalizers"}]' && \
+   kubectx gke_${TF_VAR_project_id_hub}_${LOCATION}-b_${HUB_CLUSTER_NAME} && \
+   kubectl logs -f $(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep operator)
+   ```
+   <Details>
 
-1. (Optional) Use finalizer to delete the CR if the operator fails to delete it
+   <summary>🟢 Operator log (CR deleted):</summary>
 
-```sh
-kubectl patch orch orch01 --type=json -p '[{"op": "remove", "path": "/metadata/finalizers"}]'
-```
+   ```sh
+   [2025-02-06 14:04:29,989] __kopf_script_0__/ap [INFO    ] [orch01] ***** DELETE *****
+   [2025-02-06 14:04:30,629] utils                [INFO    ] [orch01] deleting_dns -> delete_dns_a_record() -> Deleted user2-orch01.hub.g.corp. = ['10.22.100.4']
+   [2025-02-06 14:04:30,670] kopf.objects         [INFO    ] [default/orch01] Handler 'on_orchestra_delete' succeeded.
+   [2025-02-06 14:04:30,671] kopf.objects         [INFO    ] [default/orch01] Deletion is processed: 1 succeeded; 0 failed.
+   [2025-02-06 14:04:30,860] __kopf_script_0__/ap [INFO    ] [IDLE] Registered CRs: []
+   [2025-02-06 14:04:51,082] __kopf_script_0__/ap [INFO    ] [IDLE] Registered CRs: []
+   ```
+    </Details>
+    <p>
 
-Operator log:
+   When a CR is deleted, the operator removes any stale DNS records - in this case, the `user2` pod IP address.
 
-```sh
-[2025-02-04 10:59:37,267] __kopf_script_0__/ap [INFO    ] Orchestra DELETE: orch01
-[2025-02-04 10:59:37,270] __kopf_script_0__/ap [INFO    ] [orch01] State: deleting_dns -> Deleting DNS records
-[2025-02-04 10:59:38,140] utils                [INFO    ] DNS DELETE: Success! user2-orch01.hub.g.corp. -> ['10.22.100.9']
-[2025-02-04 10:59:38,140] __kopf_script_0__/ap [INFO    ] [orch01] Deleted DNS record: user2-orch01.hub.g.corp.
-[2025-02-04 10:59:38,142] kopf.objects         [INFO    ] [default/orch01] Handler 'on_orchestra_delete' succeeded.
-[2025-02-04 10:59:38,143] kopf.objects         [INFO    ] [default/orch01] Deletion is processed: 1 succeeded; 0 failed.
-[2025-02-04 10:59:50,295] __kopf_script_0__/ap [INFO    ] CRs Found: []
-```
+   Press **Ctrl+C** to exit the logs.
 
-When a CR is deleted, the operator removes any stale DNS records - in this case, the `user2` pod IP address.
+4. Confirm the DNS record is deleted
 
+   ```sh
+   gcloud dns record-sets list --zone=g5-hub-private --project=$TF_VAR_project_id_hub
+   ```
 
-## Deploy Custom Resource (CR) in the Hub using Manifest
+   Sample output:
+
+   ```sh
+   artifacts$ gcloud dns record-sets list --zone=g5-hub-private --project=$TF_VAR_project_id_hub
+   NAME               TYPE  TTL    DATA
+   hub.g.corp.        NS    21600  ns-gcp-private.googledomains.com.
+   hub.g.corp.        SOA   21600  ns-gcp-private.googledomains.com. cloud-dns-hostmaster.google.com. 1 21600 3600 259200 300
+   vm.eu.hub.g.corp.  A     300    10.1.11.9
+   vm.eu.hub.g.corp.  AAAA  300    fd20:f27:1388:4000::
+   ```
+
+   We'll now deploy the CR using manifest files in the next section.
+
+## 9. Deploy Custom Resource (CR) in the Hub using Manifest
 
 The customer resource `Orchestra` is a simple CR that represents a kubernetes cluster. The CR has a status field that is updated with the cluster's pod IP addresses.
 
@@ -525,289 +609,455 @@ In a real world scenario, when a new kubernetes cluster is created, an automated
 CR manfiest for `orch01`
 - [discovery/orchestras/manifests/kustomize/base/main/orch-001.yaml](./artifacts/discovery/orchestras/manifests/kustomize/base/main/orch01.yaml)
 
-```yaml
-apiVersion: example.com/v1
-kind: Orchestra
-metadata:
-  name: orch01
-spec:
-  cluster: g5-spoke2-eu-cluster
-  zone: europe-west2-b
-  project: prj-spoke2-lab
-  ingress: "ingress-001"
-```
+  ```yaml
+  apiVersion: example.com/v1
+  kind: Orchestra
+  metadata:
+    name: orch01
+  spec:
+    cluster: g5-spoke2-eu-cluster
+    zone: europe-west2-b
+    project: prj-spoke2-lab
+    ingress: "ingress-001"
+  ```
 
 CR manifest for `orch02`
 - [discovery/orchestras/manifests/kustomize/base/main/orch-002.yaml](./artifacts/discovery/orchestras/manifests/kustomize/base/main/orch02.yaml)
 
-```yaml
-apiVersion: example.com/v1
-kind: Orchestra
-metadata:
-  name: orch02
-spec:
-  cluster: g5-spoke2-eu-cluster
-  zone: europe-west2-b
-  project: prj-spoke2-lab
-  ingress: "ingress-001"
-```
+  ```yaml
+  apiVersion: example.com/v1
+  kind: Orchestra
+  metadata:
+    name: orch02
+  spec:
+    cluster: g5-spoke2-eu-cluster
+    zone: europe-west2-b
+    project: prj-spoke2-lab
+    ingress: "ingress-001"
+  ```
 
-1. Deploy the CRs using Skaffold
+Now let's deploy the CRs.
 
-```sh
-kubectx gke_${PROJECT_ID_HUB}_${LOCATION}-b_${HUB_CLUSTER_NAME} && \
-skaffold run -p orchestras
-```
+1. Deploy the CRs using Skaffold and kustomize, and check the operator logs
 
-<Details>
+   ```sh
+   kubectx gke_${TF_VAR_project_id_hub}_${LOCATION}-b_${HUB_CLUSTER_NAME} && \
+   skaffold run -p orchestras && \
+   kubectl logs -f $(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep operator)
+   ```
 
-<summary>Sample Output</summary>
+   <Details>
 
-```sh
+   <summary>🟢 Operator logs (New CRs created)</summary>
 
-```
+   ```sh
+   [2025-02-06 14:07:06,174] __kopf_script_0__/ap [INFO    ] [orch01] kopf.on.create() +finalizer
+   [2025-02-06 14:07:06,174] __kopf_script_0__/ap [INFO    ] [orch01] ***** CREATE *****
+   [2025-02-06 14:07:06,210] __kopf_script_0__/ap [INFO    ] [orch02] kopf.on.create() +finalizer
+   [2025-02-06 14:07:06,211] __kopf_script_0__/ap [INFO    ] [orch02] ***** CREATE *****
+   Fetching cluster endpoint and auth data.
+   Fetching cluster endpoint and auth data.
+   kubeconfig entry generated for g5-spoke2-eu-cluster.
+   kubeconfig entry generated for g5-spoke2-eu-cluster.
+   [2025-02-06 14:07:09,152] _PodManager          [INFO    ] [orch02] scanning -> set_context() -> gke_prj-spoke2-lab_europe-west2-b_g5-spoke2-eu-cluster
+   [2025-02-06 14:07:09,155] _PodManager          [INFO    ] [orch01] scanning -> set_context() -> gke_prj-spoke2-lab_europe-west2-b_g5-spoke2-eu-cluster
+   Property "current-context" unset.
+   [2025-02-06 14:07:09,697] _PodManager          [INFO    ] [orch01] scanning -> unset_context() (in_cluster_config)
+   [2025-02-06 14:07:09,698] __kopf_script_0__/ap [INFO    ] [orch01] scanning -> scan_pods() -> Found [1] pods
+   [2025-02-06 14:07:09,699] __kopf_script_0__/ap [INFO    ] [orch01] updating_cr -> update_custom_resource() -> Start
+   Property "current-context" unset.
+   [2025-02-06 14:07:09,709] _PodManager          [INFO    ] [orch02] scanning -> unset_context() (in_cluster_config)
+   [2025-02-06 14:07:09,710] __kopf_script_0__/ap [INFO    ] [orch02] scanning -> scan_pods() -> Found [1] pods
+   [2025-02-06 14:07:09,710] __kopf_script_0__/ap [INFO    ] [orch02] updating_cr -> update_custom_resource() -> Start
+   [2025-02-06 14:07:09,726] __kopf_script_0__/ap [INFO    ] [orch01] updating_cr -> update_custom_resource() -> Success!
+   [2025-02-06 14:07:09,737] __kopf_script_0__/ap [INFO    ] [orch02] updating_cr -> update_custom_resource() -> Success!
+   [2025-02-06 14:07:09,997] __kopf_script_0__/ap [INFO    ] [orch01] reconciling_dns -> reconcile_dns() -> Found [0] records
+   [2025-02-06 14:07:09,999] __kopf_script_0__/ap [INFO    ] [orch02] reconciling_dns -> reconcile_dns() -> Found [0] records
+   [2025-02-06 14:07:10,498] utils                [INFO    ] [orch02] reconciling_dns -> create_dns_a_record() -> Added user2-orch02.hub.g.corp. = 10.22.100.4
+   [2025-02-06 14:07:10,499] kopf.objects         [INFO    ] [default/orch02] Handler 'on_orchestra_create' succeeded.
+   [2025-02-06 14:07:10,500] kopf.objects         [INFO    ] [default/orch02] Creation is processed: 1 succeeded; 0 failed.
+   [2025-02-06 14:07:10,589] utils                [INFO    ] [orch01] reconciling_dns -> create_dns_a_record() -> Added user2-orch01.hub.g.corp. = 10.22.100.4
+   [2025-02-06 14:07:10,590] kopf.objects         [INFO    ] [default/orch01] Handler 'on_orchestra_create' succeeded.
+   [2025-02-06 14:07:10,591] kopf.objects         [INFO    ] [default/orch01] Creation is processed: 1 succeeded; 0 failed.
+   [2025-02-06 14:07:12,439] __kopf_script_0__/ap [INFO    ] [IDLE] Registered CRs: ['orch01', 'orch02']
+   ```
 
-</Details>
-<p>
+   </Details>
+   <p>
 
-### SORT
+   The operator added the CRs concurrently (in a muti-threaded operation) and updated the status of each CR with the `user2` pod IP address. Remember, `user` was deleted earlier.
 
-##############
-From hub pod
-The in-cluster Kubernetes configuration is stored as files in that directory. Check the files like this:
-root@gcloud:/# ls /var/run/secrets/kubernetes.io/serviceaccount
-ca.crt  namespace  token
+   Press **Ctrl+C** to exit the logs.
 
-The context is automatically inferred by kubectl from the in-cluster configuration, specifically:
+1. Verify the contents of the `orch02` CR
 
-API server URL from the Kubernetes environment variable KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT.
-Credentials from /var/run/secrets/kubernetes.io/serviceaccount (token, namespace, and CA cert).
+   ```sh
+   kubectl get orchestras orch02 -o yaml
+   ```
 
-gte local pods
-root@gcloud:/# kubectl get pods
-NAME       READY   STATUS    RESTARTS   AGE
-gcloud     1/1     Running   0          42m
-netshoot   1/1     Running   0          42m
+   <Details>
+
+   <summary>🟢 Custom Resource YAML output:</summary>
+
+   ```yaml
+   apiVersion: example.com/v1
+   kind: Orchestra
+   metadata:
+     annotations:
+       kopf.zalando.org/last-handled-configuration: |
+         {"spec":{"cluster":"g5-spoke2-eu-cluster","ingress":"ingress-001","project":"prj-spoke2-lab","zone":"europe-west2-b"}}
+       kubectl.kubernetes.io/last-applied-configuration: |
+         {"apiVersion":"example.com/v1","kind":"Orchestra","metadata":{"annotations":{},"name":"orch02","namespace":"default"},"spec":{"cluster":"g5-spoke2-eu-cluster","ingress":"ingress-001","project":"prj-spoke2-lab","zone":"europe-west2-b"}}
+     creationTimestamp: "2025-02-06T14:07:05Z"
+     finalizers:
+     - kopf.zalando.org/KopfFinalizerMarker
+     - orchestra.finalizer.example.com
+     generation: 2
+     name: orch02
+     namespace: default
+     resourceVersion: "1240470"
+     uid: 3e0c143d-d09b-4b29-832b-8cb68fcc3239
+   spec:
+     cluster: g5-spoke2-eu-cluster
+     ingress: ingress-001
+     project: prj-spoke2-lab
+     zone: europe-west2-b
+   status:
+     endpoints:
+     - hostIp: 10.22.12.4
+       phase: Running
+       podIp: 10.22.100.4
+       podName: user2
+     state: Updated
+   ```
+
+   1. Deploy all pods again in the spoke cluster and check the CR status
+
+   ```sh
+   kubectx gke_${TF_VAR_project_id_spoke2}_${LOCATION}-b_${SPOKE_CLUSTER1_NAME} && \
+   skaffold run -p workload && \
+   kubectl get pods -o wide
+   ```
+
+   </Details>
+   <p>
+
+## 10. Create HAProxy in the Hub Cluster
+
+Let's create the HAProxy as our reverse proxy for HTTP and TCP traffic. The HAProxy will be used to route traffic to the orchestras based on the hostname.
+
+In a real world scenario, when a CR is created and Cloud DNS records are updated, then the oprator shoudl configure the HAProxy with frontend and backend to macth the DNS records for the CR. To make things simple, we have manually configured the HAProxy [ConfigMap](artifacts/discovery/haproxy/charts/1-haproxy/templates/2-config.yaml) to use the [DNS records](artifacts/discovery/haproxy/charts/values.yaml#L15) for our pods.
+
+The rendered HAProxy configuration file is available [here](artifacts/discovery/haproxy/charts_rendered/1-haproxy/templates/2-config.yaml).
+
+The frontend configurations:
+
+   <Details>
+   <summary>🟢 HAProxy HTTP Frontend:</summary>
+
+   ```yaml
+       frontend fe-http
+         bind *:7474
+         mode http
+         acl host_user1-orch01_and_port hdr_beg(host) -i user1-orch01.hub.g.corp
+         acl host_user2-orch01_and_port hdr_beg(host) -i user2-orch01.hub.g.corp
+         acl host_user1-orch02_and_port hdr_beg(host) -i user1-orch02.hub.g.corp
+         acl host_user2-orch02_and_port hdr_beg(host) -i user2-orch02.hub.g.corp
+         use_backend be_user1-orch01_http if host_user1-orch01_and_port
+         use_backend be_user2-orch01_http if host_user2-orch01_and_port
+         use_backend be_user1-orch02_http if host_user1-orch02_and_port
+         use_backend be_user2-orch02_http if host_user2-orch02_and_port
+   ```
+   </Details>
+   <p>
+
+   <Details>
+   <summary>🟢 HAProxy HTTPS Frontend:</summary>
+
+   ```yaml
+       frontend fe-https
+         bind *:7473 ssl crt /etc/ssl/certs/tls-combined.pem
+         mode http
+         acl host_user1-orch01_and_port hdr_beg(host) -i user1-orch01.hub.g.corp
+         acl host_user2-orch01_and_port hdr_beg(host) -i user2-orch01.hub.g.corp
+         acl host_user1-orch02_and_port hdr_beg(host) -i user1-orch02.hub.g.corp
+         acl host_user2-orch02_and_port hdr_beg(host) -i user2-orch02.hub.g.corp
+         use_backend be_user1-orch01_https if host_user1-orch01_and_port
+         use_backend be_user2-orch01_https if host_user2-orch01_and_port
+         use_backend be_user1-orch02_https if host_user1-orch02_and_port
+         use_backend be_user2-orch02_https if host_user2-orch02_and_port
+   ```
+   </Details>
+   <p>
+
+   <Details>
+   <summary>🟢 HAProxy TCP Frontend:</summary>
+
+   ```yaml
+       frontend fe-bolt
+         bind *:7687 #ssl crt /etc/ssl/certs/tls-combined.pem
+         mode tcp
+         default_backend be_user1-orch01_bolt
+   ```
+   </Details>
+   <p>
+
+   The backend configurations:
+
+   <Details>
+   <summary>🟢 HAProxy Backend `user1` on cluster `orch01`:</summary>
+
+   ```yaml
+       backend be_user1-orch01_http
+         mode http
+         option forwardfor
+         server user1-orch01 user1-orch01.hub.g.corp:7474 check
+
+       backend be_user1-orch01_https
+         mode http
+         option forwardfor
+         server user1-orch01 user1-orch01.hub.g.corp:7473 check
+
+       backend be_user1-orch01_bolt
+         mode tcp
+         server user1-orch01 user1-orch01.hub.g.corp:7687 check
+   ```
+   </Details>
+   <p>
+
+   <Details>
+   <summary>🟢 HAProxy Backend `user2` on cluster `orch01`:</summary>
+
+   ```yaml
+       backend be_user2-orch01_http
+         mode http
+         option forwardfor
+         server user2-orch01 user2-orch01.hub.g.corp:7474 check
+
+       backend be_user2-orch01_https
+         mode http
+         option forwardfor
+         server user2-orch01 user2-orch01.hub.g.corp:7473 check
+
+       backend be_user2-orch01_bolt
+         mode tcp
+         server user2-orch01 user2-orch01.hub.g.corp:7687 check
+   ```
+   </Details>
+   <p>
+
+Now let's deploy the HAProxy.
+
+1. Create the HAProxy deployment
+
+   ```sh
+   kubectx gke_${TF_VAR_project_id_hub}_${LOCATION}-b_${HUB_CLUSTER_NAME} && \
+   skaffold run -p haproxy && \
+   kubectl logs $(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep haproxy)
+   ```
+
+1. Get the HAPProxy external load balancer IP, HAProxy pod IP, and `user1` pod IP addresses
+
+   ```sh
+   kubectx gke_${TF_VAR_project_id_hub}_${LOCATION}-b_${HUB_CLUSTER_NAME} && \
+   HAPROXY_EXTERNAL_LOAD_BALANCER_IP=$(kubectl get svc haproxy-elb -o jsonpath='{.status.loadBalancer.ingress[0].ip}') &&  \
+
+   HAPROXY_POD_IP=$(kubectl get pods -l app=haproxy -o jsonpath='{.items[0].status.podIP}') && \
+   kubectx gke_${TF_VAR_project_id_spoke2}_${LOCATION}-b_${SPOKE_CLUSTER1_NAME} && \
+   USER1_POD_IP=$(kubectl get pods -l app=user1 -o jsonpath='{.items[0].status.podIP}') && \
+   echo "HAPROXY_PUBLIC_IP: $HAPROXY_PUBLIC_IP" && \
+   echo "HAPROXY_POD_IP: $HAPROXY_POD_IP" && \
+   echo "USER1_POD_IP: $USER1_POD_IP"
+   ```
+
+   Sample output:
+
+   ```sh
+   HAPROXY_EXTERNAL_LOAD_BALANCER_IP: 34.147.184.73
+   HAPROXY_POD_IP: 10.1.100.24
+   USER1_POD_IP: 10.22.100.11
+   ```
+
+1. Test HTTP endpoint `user1-orch01.hub.g.corp` and verify the response
+
+   ```sh
+   curl -H "Host: user1-orch01.hub.g.corp" http://${HAPROXY_PUBLIC_IP}:7474
+   ```
+
+   Sample output:
+
+   ```json
+   {
+     "app": "Neo4j-HTTP",
+     "hostname": "user1",
+     "server-ipv4": "10.22.100.11",
+     "remote-addr": "10.1.100.24",
+     "headers": {
+       "host": "user1-orch01.hub.g.corp",
+       "user-agent": "curl/7.88.1",
+       "accept": "*/*",
+       "x-forwarded-for": "10.1.100.1"
+     }
+   }
+   ```
+
+   We can see that traffic reached the HTTP service of `user1` pod on `server-ipv4` **10.22.100.11**. The request was proxied via the HAPRoxy as seen from `remote-addr` **10.1.100.24**.
 
 
-get spoke2 pods
-root@gcloud:/# gcloud container clusters get-credentials g5-spoke2-eu-cluster --region europe-west2-b --project prj-spoke2-lab
-Fetching cluster endpoint and auth data.
-kubeconfig entry generated for g5-spoke2-eu-cluster.
-root@gcloud:/# kubectl get pods
-NAME       READY   STATUS    RESTARTS   AGE
-gcloud     1/1     Running   0          26m
-netshoot   1/1     Running   0          26m
+1. Test the HTTPS endpoint `user1-orch01.hub.g.corp` and verify the response
 
-root@gcloud:/# kubectl describe pod gcloud
-Name:             gcloud
-Namespace:        default
-Priority:         0
-Service Account:  cluster-ksa
-Node:             gke-g5-spoke2-eu-clu-g5-spoke2-eu-clu-9f95abe1-jpd4/10.22.12.3
-Start Time:       Sun, 26 Jan 2025 12:30:59 +0000
-Labels:           skaffold.dev/run-id=d292403c-d0b5-4cad-825b-22ca8495dc99
-Annotations:      <none>
-Status:           Running
-IP:               10.22.100.11
-IPs:
-  IP:  10.22.100.11
-Containers:
-  gcloud:
-    Container ID:  containerd://4941ad3253c8b14ac848e27d5fb1e4ee109cce3bbd637061522ad6b99f592b57
-    Image:         google/cloud-sdk:latest
-    Image ID:      docker.io/google/cloud-sdk@sha256:7ad5616cf9abbbb7525e38ea83671f5f1389cedcec0c7244cca68e005717bb7f
-    Port:          <none>
-    Host Port:     <none>
-    Command:
-      sleep
-      infinity
-    State:          Running
-      Started:      Sun, 26 Jan 2025 12:32:23 +0000
-    Ready:          True
-    Restart Count:  0
-    Environment:    <none>
-    Mounts:
-      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-rl8xp (ro)
-Conditions:
-  Type                        Status
-  PodReadyToStartContainers   True
-  Initialized                 True
-  Ready                       True
-  ContainersReady             True
-  PodScheduled                True
-Volumes:
-  kube-api-access-rl8xp:
-    Type:                    Projected (a volume that contains injected data from multiple sources)
-    TokenExpirationSeconds:  3607
-    ConfigMapName:           kube-root-ca.crt
-    ConfigMapOptional:       <nil>
-    DownwardAPI:             true
-QoS Class:                   BestEffort
-Node-Selectors:              <none>
-Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
-                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
-Events:
-  Type    Reason     Age   From               Message
-  ----    ------     ----  ----               -------
-  Normal  Scheduled  26m   default-scheduler  Successfully assigned default/gcloud to gke-g5-spoke2-eu-clu-g5-spoke2-eu-clu-9f95abe1-jpd4
-  Normal  Pulling    26m   kubelet            Pulling image "google/cloud-sdk:latest"
-  Normal  Pulled     25m   kubelet            Successfully pulled image "google/cloud-sdk:latest" in 1m23.199s (1m23.199s including waiting). Image size: 1313001752 bytes.
-  Normal  Created    25m   kubelet            Created container gcloud
-  Normal  Started    25m   kubelet            Started container gcloud
+   ```sh
+   curl -k -H "Host: user1-orch01.hub.g.corp" https://${HAPROXY_PUBLIC_IP}:7473
+   ```
 
-root@gcloud:/# kubectl get pods -o wide
-NAME       READY   STATUS    RESTARTS   AGE   IP             NODE                                                  NOMINATED NODE   READINESS GATES
-gcloud     1/1     Running   0          28m   10.22.100.11   gke-g5-spoke2-eu-clu-g5-spoke2-eu-clu-9f95abe1-jpd4   <none>           <none>
-netshoot   1/1     Running   0          28m   10.22.100.10   gke-g5-spoke2-eu-clu-g5-spoke2-eu-clu-9f95abe1-jpd4   <none>           <none>
+   Sample output:
 
-now test python script
+   ```json
+   {
+     "app": "Neo4j-HTTPS",
+     "hostname": "user1",
+     "server-ipv4": "10.22.100.11",
+     "remote-addr": "10.1.100.24",
+     "headers": {
+       "host": "user1-orch01.hub.g.corp",
+       "user-agent": "curl/7.88.1",
+       "accept": "*/*",
+       "x-forwarded-for": "10.1.100.1"
+     }
+   }
+   ```
 
-```sh
-root@gcloud:/# kubectl config current-context
-gke_prj-spoke2-lab_europe-west2-b_g5-spoke2-eu-cluster
+1. Test the other endpoints and confirm connectivity
 
-root@gcloud:/# kubectl config delete-context gke_prj-spoke2-lab_europe-west2-b_g5-spoke2-eu-cluster
-warning: this removed your active context, use "kubectl config use-context" to select a different one
-deleted context gke_prj-spoke2-lab_europe-west2-b_g5-spoke2-eu-cluster from /root/.kube/config
+   ```sh
+   curl -H "Host: user2-orch01.hub.g.corp" http://${HAPROXY_PUBLIC_IP}:7474 && \
+   curl -k -H "Host: user2-orch01.hub.g.corp" https://${HAPROXY_PUBLIC_IP}:7473 && \
+   curl -H "Host: user1-orch02.hub.g.corp" http://${HAPROXY_PUBLIC_IP}:7474 && \
+   curl -k -H "Host: user1-orch02.hub.g.corp" https://${HAPROXY_PUBLIC_IP}:7473
+   ```
 
-kubectl config unset contexts.gke_prj-spoke2-lab_europe-west2-b_g5-spoke2-eu-cluster
-kubectl config unset current-context
+   Similarly, we can see that traffic reached the HTTPS service of `user1` via the HAProxy.
 
-apt install -y python3.11-venv
-python3 -m venv /tmp/venv
-source /tmp/venv/bin/activate
-pip install kubernetes
+1. Test the TCP endpoint using netcat on port **7687**
 
-```
+   ```sh
+   nc -vz ${HAPROXY_PUBLIC_IP} 7687
+   ```
 
-```python
-from kubernetes import client, config
-from google.auth.transport.requests import Request
-from google.oauth2 import id_token
-import requests
+   Sample output:
 
-# Generate a GCP access token for the spoke2 cluster
-def get_gcp_token(project_id, cluster_name, region):
-    url = f"https://container.googleapis.com/v1/projects/{project_id}/locations/{region}/clusters/{cluster_name}"
-    token_request = Request()
-    token = id_token.fetch_id_token(token_request, url)
-    return token
+   ```sh
+   Neo4j-BOLT remote=10.1.100.24, hostname=user1
+   ```
 
-# Configure Kubernetes API dynamically for spoke2
-def configure_k8s_api(cluster_endpoint, token):
-    configuration = client.Configuration()
-    configuration.host = f"https://{cluster_endpoint}"
-    configuration.verify_ssl = True
-    configuration.api_key = {"authorization": f"Bearer {token}"}
-    client.Configuration.set_default(configuration)
+   The TCP connection was successful and the traffic reached the `user1` pod via the HAProxy.
 
-# List pods in spoke2
-def list_spoke2_pods(project_id, cluster_name, region):
-    token = get_gcp_token(project_id, cluster_name, region)
-    configure_k8s_api("spoke2-cluster-endpoint", token)  # Replace with actual spoke2 API endpoint
-    v1 = client.CoreV1Api()
-    pods = v1.list_pod_for_all_namespaces()
-    for pod in pods.items:
-        print(f"Pod: {pod.metadata.name}, Namespace: {pod.metadata.namespace}")
+1. Delete `user1` pod and confirm operator updates the CR status and DNS records
 
-if __name__ == "__main__":
-    list_spoke2_pods("prj-spoke2-lab", "g5-spoke2-eu-cluster", "europe-west2")
-```
+   ```sh
+   kubectx gke_${TF_VAR_project_id_spoke2}_${LOCATION}-b_${SPOKE_CLUSTER1_NAME} && \
+   kubectl delete pod user1 && \
+   kubectx gke_${TF_VAR_project_id_hub}_${LOCATION}-b_${HUB_CLUSTER_NAME} && \
+   kubectl logs -f $(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep operator)
+   ```
+
+   <Details>
+   <summary>🟢 Operator logs (Pod deleted):</summary>
+
+   ```sh
+   [2025-02-06 20:17:29,743] _PodManager          [INFO    ] [orch01] scanning -> unset_context() (in_cluster_config)
+   [2025-02-06 20:17:29,744] __kopf_script_0__/ap [INFO    ] [orch01] scanning -> scan_pods() -> Found [1] pods
+   [2025-02-06 20:17:29,744] __kopf_script_0__/ap [INFO    ] [orch01] updating_cr -> update_custom_resource() -> Start
+   [2025-02-06 20:17:29,747] _PodManager          [INFO    ] [orch02] scanning -> unset_context() (in_cluster_config)
+   [2025-02-06 20:17:29,747] __kopf_script_0__/ap [INFO    ] [orch02] scanning -> scan_pods() -> Found [1] pods
+   [2025-02-06 20:17:29,747] __kopf_script_0__/ap [INFO    ] [orch02] updating_cr -> update_custom_resource() -> Start
+   [2025-02-06 20:17:29,790] __kopf_script_0__/ap [INFO    ] [orch01] updating_cr -> update_custom_resource() -> Success!
+   [2025-02-06 20:17:29,800] __kopf_script_0__/ap [INFO    ] [orch02] updating_cr -> update_custom_resource() -> Success!
+   [2025-02-06 20:17:30,033] __kopf_script_0__/ap [INFO    ] [orch01] reconciling_dns -> reconcile_dns() -> Found [2] records
+   [2025-02-06 20:17:30,037] __kopf_script_0__/ap [INFO    ] [orch02] reconciling_dns -> reconcile_dns() -> Found [2] records
+   [2025-02-06 20:17:30,758] utils                [INFO    ] [orch02] reconciling_dns -> delete_dns_a_record() -> Deleted user1-orch02.hub.g.corp. = ['10.22.100.11']
+   [2025-02-06 20:17:30,758] __kopf_script_0__/ap [INFO    ] [orch02] reconciling_dns -> reconcile_dns() -> Deleted user1-orch02.hub.g.corp.
+   [2025-02-06 20:17:30,862] utils                [INFO    ] [orch01] reconciling_dns -> delete_dns_a_record() -> Deleted user1-orch01.hub.g.corp. = ['10.22.100.11']
+   [2025-02-06 20:17:30,862] __kopf_script_0__/ap [INFO    ] [orch01] reconciling_dns -> reconcile_dns() -> Deleted user1-orch01.hub.g.corp.
+   [2025-02-06 20:17:51,046] __kopf_script_0__/ap [INFO    ] [IDLE] Registered CRs: ['orch01', 'orch02']
+   ```
+
+    </Details>
+    <p>
+
+    When the pod in the spoke is deleted, the operator in the hub removes the DNS records for `user1` pod. This means the HAProxy will not be able to resolve the DNS nor route traffic to the `user1` pod.
+
+    Press **Ctrl+C** to exit the logs.
 
 
+1. Test the HTTP endpoint `user1-orch01.hub.g.corp` and verify the response
 
-##############
-```sh
-artifacts$ k get pods
-NAME                        READY   STATUS      RESTARTS      AGE
-endpoints-d7fd7f8fb-9lnt2   0/1     Completed   2 (20s ago)   27s
-gcloud                      1/1     Running     0             9h
-netshoot                    1/1     Running     0             9h
-artifacts$
-artifacts$
-artifacts$
-artifacts$
-artifacts$ k logs endpoints-d7fd7f8fb-9lnt2
-Fetching cluster endpoint and auth data.
-kubeconfig entry generated for g5-spoke2-eu-cluster.
-[
-  {
-    "name": "gcloud",
-    "podIP": "10.22.100.11",
-    "hostIP": "10.22.12.3",
-    "phase": "Running"
-  },
-  {
-    "name": "netshoot",
-    "podIP": "10.22.100.10",
-    "hostIP": "10.22.12.3",
-    "phase": "Running"
-  }
-]
+    ```sh
+    curl -H "Host: user1-orch01.hub.g.corp" http://${HAPROXY_PUBLIC_IP}:7474
+    ```
 
+    Sample output:
 
-kubectl logs $(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep endpoints)
+   ```html
+   <html><body><h1>503 Service Unavailable</h1>
+   No server is available to handle this request.
+   </body></html>
+   ```
 
-# test the endpoinst script locally
-python -m uvicorn main:app --reload --host 0.0.0.0 --port 8080
+1. We should still be able to reach the `user2` pod via the HAProxy
 
+    ```sh
+    curl -H "Host: user2-orch01.hub.g.corp" http://${HAPROXY_PUBLIC_IP}:7474
+    ```
 
-kubectl auth can-i get orchestras --as=system:serviceaccount:default:default
+    Sample output:
 
-kopf run main.py --namespace default
+    ```json
+   {
+     "app": "Neo4j-HTTP",
+     "hostname": "user2",
+     "server-ipv4": "10.22.100.4",
+     "remote-addr": "10.1.100.24",
+     "headers": {
+       "host": "user2-orch01.hub.g.corp",
+       "user-agent": "curl/7.88.1",
+       "accept": "*/*",
+       "x-forwarded-for": "10.1.100.1"
+     }
+   }
+   ```
 
+## Summary
 
-USER=$(kubectl config view --minify --output 'jsonpath={.contexts[0].context.user}')
-echo $USER
-# gke_prj-hub-lab_europe-west2-b_g5-hub-eu-cluster
-kubectl create clusterrolebinding my-user-admin --clusterrole=cluster-admin --user=$USER
-# clusterrolebinding.rbac.authorization.k8s.io/my-user-admin created
-kubectl auth can-i get orchestras --as=$USER
-
-
-kubectl auth can-i get apis --as=$USER
-kubectl auth can-i get crds --as=$USER
-kubectl auth can-i get orchestras --as=$USER
-
-
-kubectl config view --minify
-gcloud auth print-access-token | kubectl auth can-i get pods --all-namespaces --token=$(cat)
-
-kubectl patch orch orch01 --type=json -p '[{"op": "remove", "path": "/metadata/finalizers"}]'
-kubectl patch orch orch02 --type=json -p '[{"op": "remove", "path": "/metadata/finalizers"}]'
-
-
-# WORKLOADS
-#------------------------------------------------
-
-kubectl create namespace default
-
-
-```
+We have successfully deployed a hub and spoke ingress pattern where the hub cluster acts as the central point of entry for all traffic to spokes. The operator in the hub cluster uses an operator to detect services in the spoke clusters and makes them available to the HAProxy in the hub cluster via DNS records.
 
 
 ## Cleanup
 
-1\. (Optional) Navigate back to the lab directory (if you are not already there).
+1. Delete all kubernetes deployments and srvices
 
-```sh
-cd gcp-network-terraform/4-general/g5-gke-ingress
-```
+   ```sh
+   kubectx gke_${TF_VAR_project_id_spoke2}_${LOCATION}-b_${SPOKE_CLUSTER1_NAME} && \
+   skaffold delete -p workload && \
+   kubectx gke_${TF_VAR_project_id_hub}_${LOCATION}-b_${HUB_CLUSTER_NAME} && \
+   skaffold delete -p haproxy && \
+   skaffold delete -p orchestras && \
+   skaffold delete -p operator && \
+   skaffold delete -p api-server && \
+   helm uninstall cert-manager --namespace cert-manager || true
+   ```
 
-2\. Run terraform destroy.
+2. (Optional) Navigate back to the lab directory `gcp-network-terraform/4-general/g5-gke-ingress`
 
-```sh
-terraform destroy -auto-approve
-```
+   ```sh
+   cd gcp-network-terraform/4-general/g5-gke-ingress
+   ```
 
-## Useful Commands
+3. Run terraform destroy.
 
-1\. Force delete PingResource custom resource
-
-```sh
-kubectl patch pingresource test-ping1 -p '{"metadata":{"finalizers":[]}}' --type=merge
-```
+   ```sh
+   terraform destroy -auto-approve
+   ```
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements

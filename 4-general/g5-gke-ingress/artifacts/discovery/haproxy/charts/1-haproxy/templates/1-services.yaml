@@ -88,20 +88,20 @@ spec:
       port: {{ .Values.portNeo4jBolt }}
       protocol: TCP
       targetPort: {{ .Values.portNeo4jBolt }}
----
-apiVersion: networking.gke.io/v1
-kind: ServiceAttachment
-metadata:
- name: haproxy-ilb-attachment
- namespace: {{ .Values.nameSpace }}
-spec:
- connectionPreference: ACCEPT_AUTOMATIC
- natSubnets:
- - {{ .Values.pscProducerNatSubnetname }}
- proxyProtocol: false
- resourceRef:
-   kind: Service
-   name: haproxy-ilb
+# ---
+# apiVersion: networking.gke.io/v1
+# kind: ServiceAttachment
+# metadata:
+#  name: haproxy-ilb-attachment
+#  namespace: {{ .Values.nameSpace }}
+# spec:
+#  connectionPreference: ACCEPT_AUTOMATIC
+#  natSubnets:
+#  - {{ .Values.pscProducerNatSubnetname }}
+#  proxyProtocol: false
+#  resourceRef:
+#    kind: Service
+#    name: haproxy-ilb
 ---
 apiVersion: apps/v1
 kind: Deployment
