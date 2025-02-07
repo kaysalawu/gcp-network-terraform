@@ -9,7 +9,7 @@ Contents
 - [5. Initial Setup](#5-initial-setup)
 - [Testing the Operator (GKE)](#testing-the-operator-gke)
 - [Cleanup](#cleanup)
-- [Useful Commands](#useful-commands)
+- [(Optional) Useful Commands](#optional-useful-commands)
 - [Requirements](#requirements)
 - [Inputs](#inputs)
 - [Outputs](#outputs)
@@ -37,7 +37,7 @@ This lab deploys a GKE cluster and a simple Kubernetes Operator that watches for
 4. Navigate to the lab directory
 
    ```sh
-   cd gcp-network-terraform/4-general/g1-k8s-custom-resource
+   cd gcp-network-terraform/4-general/g1-gke-custom-resource
    ```
 
 5. Deploy the terraform configuration:
@@ -75,22 +75,12 @@ See the [troubleshooting](../../troubleshooting/README.md) section for tips on h
    for i in $(find artifacts -name '*.yaml'); do sed -i'' -e "s/YOUR_PROJECT_ID/${TF_VAR_project_id_hub}/g" "$i"; done
    ```
 
-4. Create the python virtual environment
-
-   ```sh
-   cd artifacts/ping/app && \
-   python3 -m venv ping-venv && \
-   source ping-venv/bin/activate && \
-   pip install kopf fastapi kubernetes uvicorn && \
-   pip freeze > requirements.txt
-   ```
-
 ## Testing the Operator (GKE)
 
 1. Deploy the operator, control plane and API server using skaffold
 
    ```sh
-   cd artifacts
+   cd artifacts && \
    skaffold run
    ```
 
@@ -104,10 +94,10 @@ See the [troubleshooting](../../troubleshooting/README.md) section for tips on h
 
    ```sh
    artifacts$ kubectl get pods
-   NAME                             READY   STATUS    RESTARTS   AGE
-   api-server-5ff4d7b6cb-7ndh8      1/1     Running   0          56s
-   control-plane-6b98d95f97-s64rt   1/1     Running   0          56s
-   ping-operator-64fcffb9d8-2sdv4   1/1     Running   0          56s
+   NAME                            READY   STATUS    RESTARTS   AGE
+   api-server-b54f79b98-r4f6c      1/1     Running   0          17s
+   control-plane-c6f98d7c-tsc9s    1/1     Running   0          17s
+   ping-operator-c89775d94-smxbc   1/1     Running   0          17s
    ```
 
 3. Confirm the CRD is created
@@ -119,7 +109,6 @@ See the [troubleshooting](../../troubleshooting/README.md) section for tips on h
    Sample output
 
    ```sh
-   artifacts$ kubectl get crd pingresources.example.com
    NAME                        CREATED AT
    pingresources.example.com   2025-01-08T08:45:51Z
    ```
@@ -133,20 +122,19 @@ See the [troubleshooting](../../troubleshooting/README.md) section for tips on h
    Sample output
 
    ```sh
-   artifacts$ kubectl get svc
    NAME                 TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)        AGE
-   api-server-elb       LoadBalancer   10.1.102.123   34.142.15.176    80:30889/TCP   76m
-   api-server-service   ClusterIP      10.1.102.125   <none>           8080/TCP       99m
-   control-plane        ClusterIP      10.1.102.32    <none>           9000/TCP       70m
-   control-plane-elb    LoadBalancer   10.1.102.176   35.197.246.167   80:30298/TCP   74m
-   kubernetes           ClusterIP      10.1.102.1     <none>           443/TCP        6h26m
+   api-server-elb       LoadBalancer   10.1.102.157   34.105.153.156   80:30435/TCP   50s
+   api-server-service   ClusterIP      10.1.102.27    <none>           8080/TCP       51s
+   control-plane        ClusterIP      10.1.102.185   <none>           9000/TCP       51s
+   control-plane-elb    LoadBalancer   10.1.102.206   <pending>        80:30099/TCP   50s
+   kubernetes           ClusterIP      10.1.102.1     <none>           443/TCP        168m
    ```
 
 5. Extract the external IP addresses and create `test-ping1` resource
 
    ```sh
-   API_SERVER_IP=$(kubectl get svc api-server-elb -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-   curl -X POST "http://$API_SERVER_IP/api/create_ping" -H "Content-Type: application/json" -d '{"name": "test-ping1", "message": "Hello from FastAPI"}'
+   API_SERVER_IP=$(kubectl get svc api-server-elb -o jsonpath='{.status.loadBalancer.ingress[0].ip}') && \
+   curl -X POST "http://$API_SERVER_IP/api/create_ping" -H "Content-Type: application/json" -d '{"name": "test-ping1", "message": "Hello from FastAPI"}' && echo
    ```
 
    Sample output
@@ -155,11 +143,44 @@ See the [troubleshooting](../../troubleshooting/README.md) section for tips on h
    {"status":"success","name":"test-ping1"}
    ```
 
-6. Confirm the control plane events
+6. Confirm `test-ping1` custom resource is created
 
    ```sh
-   CONTROL_PLANE_IP=$(kubectl get svc control-plane-elb -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-   curl -X GET "http://$CONTROL_PLANE_IP/resources" -H "Content-Type: application/json"
+   kubectl get pingresource test-ping1 -o yaml
+   ```
+
+   <details>
+   <summary>🟢 Sample output</summary>
+
+   ```yaml
+   apiVersion: example.com/v1
+   kind: PingResource
+   metadata:
+     annotations:
+       kopf.zalando.org/last-handled-configuration: |
+         {"spec":{"message":"Hello from FastAPI"}}
+     creationTimestamp: "2025-02-07T19:48:45Z"
+     finalizers:
+     - kopf.zalando.org/KopfFinalizerMarker
+     generation: 2
+     name: test-ping1
+     namespace: default
+     resourceVersion: "131792"
+     uid: fd728d80-45fc-4600-8b86-c6a589f577a8
+   spec:
+     message: Hello from FastAPI
+   status:
+     response: Hello from FastAPI - Pong
+   ```
+
+   </details>
+   <p  >
+
+7. Confirm the control plane events
+
+   ```sh
+   CONTROL_PLANE_IP=$(kubectl get svc control-plane-elb -o jsonpath='{.status.loadBalancer.ingress[0].ip}') && \
+   curl -X GET "http://$CONTROL_PLANE_IP/resources" -H "Content-Type: application/json" && echo
    ```
 
    Sample output
@@ -168,38 +189,60 @@ See the [troubleshooting](../../troubleshooting/README.md) section for tips on h
    {"resources":{"test-ping1":"created"}}
    ```
 
-7. Create `test-ping2` resource
+8. Create `test-ping2` resource using kubectl and confirm it is created
 
    ```sh
-   curl -X POST "http://$API_SERVER_IP/api/create_ping" \
-   -H "Content-Type: application/json" \
-   -d '{"name": "test-ping2", "message": "Hello from FastAPI"}'
+   kubectl apply -f ping/manifests/kustomize/overlays/ping-resources/pingresource.yaml && \
+   kubectl get pingresource test-ping2 -o yaml
    ```
 
    Sample output
 
-   ```json
-   {"status":"success","name":"test-ping2"}
+   <details>
+   <summary>🟢 Sample output</summary>
+
+   ```yaml
+   apiVersion: example.com/v1
+   kind: PingResource
+   metadata:
+     annotations:
+       kopf.zalando.org/last-handled-configuration: |
+         {"spec":{"message":"Ping"}}
+       kubectl.kubernetes.io/last-applied-configuration: |
+         {"apiVersion":"example.com/v1","kind":"PingResource","metadata":{"annotations":{},"name":"test-ping2","namespace":"default"},"spec":{"message":"Ping"}}
+     creationTimestamp: "2025-02-07T19:54:49Z"
+     finalizers:
+     - kopf.zalando.org/KopfFinalizerMarker
+     generation: 2
+     name: test-ping2
+     namespace: default
+     resourceVersion: "136071"
+     uid: 8d327dec-de62-4350-943e-669e9ae492cf
+   spec:
+     message: Ping
+   status:
+     response: Ping - Pong
    ```
 
-8. (Optional) Test API server using FastApi web interface
+9. (Optional) Test API server using FastApi web interface
 
    Go to `http://$API_SERVER_IP/docs` in your browser and test the API server.
 
    <img src="images/fastapi-api-server.png" alt="FastAPI Web Interface" width="800"/>
 
-9. (Optional) Test control plane using FastApi web interface
+10. (Optional) Test control plane using FastApi web interface
 
    Go to `http://$CONTROL_PLANE_IP/docs` in your browser and test the control plane.
 
    <img src="images/fastapi-control-plane.png" alt="FastAPI Web Interface" width="800"/>
 
-10. Delete the resources
+11. Delete the resources
 
     ```sh
-    curl -X DELETE "http://$API_SERVER_IP/api/delete_ping/test-ping1"
+    kubectl delete pingresource test-ping1 && \
     curl -X DELETE "http://$API_SERVER_IP/api/delete_ping/test-ping2"
-    skaffold delete
+    skaffold delete && \
+    cd ..
     ```
 
 ## Cleanup
@@ -207,7 +250,7 @@ See the [troubleshooting](../../troubleshooting/README.md) section for tips on h
 1. (Optional) Navigate back to the lab directory (if you are not already there).
 
    ```sh
-   cd gcp-network-terraform/4-general/g1-k8s-custom-resource
+   cd gcp-network-terraform/4-general/g1-gke-custom-resource
    ```
 
 2. Run terraform destroy.
@@ -216,7 +259,7 @@ See the [troubleshooting](../../troubleshooting/README.md) section for tips on h
    terraform destroy -auto-approve
    ```
 
-## Useful Commands
+## (Optional) Useful Commands
 
 1. Force delete PingResource custom resource
 
