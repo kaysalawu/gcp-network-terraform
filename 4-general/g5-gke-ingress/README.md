@@ -85,8 +85,8 @@ We are simulating user applications that run in the spoke cluster. The applicati
 8. Set the environment variables for the lab
 
    ```sh
-   export TF_VAR_project_id_hub=<YOUR_HUB_PROJECT_ID>
-   export TF_VAR_project_id_spoke2=<YOUR_SPOKE_PROJECT_ID>
+   export TF_VAR_project_id_hub=<PLACEHOLDER_FOR_HUB_PROJECT_ID>
+   export TF_VAR_project_id_spoke2=<PLACEHOLDER_FOR_SPOKE_PROJECT_ID>
    export LOCATION=europe-west2
    export HUB_CLUSTER_NAME=g5-hub-eu-cluster
    export SPOKE_CLUSTER_NAME=g5-spoke2-eu-cluster
