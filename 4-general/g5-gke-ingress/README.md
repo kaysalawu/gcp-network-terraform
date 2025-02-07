@@ -104,7 +104,7 @@ We are simulating user applications that run in the spoke cluster. The applicati
    export SPOKE_CONTEXT=gke_${TF_VAR_project_id_spoke2}_${LOCATION}-b_${SPOKE_CLUSTER_NAME}
    ```
 
-2. Deploy the terraform configuration:
+1. Deploy the terraform configuration:
 
     ```sh
     terraform init
@@ -114,21 +114,21 @@ We are simulating user applications that run in the spoke cluster. The applicati
 
     This creates the VPC network, subnets, GKE clusters and the artifacts and kubernetes service accounts required to deploy the applications to the GKE clusters.
 
-3. Get the GKE cluster credentials for the spoke and hub clusters
+1. Get the GKE cluster credentials for the spoke and hub clusters
 
    ```sh
    gcloud container clusters get-credentials $SPOKE_CLUSTER_NAME --region "$LOCATION-b" --project=$TF_VAR_project_id_spoke2 && \
    gcloud container clusters get-credentials $HUB_CLUSTER_NAME --region "$LOCATION-b" --project=$TF_VAR_project_id_hub
    ```
 
-4. Replace all occurences of project IDs in the manifests with the environment variables.
+1. Replace all occurences of project IDs in the manifests with the environment variables.
 
    ```sh
    for i in $(find artifacts -name '*.yaml'); do sed -i'' -e "s/YOUR_HUB_PROJECT_ID/${TF_VAR_project_id_hub}/g" "$i"; done && \
    for i in $(find artifacts -name '*.yaml'); do sed -i'' -e "s/YOUR_SPOKE_PROJECT_ID/${TF_VAR_project_id_spoke2}/g" "$i"; done
    ```
 
-5. Install cert-manager in the hub cluster in order to use Let's Encrypt certificates for our custom ingress.
+1. Install cert-manager in the hub cluster in order to use Let's Encrypt certificates for our custom ingress.
 
    ```sh
    kubectx ${HUB_CONTEXT} && \
