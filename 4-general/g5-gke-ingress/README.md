@@ -96,7 +96,6 @@ We are simulating user applications that run in the spoke cluster. The applicati
 9. Replace all occurences of project IDs in the manifests with the environment variables.
 
    ```sh
-   for i in `find . -name 'README.md'`; do sed -i'' -e "s/UPDATE_SPOKE_PROJECT_ID/${TF_VAR_project_id_spoke2}/" $i; done && \
    for i in $(find artifacts -name '*.yaml'); do sed -i'' -e "s/YOUR_HUB_PROJECT_ID/${TF_VAR_project_id_hub}/g" "$i"; done && \
    for i in $(find artifacts -name '*.yaml'); do sed -i'' -e "s/YOUR_SPOKE_PROJECT_ID/${TF_VAR_project_id_spoke2}/g" "$i"; done
    ```
@@ -330,7 +329,7 @@ In a real world scenario, when a new kubernetes cluster is created, an automated
      "cluster": "g5-spoke2-eu-cluster",
      "ingress": "ingress01",
      "name": "orch01",
-     "project": "UPDATE_SPOKE_PROJECT_ID",
+     "project": '${TF_VAR_project_id_spoke2}',
      "zone": "europe-west2-b"
    }'
    ```
