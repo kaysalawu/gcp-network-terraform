@@ -72,6 +72,7 @@ We are simulating user applications that run in the spoke cluster. The applicati
 4. Install [skaffold](https://skaffold.dev/docs/install/#standalone-binary), the tool we'll use for building and deploying to Kubernetes.
 5. Create two GCP projects, one for the hub and the other for the spoke clusters.
 6. (Optional) Install graphviz for visualizing the operator's state machine. [Install graphviz](https://graphviz.gitlab.io/download/)
+
    ```sh
    sudo apt update
    sudo apt install graphviz graphviz-dev
@@ -95,6 +96,8 @@ We are simulating user applications that run in the spoke cluster. The applicati
 9. Replace all occurences of project IDs in the manifests with the environment variables.
 
    ```sh
+   for i in `find . -name 'README.md'`; do sed -i'' -e "s/YOUR_HUB_PROJECT_ID/${TF_VAR_project_id_hub}/" $i; done && \
+   for i in `find . -name 'README.md'`; do sed -i'' -e "s/YOUR_SPOKE_PROJECT_ID/${TF_VAR_project_id_spoke2}/" $i; done && \
    for i in $(find artifacts -name '*.yaml'); do sed -i'' -e "s/YOUR_HUB_PROJECT_ID/${TF_VAR_project_id_hub}/g" "$i"; done && \
    for i in $(find artifacts -name '*.yaml'); do sed -i'' -e "s/YOUR_SPOKE_PROJECT_ID/${TF_VAR_project_id_spoke2}/g" "$i"; done
    ```
