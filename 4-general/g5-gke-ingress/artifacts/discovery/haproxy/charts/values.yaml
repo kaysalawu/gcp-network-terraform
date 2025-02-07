@@ -1,9 +1,9 @@
 
 serviceAccountName: cluster-ksa
-portNeo4jHttp: 7474
-portNeo4jHttps: 7473
-portNeo4jBolt: 7687
-portNeo4jBackup: 6362
+portAppyHttp: 7474
+portAppyHttps: 7473
+portAppyBolt: 7687
+portAppyBackup: 6362
 portGraphiteMonitoring: 2003
 portPrometheusMetrics: 2004
 pscProducerNatSubnetname: gke-nat-subnet

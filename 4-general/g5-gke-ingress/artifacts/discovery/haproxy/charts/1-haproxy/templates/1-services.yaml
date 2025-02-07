@@ -10,17 +10,17 @@ spec:
     app: haproxy
   ports:
     - name: http
-      port: {{ .Values.portNeo4jHttp }}
+      port: {{ .Values.portAppyHttp }}
       protocol: TCP
-      targetPort: {{ .Values.portNeo4jHttp }}
+      targetPort: {{ .Values.portAppyHttp }}
     - name: https
-      port: {{ .Values.portNeo4jHttps }}
+      port: {{ .Values.portAppyHttps }}
       protocol: TCP
-      targetPort: {{ .Values.portNeo4jHttps }}
+      targetPort: {{ .Values.portAppyHttps }}
     - name: bolt
-      port: {{ .Values.portNeo4jBolt }}
+      port: {{ .Values.portAppyBolt }}
       protocol: TCP
-      targetPort: {{ .Values.portNeo4jBolt }}
+      targetPort: {{ .Values.portAppyBolt }}
     - name: stats
       port: 8404
       protocol: TCP
@@ -44,17 +44,17 @@ spec:
     app: haproxy
   ports:
     - name: http
-      port: {{ .Values.portNeo4jHttp }}
+      port: {{ .Values.portAppyHttp }}
       protocol: TCP
-      targetPort: {{ .Values.portNeo4jHttp }}
+      targetPort: {{ .Values.portAppyHttp }}
     - name: https
-      port: {{ .Values.portNeo4jHttps }}
+      port: {{ .Values.portAppyHttps }}
       protocol: TCP
-      targetPort: {{ .Values.portNeo4jHttps }}
+      targetPort: {{ .Values.portAppyHttps }}
     - name: bolt
-      port: {{ .Values.portNeo4jBolt }}
+      port: {{ .Values.portAppyBolt }}
       protocol: TCP
-      targetPort: {{ .Values.portNeo4jBolt }}
+      targetPort: {{ .Values.portAppyBolt }}
     - name: stats
       port: 8404
       protocol: TCP
@@ -77,17 +77,17 @@ spec:
     app: haproxy
   ports:
     - name: http
-      port: {{ .Values.portNeo4jHttp }}
+      port: {{ .Values.portAppyHttp }}
       protocol: TCP
-      targetPort: {{ .Values.portNeo4jHttp }}
+      targetPort: {{ .Values.portAppyHttp }}
     - name: https
-      port: {{ .Values.portNeo4jHttps }}
+      port: {{ .Values.portAppyHttps }}
       protocol: TCP
-      targetPort: {{ .Values.portNeo4jHttps }}
+      targetPort: {{ .Values.portAppyHttps }}
     - name: bolt
-      port: {{ .Values.portNeo4jBolt }}
+      port: {{ .Values.portAppyBolt }}
       protocol: TCP
-      targetPort: {{ .Values.portNeo4jBolt }}
+      targetPort: {{ .Values.portAppyBolt }}
 # ---
 # apiVersion: networking.gke.io/v1
 # kind: ServiceAttachment
@@ -123,9 +123,9 @@ spec:
       - name: haproxy
         image: haproxy:latest
         ports:
-        - containerPort: {{ .Values.portNeo4jHttp }}
-        - containerPort: {{ .Values.portNeo4jHttps }}
-        - containerPort: {{ .Values.portNeo4jBolt }}
+        - containerPort: {{ .Values.portAppyHttp }}
+        - containerPort: {{ .Values.portAppyHttps }}
+        - containerPort: {{ .Values.portAppyBolt }}
         volumeMounts:
         - name: tls-secret
           mountPath: /etc/ssl/certs

@@ -1,12 +1,12 @@
 
 serviceAccountName: cluster-ksa
-imageNeo4jHttp: europe-west2-docker.pkg.dev/YOUR_SPOKE_PROJECT_ID/g5-spoke2-eu-repo/http
-imageNeo4jHttps: europe-west2-docker.pkg.dev/YOUR_SPOKE_PROJECT_ID/g5-spoke2-eu-repo/https
-imageNeo4jBolt: europe-west2-docker.pkg.dev/YOUR_SPOKE_PROJECT_ID/g5-spoke2-eu-repo/bolt
-portNeo4jHttp: 7474
-portNeo4jHttps: 7473
-portNeo4jBolt: 7687
-portNeo4jBackup: 6362
+imageAppyHttp: europe-west2-docker.pkg.dev/YOUR_SPOKE_PROJECT_ID/g5-spoke2-eu-repo/http
+imageAppyHttps: europe-west2-docker.pkg.dev/YOUR_SPOKE_PROJECT_ID/g5-spoke2-eu-repo/https
+imageAppyBolt: europe-west2-docker.pkg.dev/YOUR_SPOKE_PROJECT_ID/g5-spoke2-eu-repo/bolt
+portAppyHttp: 7474
+portAppyHttps: 7473
+portAppyBolt: 7687
+portAppyBackup: 6362
 nameSpace: default
 users:
   - name: user1

@@ -19,7 +19,7 @@ data:
       timeout server 50000ms
 
     frontend fe-http
-      bind *:{{ .Values.portNeo4jHttp }}
+      bind *:{{ .Values.portAppyHttp }}
       mode http
     {{- range $user := .Values.users }}
       acl host_{{ $user.name }}_and_port hdr_beg(host) -i {{ $user.host }}
@@ -29,7 +29,7 @@ data:
     {{- end }}
 
     frontend fe-https
-      bind *:{{ .Values.portNeo4jHttps }} ssl crt /etc/ssl/certs/tls-combined.pem
+      bind *:{{ .Values.portAppyHttps }} ssl crt /etc/ssl/certs/tls-combined.pem
       mode http
     {{- range $user := .Values.users }}
       acl host_{{ $user.name }}_and_port hdr_beg(host) -i {{ $user.host }}
@@ -39,17 +39,17 @@ data:
     {{- end }}
 
     frontend fe-bolt
-      bind *:{{ .Values.portNeo4jBolt }} #ssl crt /etc/ssl/certs/tls-combined.pem
+      bind *:{{ .Values.portAppyBolt }} #ssl crt /etc/ssl/certs/tls-combined.pem
       mode tcp
     {{- if .Values.bolt_use_sni }}
     {{- range $user := .Values.users }}
       acl host_{{ $user.name }}_and_port req.ssl_sni -i {{ $user.host }}
     {{- end }}
     {{- range $user := .Values.users }}
-      use_backend be_{{ $user.name }}_bolt if host_{{ $user.name }}_and_port
+      use_backend be_{{ $user.name }}_tcp if host_{{ $user.name }}_and_port
     {{- end }}
     {{- else }}
-      default_backend be_{{ (index .Values.users 0).name }}_bolt
+      default_backend be_{{ (index .Values.users 0).name }}_tcp
     {{- end }}
 
     {{- range $user := .Values.users }}
@@ -57,16 +57,16 @@ data:
     backend be_{{ $user.name }}_http
       mode http
       option forwardfor
-      server {{ $user.name }} {{ $user.host }}:{{ $.Values.portNeo4jHttp }} check
+      server {{ $user.name }} {{ $user.host }}:{{ $.Values.portAppyHttp }} check
 
     backend be_{{ $user.name }}_https
       mode http
       option forwardfor
-      server {{ $user.name }} {{ $user.host }}:{{ $.Values.portNeo4jHttps }} check
+      server {{ $user.name }} {{ $user.host }}:{{ $.Values.portAppyHttps }} check
 
-    backend be_{{ $user.name }}_bolt
+    backend be_{{ $user.name }}_tcp
       mode tcp
-      server {{ $user.name }} {{ $user.host }}:{{ $.Values.portNeo4jBolt }} check
+      server {{ $user.name }} {{ $user.host }}:{{ $.Values.portAppyBolt }} check
 
     {{- end }}
 

@@ -10,14 +10,14 @@ spec:
   selector:
     app: {{ .name }}
   ports:
-  - port: {{ $.Values.portNeo4jHttp }}
-    targetPort: {{ $.Values.portNeo4jHttp }}
+  - port: {{ $.Values.portAppyHttp }}
+    targetPort: {{ $.Values.portAppyHttp }}
     name: http
-  - port: {{ $.Values.portNeo4jHttps }}
-    targetPort: {{ $.Values.portNeo4jHttps }}
+  - port: {{ $.Values.portAppyHttps }}
+    targetPort: {{ $.Values.portAppyHttps }}
     name: https
-  - port: {{ $.Values.portNeo4jBolt }}
-    targetPort: {{ $.Values.portNeo4jBolt }}
+  - port: {{ $.Values.portAppyBolt }}
+    targetPort: {{ $.Values.portAppyBolt }}
     name: bolt
 ---
 apiVersion: v1
@@ -31,48 +31,48 @@ spec:
   serviceAccountName: {{ $.Values.serviceAccountName }}
   containers:
   - name: {{ .name }}-container-http
-    image: {{ $.Values.imageNeo4jHttp }}
+    image: {{ $.Values.imageAppyHttp }}
     ports:
-    - containerPort: {{ $.Values.portNeo4jHttp }}
+    - containerPort: {{ $.Values.portAppyHttp }}
       name: http
     livenessProbe:
       tcpSocket:
-        port: {{ $.Values.portNeo4jHttp }}
+        port: {{ $.Values.portAppyHttp }}
       initialDelaySeconds: 10
       periodSeconds: 5
     readinessProbe:
       tcpSocket:
-        port: {{ $.Values.portNeo4jHttp }}
+        port: {{ $.Values.portAppyHttp }}
       initialDelaySeconds: 5
       periodSeconds: 5
   - name: {{ .name }}-container-https
-    image: {{ $.Values.imageNeo4jHttps }}
+    image: {{ $.Values.imageAppyHttps }}
     ports:
-    - containerPort: {{ $.Values.portNeo4jHttps }}
+    - containerPort: {{ $.Values.portAppyHttps }}
       name: https
     livenessProbe:
       tcpSocket:
-        port: {{ $.Values.portNeo4jHttps }}
+        port: {{ $.Values.portAppyHttps }}
       initialDelaySeconds: 10
       periodSeconds: 5
     readinessProbe:
       tcpSocket:
-        port: {{ $.Values.portNeo4jHttps }}
+        port: {{ $.Values.portAppyHttps }}
       initialDelaySeconds: 5
       periodSeconds: 5
   - name: {{ .name }}-container-bolt
-    image: {{ $.Values.imageNeo4jBolt }}
+    image: {{ $.Values.imageAppyBolt }}
     ports:
-    - containerPort: {{ $.Values.portNeo4jBolt }}
+    - containerPort: {{ $.Values.portAppyBolt }}
       name: bolt
     livenessProbe:
       tcpSocket:
-        port: {{ $.Values.portNeo4jBolt }}
+        port: {{ $.Values.portAppyBolt }}
       initialDelaySeconds: 10
       periodSeconds: 5
     readinessProbe:
       tcpSocket:
-        port: {{ $.Values.portNeo4jBolt }}
+        port: {{ $.Values.portAppyBolt }}
       initialDelaySeconds: 5
       periodSeconds: 5
 {{- end }}

@@ -804,7 +804,7 @@ The frontend configurations:
        frontend fe-bolt
          bind *:7687 #ssl crt /etc/ssl/certs/tls-combined.pem
          mode tcp
-         default_backend be_user1-orch01_bolt
+         default_backend be_user1-orch01_tcp
    ```
    </Details>
    <p>
@@ -825,7 +825,7 @@ The frontend configurations:
          option forwardfor
          server user1-orch01 user1-orch01.hub.g.corp:7473 check
 
-       backend be_user1-orch01_bolt
+       backend be_user1-orch01_tcp
          mode tcp
          server user1-orch01 user1-orch01.hub.g.corp:7687 check
    ```
@@ -846,7 +846,7 @@ The frontend configurations:
          option forwardfor
          server user2-orch01 user2-orch01.hub.g.corp:7473 check
 
-       backend be_user2-orch01_bolt
+       backend be_user2-orch01_tcp
          mode tcp
          server user2-orch01 user2-orch01.hub.g.corp:7687 check
    ```
@@ -895,7 +895,7 @@ Now let's deploy the HAProxy.
 
    ```json
    {
-     "app": "Neo4j-HTTP",
+     "app": "Appy-HTTP",
      "hostname": "user1",
      "server-ipv4": "10.22.100.11",
      "remote-addr": "10.1.100.24",
@@ -921,7 +921,7 @@ Now let's deploy the HAProxy.
 
    ```json
    {
-     "app": "Neo4j-HTTPS",
+     "app": "Appy-HTTPS",
      "hostname": "user1",
      "server-ipv4": "10.22.100.11",
      "remote-addr": "10.1.100.24",
@@ -954,7 +954,7 @@ Now let's deploy the HAProxy.
    Sample output:
 
    ```sh
-   Neo4j-BOLT remote=10.1.100.24, hostname=user1
+   Appy-TCP remote=10.1.100.24, hostname=user1
    ```
 
    The TCP connection was successful and the traffic reached the `user1` pod via the HAProxy.
@@ -1021,7 +1021,7 @@ Now let's deploy the HAProxy.
 
     ```json
    {
-     "app": "Neo4j-HTTP",
+     "app": "Appy-HTTP",
      "hostname": "user2",
      "server-ipv4": "10.22.100.4",
      "remote-addr": "10.1.100.24",
