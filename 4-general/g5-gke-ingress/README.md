@@ -96,8 +96,7 @@ We are simulating user applications that run in the spoke cluster. The applicati
 9. Replace all occurences of project IDs in the manifests with the environment variables.
 
    ```sh
-   for i in `find . -name 'README.md'`; do sed -i'' -e "s/YOUR_HUB_PROJECT_ID/${TF_VAR_project_id_hub}/" $i; done && \
-   for i in `find . -name 'README.md'`; do sed -i'' -e "s/YOUR_SPOKE_PROJECT_ID/${TF_VAR_project_id_spoke2}/" $i; done && \
+   for i in `find . -name 'README.md'`; do sed -i'' -e "s/UPDATE_SPOKE_PROJECT_ID/${TF_VAR_project_id_spoke2}/" $i; done && \
    for i in $(find artifacts -name '*.yaml'); do sed -i'' -e "s/YOUR_HUB_PROJECT_ID/${TF_VAR_project_id_hub}/g" "$i"; done && \
    for i in $(find artifacts -name '*.yaml'); do sed -i'' -e "s/YOUR_SPOKE_PROJECT_ID/${TF_VAR_project_id_spoke2}/g" "$i"; done
    ```
@@ -331,7 +330,7 @@ In a real world scenario, when a new kubernetes cluster is created, an automated
      "cluster": "g5-spoke2-eu-cluster",
      "ingress": "ingress01",
      "name": "orch01",
-     "project": "prj-spoke2-lab",
+     "project": "UPDATE_SPOKE_PROJECT_ID",
      "zone": "europe-west2-b"
    }'
    ```
@@ -616,35 +615,8 @@ The customer resource `Orchestra` is a simple CR that represents a kubernetes cl
 
 In a real world scenario, when a new kubernetes cluster is created, an automated process should create the CR for that orchestra - and then the operator will detect the CR and run the state machine logic. To make things simple, we are manually creating the CR using kubernetes manifest files.
 
-CR manfiest for `orch01`
-- [discovery/orchestras/manifests/kustomize/base/main/orch-001.yaml](./artifacts/discovery/orchestras/manifests/kustomize/base/main/orch01.yaml)
-
-  ```yaml
-  apiVersion: example.com/v1
-  kind: Orchestra
-  metadata:
-    name: orch01
-  spec:
-    cluster: g5-spoke2-eu-cluster
-    zone: europe-west2-b
-    project: prj-spoke2-lab
-    ingress: "ingress01"
-  ```
-
-CR manifest for `orch02`
-- [discovery/orchestras/manifests/kustomize/base/main/orch-002.yaml](./artifacts/discovery/orchestras/manifests/kustomize/base/main/orch02.yaml)
-
-  ```yaml
-  apiVersion: example.com/v1
-  kind: Orchestra
-  metadata:
-    name: orch02
-  spec:
-    cluster: g5-spoke2-eu-cluster
-    zone: europe-west2-b
-    project: prj-spoke2-lab
-    ingress: "ingress01"
-  ```
+- CR manfiest for `orch01` is [here](./artifacts/discovery/orchestras/manifests/kustomize/base/main/orch01.yaml)
+- CR manifest for `orch02` is [here](./artifacts/discovery/orchestras/manifests/kustomize/base/main/orch02.yaml)
 
 Now let's deploy the CRs.
 
@@ -699,7 +671,7 @@ Now let's deploy the CRs.
 
    Press **Ctrl+C** to exit the logs.
 
-1. Verify the contents of the `orch02` CR
+2. Verify the contents of the `orch02` CR
 
    ```sh
    kubectl get orchestras orch02 -o yaml

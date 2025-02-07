@@ -1,5 +1,0 @@
-bases:
-  - ../base
-
-resources:
-  - load-balancers/endpoints.yaml

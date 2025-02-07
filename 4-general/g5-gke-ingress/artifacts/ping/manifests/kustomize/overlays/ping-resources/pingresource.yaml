@@ -1,6 +1,0 @@
-apiVersion: example.com/v1
-kind: PingResource
-metadata:
-  name: test-ping
-spec:
-  message: "Ping"
