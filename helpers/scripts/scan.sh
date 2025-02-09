@@ -24,7 +24,7 @@ terraform_docs_dirs=(
     2-projects
     3-labs
     4-general
-    modules
+    # modules
 )
 
 main_dirs=(

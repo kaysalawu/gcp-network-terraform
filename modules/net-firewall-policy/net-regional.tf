@@ -118,4 +118,12 @@ resource "google_compute_region_network_firewall_policy_rule" "net-regional" {
       name = target_secure_tags.value
     }
   }
+
+  # TODO: Lifecycle only needed to suppress IPV6 issues due to range expansion
+  lifecycle {
+    ignore_changes = [
+      match[0].src_ip_ranges,
+      match[0].dest_ip_ranges,
+    ]
+  }
 }

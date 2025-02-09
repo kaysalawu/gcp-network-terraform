@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: netshoot
+  namespace: default
+spec:
+  serviceAccountName: cluster-ksa
+  containers:
+    - name: netshoot
+      image: nicolaka/netshoot:latest
+      command: ["sleep", "infinity"]

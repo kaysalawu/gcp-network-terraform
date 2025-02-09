@@ -1,0 +1,105 @@
+# CRD Definition
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: orchestras.example.com
+spec:
+  group: example.com
+  names:
+    plural: orchestras
+    singular: orchestra
+    shortNames:
+      - orch
+      - orchs
+    kind: Orchestra
+  scope: Namespaced
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                ingress:
+                  type: string
+                cluster:
+                  type: string
+                project:
+                  type: string
+                region:
+                  type: string
+                  nullable: true
+                zone:
+                  type: string
+                  nullable: true
+            status:
+              type: object
+              properties:
+                state:
+                  type: string
+                endpoints:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      podName:
+                        type: string
+                      podIp:
+                        type: string
+                      hostIp:
+                        type: string
+                      phase:
+                        type: string
+      additionalPrinterColumns:
+        - name: Cluster
+          type: string
+          jsonPath: ".spec.cluster"
+        - name: Ingress
+          type: string
+          jsonPath: ".spec.ingress"
+        - name: Zone
+          type: string
+          jsonPath: ".spec.zone"
+        - name: Region
+          type: string
+          jsonPath: ".spec.region"
+        - name: Project
+          type: string
+          jsonPath: ".spec.project"
+
+---
+
+# Role Definition for Updating Status
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: orchestra-operator-role
+  namespace: default
+rules:
+  - apiGroups: ["example.com"]
+    resources: ["orchestras"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+  - apiGroups: ["example.com"]
+    resources: ["orchestras/status"]
+    verbs: ["get", "update", "patch"]
+
+---
+
+# RoleBinding to Attach Role to the Default ServiceAccount
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: orchestra-operator-rolebinding
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: orchestra-operator-role
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: default

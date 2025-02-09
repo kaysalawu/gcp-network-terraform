@@ -1,0 +1,83 @@
+apiVersion: skaffold/v2beta8
+kind: Config
+profiles:
+  - name: tools
+    build:
+      local:
+        push: false
+    deploy:
+      kustomize:
+        paths:
+          - tools/manifests/kustomize/base
+  - name: operator
+    build:
+      tagPolicy:
+        envTemplate:
+          template: "{{.VERSION}}"
+      artifacts:
+        - image: europe-west2-docker.pkg.dev/YOUR_HUB_PROJECT_ID/g5-hub-eu-repo/discovery-operator
+          context: discovery/operator/app
+          docker:
+            dockerfile: Dockerfile
+    deploy:
+      kustomize:
+        paths:
+          - discovery/operator/manifests/kustomize/base
+  - name: api-server
+    build:
+      tagPolicy:
+        envTemplate:
+          template: "{{.VERSION}}"
+      artifacts:
+        - image: europe-west2-docker.pkg.dev/YOUR_HUB_PROJECT_ID/g5-hub-eu-repo/api-server
+          context: discovery/api-server/app
+          docker:
+            dockerfile: Dockerfile
+    deploy:
+      kustomize:
+        paths:
+          - discovery/api-server/manifests/kustomize/base
+          - discovery/api-server/manifests/kustomize/overlays/load-balancers
+  - name: orchestras
+    deploy:
+      kustomize:
+        paths:
+          - discovery/orchestras/manifests/kustomize/base
+
+  - name: workload
+    build:
+      tagPolicy:
+        envTemplate:
+          template: "{{.VERSION}}"
+      artifacts:
+      - image: europe-west2-docker.pkg.dev/YOUR_SPOKE_PROJECT_ID/g5-spoke2-eu-repo/http
+        context: discovery/workload/src/fastapi/http
+      - image: europe-west2-docker.pkg.dev/YOUR_SPOKE_PROJECT_ID/g5-spoke2-eu-repo/https
+        context: discovery/workload/src/fastapi/https
+      - image: europe-west2-docker.pkg.dev/YOUR_SPOKE_PROJECT_ID/g5-spoke2-eu-repo/bolt
+        context: discovery/workload/src/fastapi/bolt
+
+    deploy:
+      helm:
+        releases:
+          - name: users
+            chartPath: discovery/workload/charts/1-apps
+            valuesFiles:
+              - discovery/workload/charts/values.yaml
+          # - name: test
+          #   chartPath: discovery/workload/charts/2-k6
+          #   valuesFiles:
+          #     - discovery/workload/charts/values.yaml
+
+  - name: haproxy
+    deploy:
+      helm:
+        releases:
+          - name: system
+            chartPath: discovery/haproxy/charts/0-system
+            valuesFiles:
+              - discovery/haproxy/charts/values.yaml
+          - name: haproxy
+            chartPath: discovery/haproxy/charts/1-haproxy
+            valuesFiles:
+              - discovery/haproxy/charts/values.yaml

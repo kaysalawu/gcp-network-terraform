@@ -38,8 +38,8 @@ server:
         # local data records
         local-data: "vm.site1.corp 300 IN A 10.10.1.9"
         local-data: "vm.site2.corp 300 IN A 10.20.1.9"
-        local-data: "vm.site1.corp 300 IN AAAA fd20:b90:1e4a:4000:0:0:0:0"
-        local-data: "vm.site2.corp 300 IN AAAA fd20:f6f:e922:8000:0:0:0:0"
+        local-data: "vm.site1.corp 300 IN AAAA fd20:c26:beb5:4000:0:0:0:0"
+        local-data: "vm.site2.corp 300 IN AAAA fd20:5a3:654b:8000:0:0:0:0"
 
         # hosts redirected to PSC
         local-zone: storage.googleapis.com redirect

@@ -10,7 +10,8 @@ locals {
 # ilb
 
 module "spoke1_eu_ilb" {
-  source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-int?ref=v34.1.0"
+  source = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-int?ref=v34.1.0"
+  # source        = "../../modules/net-lb-int"
   project_id    = var.project_id_spoke1
   region        = local.spoke1_eu_region
   name          = "${local.spoke1_prefix}eu-ilb"
@@ -30,8 +31,8 @@ module "spoke1_eu_ilb" {
   forwarding_rules_config = {
     fr-ipv4 = {
       address    = local.spoke1_eu_ilb_addr
-      protocol   = "TCP"                  # NOTE: protocol required for geo routing, service attachment etc
-      ports      = [local.svc_web.port, ] # NOTE: port required for geo routing, service attachment etc
+      protocol   = "TCP"                  # NOTE: protocol required for geo routing, service attachment etc.
+      ports      = [local.svc_web.port, ] # NOTE: port required for geo routing, service attachment etc.
       ip_version = "IPV4"
     }
     fr-ipv6 = {
@@ -98,7 +99,8 @@ module "spoke1_eu_nlb_vm" {
 # nlb
 
 module "spoke1_eu_nlb" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-proxy-int?ref=v34.1.0"
+  source = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-proxy-int?ref=v34.1.0"
+  # source     = "../../modules/net-lb-proxy-int"
   project_id = var.project_id_spoke1
   region     = local.spoke1_eu_region
   name       = "${local.spoke1_prefix}eu-nlb"
@@ -170,7 +172,8 @@ module "spoke1_eu_alb_vm" {
 # alb
 
 module "spoke1_eu_alb" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-app-int?ref=v34.1.0"
+  source = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-app-int?ref=v34.1.0"
+  # source     = "../../modules/net-lb-app-int"
   project_id = var.project_id_spoke1
   name       = "${local.spoke1_prefix}eu-alb"
   region     = local.spoke1_eu_region
@@ -185,11 +188,9 @@ module "spoke1_eu_alb" {
     default_service = "default"
     host_rules = [
       { path_matcher = "main", hosts = [local.spoke1_eu_alb_fqdn, ] },
-      { path_matcher = "psc-neg", hosts = [local.spoke1_eu_psc_https_ctrl_run_dns, ] }
     ]
     path_matchers = {
-      main    = { default_service = "default" }
-      psc-neg = { default_service = "psc-neg" }
+      main = { default_service = "default" }
     }
   }
   backend_service_configs = {
@@ -204,30 +205,12 @@ module "spoke1_eu_alb" {
         },
       ]
     }
-    psc-neg = {
-      health_checks = []
-      backends = [
-        {
-          group          = "psc-neg"
-          balancing_mode = "UTILIZATION"
-          max_rate       = { capacity_scaler = 1.0 }
-        }
-      ]
-    }
   }
   group_configs = {
     main = {
       zone        = "${local.spoke1_eu_region}-b"
       instances   = [module.spoke1_eu_alb_vm.self_link, ]
       named_ports = { (local.svc_web.name) = local.svc_web.port }
-    }
-  }
-  neg_configs = {
-    psc-neg = {
-      psc = {
-        region         = local.spoke1_eu_region
-        target_service = local.spoke1_eu_psc_https_ctrl_run_dns
-      }
     }
   }
   health_check_configs = {
@@ -256,8 +239,7 @@ module "spoke1_dns_private_zone_records" {
   depends_on  = [module.spoke1_dns_private_zone, ]
   project_id  = var.project_id_spoke1
   name        = module.spoke1_dns_private_zone.name
-  description = "spoke1 network attached"
-
+  description = "local data"
   recordsets = {
     "A ${local.spoke1_eu_ilb_dns_prefix}" = { ttl = 300, records = [local.spoke1_eu_ilb_addr] },
     "A ${local.spoke1_eu_nlb_dns_prefix}" = { ttl = 300, records = [local.spoke1_eu_nlb_addr] },

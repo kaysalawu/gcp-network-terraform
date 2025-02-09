@@ -33,4 +33,3 @@ variable "project_id_spoke2" {
 variable "project_id_onprem" {
   description = "onprem project id (for onprem site1 and site2)"
 }
-

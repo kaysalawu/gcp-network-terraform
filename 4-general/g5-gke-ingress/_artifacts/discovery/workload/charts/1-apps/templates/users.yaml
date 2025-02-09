@@ -1,0 +1,78 @@
+{{- range .Values.users }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .name }}
+  namespace: {{ $.Values.nameSpace }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ .name }}
+  ports:
+  - port: {{ $.Values.portAppyHttp }}
+    targetPort: {{ $.Values.portAppyHttp }}
+    name: http
+  - port: {{ $.Values.portAppyHttps }}
+    targetPort: {{ $.Values.portAppyHttps }}
+    name: https
+  - port: {{ $.Values.portAppyBolt }}
+    targetPort: {{ $.Values.portAppyBolt }}
+    name: bolt
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ .name }}
+  namespace: {{ $.Values.nameSpace }}
+  labels:
+    app: {{ .name }}
+spec:
+  serviceAccountName: {{ $.Values.serviceAccountName }}
+  containers:
+  - name: {{ .name }}-container-http
+    image: {{ $.Values.imageAppyHttp }}
+    ports:
+    - containerPort: {{ $.Values.portAppyHttp }}
+      name: http
+    livenessProbe:
+      tcpSocket:
+        port: {{ $.Values.portAppyHttp }}
+      initialDelaySeconds: 10
+      periodSeconds: 5
+    readinessProbe:
+      tcpSocket:
+        port: {{ $.Values.portAppyHttp }}
+      initialDelaySeconds: 5
+      periodSeconds: 5
+  - name: {{ .name }}-container-https
+    image: {{ $.Values.imageAppyHttps }}
+    ports:
+    - containerPort: {{ $.Values.portAppyHttps }}
+      name: https
+    livenessProbe:
+      tcpSocket:
+        port: {{ $.Values.portAppyHttps }}
+      initialDelaySeconds: 10
+      periodSeconds: 5
+    readinessProbe:
+      tcpSocket:
+        port: {{ $.Values.portAppyHttps }}
+      initialDelaySeconds: 5
+      periodSeconds: 5
+  - name: {{ .name }}-container-bolt
+    image: {{ $.Values.imageAppyBolt }}
+    ports:
+    - containerPort: {{ $.Values.portAppyBolt }}
+      name: bolt
+    livenessProbe:
+      tcpSocket:
+        port: {{ $.Values.portAppyBolt }}
+      initialDelaySeconds: 10
+      periodSeconds: 5
+    readinessProbe:
+      tcpSocket:
+        port: {{ $.Values.portAppyBolt }}
+      initialDelaySeconds: 5
+      periodSeconds: 5
+{{- end }}

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: gcloud
+  namespace: default
+spec:
+  serviceAccountName: cluster-ksa
+  containers:
+    - name: gcloud
+      image: google/cloud-sdk:latest
+      command: ["sleep", "infinity"]
