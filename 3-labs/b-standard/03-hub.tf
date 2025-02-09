@@ -114,7 +114,8 @@ resource "google_compute_address" "hub_us_main_addresses" {
 ####################################################
 
 module "hub_nat_eu" {
-  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
+  # source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
+  source         = "../../modules/net-cloudnat"
   project_id     = var.project_id_hub
   region         = local.hub_eu_region
   name           = "${local.hub_prefix}eu-nat"
@@ -127,7 +128,8 @@ module "hub_nat_eu" {
 }
 
 module "hub_nat_us" {
-  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
+  # source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
+  source         = "../../modules/net-cloudnat"
   project_id     = var.project_id_hub
   region         = local.hub_us_region
   name           = "${local.hub_prefix}us-nat"
@@ -150,7 +152,8 @@ module "hub_nat_us" {
 # vpc
 
 module "hub_vpc_firewall" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc-firewall?ref=v34.1.0"
+  # source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc-firewall?ref=v34.1.0"
+  source     = "../../modules/net-vpc-firewall"
   project_id = var.project_id_hub
   network    = module.hub_vpc.name
 
@@ -242,6 +245,7 @@ module "hub_vpc_firewall" {
 
 # module "hub_vpc_fw_policy" {
 #   source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v34.1.0"
+#   source    = "../../modules/net-firewall-policy"
 #   name      = "${local.hub_prefix}vpc-fw-policy"
 #   parent_id = var.project_id_hub
 #   region    = "global"
@@ -415,30 +419,30 @@ module "hub_us_dns" {
 }
 
 ####################################################
-# psc/api
+# psc endpoint for apis
 ####################################################
 
 # address
 
-resource "google_compute_global_address" "hub_psc_api_fr_addr" {
+resource "google_compute_global_address" "hub_psc_ep_api_fr_addr" {
   provider     = google-beta
   project      = var.project_id_hub
-  name         = local.hub_psc_api_fr_name
+  name         = local.hub_psc_ep_api_fr_name
   address_type = "INTERNAL"
   purpose      = "PRIVATE_SERVICE_CONNECT"
   network      = module.hub_vpc.self_link
-  address      = local.hub_psc_api_fr_addr
+  address      = local.hub_psc_ep_api_fr_addr
 }
 
 # forwarding rule
 
-resource "google_compute_global_forwarding_rule" "hub_psc_api_fr" {
+resource "google_compute_global_forwarding_rule" "hub_psc_ep_api_fr" {
   provider              = google-beta
   project               = var.project_id_hub
-  name                  = local.hub_psc_api_fr_name
-  target                = local.hub_psc_api_fr_target
+  name                  = local.hub_psc_ep_api_fr_name
+  target                = local.hub_psc_ep_api_fr_target
   network               = module.hub_vpc.self_link
-  ip_address            = google_compute_global_address.hub_psc_api_fr_addr.id
+  ip_address            = google_compute_global_address.hub_psc_ep_api_fr_addr.id
   load_balancing_scheme = ""
 }
 
@@ -471,14 +475,14 @@ resource "time_sleep" "hub_dns_forward_to_dns_wait" {
 
 locals {
   hub_dns_rp_rules = {
-    drp-rule-eu-psc-https-ctrl = { dns_name = "${local.hub_eu_psc_https_ctrl_run_dns}.", local_data = { A = { rrdatas = [local.hub_eu_alb_addr] } } }
-    drp-rule-us-psc-https-ctrl = { dns_name = "${local.hub_us_psc_https_ctrl_run_dns}.", local_data = { A = { rrdatas = [local.hub_us_alb_addr] } } }
-    drp-rule-runapp            = { dns_name = "*.run.app.", local_data = { A = { rrdatas = [local.hub_psc_api_fr_addr] } } }
-    drp-rule-gcr               = { dns_name = "*.gcr.io.", local_data = { A = { rrdatas = [local.hub_psc_api_fr_addr] } } }
-    drp-rule-apis              = { dns_name = "*.googleapis.com.", local_data = { A = { rrdatas = [local.hub_psc_api_fr_addr] } } }
-    drp-rule-bypass-www        = { dns_name = "www.googleapis.com.", behavior = "bypassResponsePolicy" }
-    drp-rule-bypass-ouath2     = { dns_name = "oauth2.googleapis.com.", behavior = "bypassResponsePolicy" }
-    drp-rule-bypass-psc        = { dns_name = "*.p.googleapis.com.", behavior = "bypassResponsePolicy" }
+    drp-rule-hub-eu-psc-be-api-run = { dns_name = "${local.hub_eu_psc_be_api_run_dns}.", local_data = { A = { rrdatas = [local.hub_eu_alb_addr] } } }
+    drp-rule-hub-us-psc-be-api-run = { dns_name = "${local.hub_us_psc_be_api_run_dns}.", local_data = { A = { rrdatas = [local.hub_us_alb_addr] } } }
+    drp-rule-runapp                = { dns_name = "*.run.app.", local_data = { A = { rrdatas = [local.hub_psc_ep_api_fr_addr] } } }
+    drp-rule-gcr                   = { dns_name = "*.gcr.io.", local_data = { A = { rrdatas = [local.hub_psc_ep_api_fr_addr] } } }
+    drp-rule-apis                  = { dns_name = "*.googleapis.com.", local_data = { A = { rrdatas = [local.hub_psc_ep_api_fr_addr] } } }
+    drp-rule-bypass-www            = { dns_name = "www.googleapis.com.", behavior = "bypassResponsePolicy" }
+    drp-rule-bypass-ouath2         = { dns_name = "oauth2.googleapis.com.", behavior = "bypassResponsePolicy" }
+    drp-rule-bypass-psc            = { dns_name = "*.p.googleapis.com.", behavior = "bypassResponsePolicy" }
   }
 }
 
@@ -506,13 +510,13 @@ module "hub_dns_psc" {
   name        = "${local.hub_prefix}psc"
   description = "psc"
   zone_config = {
-    domain = "${local.hub_psc_api_fr_name}.p.googleapis.com."
+    domain = "${local.hub_psc_ep_api_fr_name}.p.googleapis.com."
     private = {
       client_networks = [module.hub_vpc.self_link, ]
     }
   }
   recordsets = {
-    "A " = { ttl = 300, records = [local.hub_psc_api_fr_addr] }
+    "A " = { ttl = 300, records = [local.hub_psc_ep_api_fr_addr] }
   }
   depends_on = [
     time_sleep.hub_dns_forward_to_dns_wait,

@@ -1,5 +1,6 @@
 
 locals {
+  # spoke1_eu_run_httpbin_host = module.spoke1_eu_run_httpbin.service.uri
   spoke1_eu_ilb_ipv6 = split("/", module.spoke1_eu_ilb.forwarding_rule_addresses["fr-ipv6"])[0]
 }
 
@@ -30,8 +31,8 @@ module "spoke1_eu_ilb" {
   forwarding_rules_config = {
     fr-ipv4 = {
       address    = local.spoke1_eu_ilb_addr
-      protocol   = "TCP"                  # NOTE: protocol required for geo routing, service attachment etc
-      ports      = [local.svc_web.port, ] # NOTE: port required for geo routing, service attachment etc
+      protocol   = "TCP"                  # NOTE: protocol required for geo routing, service attachment etc.
+      ports      = [local.svc_web.port, ] # NOTE: port required for geo routing, service attachment etc.
       ip_version = "IPV4"
     }
     fr-ipv6 = {
@@ -185,11 +186,9 @@ module "spoke1_eu_alb" {
     default_service = "default"
     host_rules = [
       { path_matcher = "main", hosts = [local.spoke1_eu_alb_fqdn, ] },
-      { path_matcher = "psc-neg", hosts = [local.spoke1_eu_psc_https_ctrl_run_dns, ] }
     ]
     path_matchers = {
-      main    = { default_service = "default" }
-      psc-neg = { default_service = "psc-neg" }
+      main = { default_service = "default" }
     }
   }
   backend_service_configs = {
@@ -204,30 +203,12 @@ module "spoke1_eu_alb" {
         },
       ]
     }
-    psc-neg = {
-      health_checks = []
-      backends = [
-        {
-          group          = "psc-neg"
-          balancing_mode = "UTILIZATION"
-          max_rate       = { capacity_scaler = 1.0 }
-        }
-      ]
-    }
   }
   group_configs = {
     main = {
       zone        = "${local.spoke1_eu_region}-b"
       instances   = [module.spoke1_eu_alb_vm.self_link, ]
       named_ports = { (local.svc_web.name) = local.svc_web.port }
-    }
-  }
-  neg_configs = {
-    psc-neg = {
-      psc = {
-        region         = local.spoke1_eu_region
-        target_service = local.spoke1_eu_psc_https_ctrl_run_dns
-      }
     }
   }
   health_check_configs = {
@@ -248,6 +229,37 @@ module "spoke1_eu_alb" {
 }
 
 ####################################################
+# cloud run
+####################################################
+
+# module "spoke1_eu_run_httpbin" {
+#   source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/cloud-run-v2?ref=v34.1.0"
+#   project_id = var.project_id_spoke1
+#   name       = "${local.spoke1_prefix}eu-run-httpbin"
+#   region     = local.spoke1_eu_region
+#   containers = {
+#     httpbin = {
+#       image = "kennethreitz/httpbin"
+#       ports = {
+#         httpbin = { name = "http1", container_port = local.httpbin_port }
+#       }
+#       resources     = null
+#       volume_mounts = null
+#     }
+#   }
+#   iam = {
+#     "roles/run.invoker" = [
+#       "serviceAccount:${module.site1_sa.email}",
+#       "serviceAccount:${module.site2_sa.email}",
+#       "serviceAccount:${module.hub_sa.email}",
+#       "serviceAccount:${module.spoke1_sa.email}",
+#       "serviceAccount:${module.spoke2_sa.email}",
+#     ]
+#   }
+# }
+
+
+####################################################
 # dns recordsets
 ####################################################
 
@@ -256,8 +268,7 @@ module "spoke1_dns_private_zone_records" {
   depends_on  = [module.spoke1_dns_private_zone, ]
   project_id  = var.project_id_spoke1
   name        = module.spoke1_dns_private_zone.name
-  description = "spoke1 network attached"
-
+  description = "local data"
   recordsets = {
     "A ${local.spoke1_eu_ilb_dns_prefix}" = { ttl = 300, records = [local.spoke1_eu_ilb_addr] },
     "A ${local.spoke1_eu_nlb_dns_prefix}" = { ttl = 300, records = [local.spoke1_eu_nlb_addr] },

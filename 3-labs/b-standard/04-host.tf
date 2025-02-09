@@ -87,16 +87,6 @@ resource "google_compute_address" "spoke1_eu_main_addresses" {
   region       = local.spoke1_eu_region
 }
 
-resource "google_compute_address" "spoke1_us_main_addresses" {
-  for_each     = local.spoke1_us_main_addresses
-  project      = var.project_id_spoke1
-  name         = each.key
-  subnetwork   = module.spoke1_vpc.subnet_ids["${local.spoke1_us_region}/us-main"]
-  address_type = "INTERNAL"
-  address      = each.value.ipv4
-  region       = local.spoke1_us_region
-}
-
 ####################################################
 # service networking connection
 ####################################################
@@ -117,23 +107,11 @@ resource "google_compute_address" "spoke1_us_main_addresses" {
 ####################################################
 
 module "spoke1_nat_eu" {
-  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
+  # source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
+  source         = "../../modules/net-cloudnat"
   project_id     = var.project_id_host
   region         = local.spoke1_eu_region
   name           = "${local.spoke1_prefix}eu-nat"
-  router_network = module.spoke1_vpc.self_link
-  router_create  = true
-
-  config_source_subnetworks = {
-    primary_ranges_only = true
-  }
-}
-
-module "spoke1_nat_us" {
-  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
-  project_id     = var.project_id_host
-  region         = local.spoke1_us_region
-  name           = "${local.spoke1_prefix}us-nat"
   router_network = module.spoke1_vpc.self_link
   router_create  = true
 
@@ -149,7 +127,8 @@ module "spoke1_nat_us" {
 # policy
 
 module "spoke1_vpc_fw_policy" {
-  source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v34.1.0"
+  # source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v34.1.0"
+  source    = "../../modules/net-firewall-policy"
   name      = "${local.spoke1_prefix}vpc-fw-policy"
   parent_id = var.project_id_host
   region    = "global"
@@ -296,24 +275,24 @@ resource "google_project_organization_policy" "spoke1_subnets_for_spoke1_only" {
 
 # address
 
-resource "google_compute_global_address" "spoke1_psc_api_fr_addr" {
+resource "google_compute_global_address" "spoke1_psc_ep_api_fr_addr" {
   provider     = google-beta
   project      = var.project_id_host
-  name         = local.spoke1_psc_api_fr_name
+  name         = local.spoke1_psc_ep_api_fr_name
   address_type = "INTERNAL"
   purpose      = "PRIVATE_SERVICE_CONNECT"
   network      = module.spoke1_vpc.self_link
-  address      = local.spoke1_psc_api_fr_addr
+  address      = local.spoke1_psc_ep_api_fr_addr
 }
 
 # forwarding rule
 
-resource "google_compute_global_forwarding_rule" "spoke1_psc_api_fr" {
+resource "google_compute_global_forwarding_rule" "spoke1_psc_ep_api_fr" {
   provider              = google-beta
   project               = var.project_id_host
-  name                  = local.spoke1_psc_api_fr_name
-  target                = local.spoke1_psc_api_fr_target
+  name                  = local.spoke1_psc_ep_api_fr_name
+  target                = local.spoke1_psc_ep_api_fr_target
   network               = module.spoke1_vpc.self_link
-  ip_address            = google_compute_global_address.spoke1_psc_api_fr_addr.id
+  ip_address            = google_compute_global_address.spoke1_psc_ep_api_fr_addr.id
   load_balancing_scheme = ""
 }

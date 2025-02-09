@@ -200,14 +200,18 @@ locals {
     us-psc-alb-nat6 = { region = local.hub_us_region, ip_cidr_range = "10.1.29.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
   }
 
-  # external
-  #--------------------------------
-
-  # prefixes
   hub_eu_gke_master_cidr1 = "172.16.11.0/28"
   hub_eu_gke_master_cidr2 = "172.16.11.16/28"
   hub_eu_psa_range1       = "10.1.120.0/22"
   hub_eu_psa_range2       = "10.1.124.0/22"
+
+  hub_us_gke_master_cidr1 = "172.16.11.32/28"
+  hub_us_gke_master_cidr2 = "172.16.11.48/28"
+  hub_us_psa_range1       = "10.1.220.0/22"
+  hub_us_psa_range2       = "10.1.224.0/22"
+
+  # external
+  #--------------------------------
 
   hub_eu_main_default_gw = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 1)
   hub_eu_vm_addr         = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 9)
@@ -221,6 +225,19 @@ locals {
   hub_eu_nlb_addr        = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 80)
   hub_eu_alb_addr        = cidrhost(local.hub_subnets_eu["eu-main"].ip_cidr_range, 90)
   hub_eu_router_lo_addr  = "11.11.11.11"
+
+  hub_us_main_default_gw = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 1)
+  hub_us_vm_addr         = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 9)
+  hub_us_router_addr     = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 10)
+  hub_us_ncc_cr_addr0    = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 20)
+  hub_us_ncc_cr_addr1    = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 30)
+  hub_us_ns_addr         = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 40)
+  hub_us_nva_vm_addr     = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 50)
+  hub_us_nva_ilb_addr    = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 60)
+  hub_us_ilb_addr        = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 70)
+  hub_us_alb_addr        = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 80)
+  hub_us_nlb_addr        = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 90)
+  hub_us_router_lo_addr  = "22.22.22.22"
 
   hub_eu_main_addresses = {
     "${local.hub_prefix}eu-ncc-cr-addr0" = { ipv4 = local.hub_eu_ncc_cr_addr0 }
@@ -243,54 +260,7 @@ locals {
     "${local.hub_prefix}us-alb-addr"     = { ipv4 = local.hub_us_alb_addr }
   }
 
-  hub_us_gke_master_cidr1 = "172.16.11.32/28"
-  hub_us_gke_master_cidr2 = "172.16.11.48/28"
-  hub_us_psa_range1       = "10.1.220.0/22"
-  hub_us_psa_range2       = "10.1.224.0/22"
-
-  hub_us_main_default_gw = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 1)
-  hub_us_vm_addr         = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 9)
-  hub_us_router_addr     = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 10)
-  hub_us_ncc_cr_addr0    = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 20)
-  hub_us_ncc_cr_addr1    = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 30)
-  hub_us_ns_addr         = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 40)
-  hub_us_nva_vm_addr     = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 50)
-  hub_us_nva_ilb_addr    = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 60)
-  hub_us_ilb_addr        = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 70)
-  hub_us_alb_addr        = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 80)
-  hub_us_nlb_addr        = cidrhost(local.hub_subnets_us["us-main"].ip_cidr_range, 90)
-  hub_us_router_lo_addr  = "22.22.22.22"
-
-  # psc/api
-  hub_psc_api_fr_range    = "10.1.0.0/24"                           # vip range
-  hub_psc_api_all_fr_name = "${var.prefix}huball"                   # all-apis forwarding rule name
-  hub_psc_api_sec_fr_name = "${var.prefix}hubsec"                   # vpc-sc forwarding rule name
-  hub_psc_api_all_fr_addr = cidrhost(local.hub_psc_api_fr_range, 1) # all-apis forwarding rule vip
-  hub_psc_api_sec_fr_addr = cidrhost(local.hub_psc_api_fr_range, 2) # vpc-sc forwarding rule vip
-
-  # psc/api http(s) service controls
-  hub_eu_psc_https_ctrl_run_dns = "${local.hub_eu_region}-run.googleapis.com"
-  hub_us_psc_https_ctrl_run_dns = "${local.hub_us_region}-run.googleapis.com"
-
-  # psc endpoints --> spoke1
-  hub_eu_ep_spoke1_eu_psc_ilb_prefix = "ep.eu.spoke1-eu-ilb"
-  hub_eu_ep_spoke1_eu_psc_nlb_prefix = "ep.eu.spoke1-eu-nlb"
-  hub_eu_ep_spoke1_eu_psc_alb_prefix = "ep.eu.spoke1-eu-alb"
-  hub_eu_ep_spoke1_eu_psc_ilb_fqdn   = "${local.hub_eu_ep_spoke1_eu_psc_ilb_prefix}.${local.hub_dns_zone}"
-  hub_eu_ep_spoke1_eu_psc_nlb_fqdn   = "${local.hub_eu_ep_spoke1_eu_psc_nlb_prefix}.${local.hub_dns_zone}"
-  hub_eu_ep_spoke1_eu_psc_alb_fqdn   = "${local.hub_eu_ep_spoke1_eu_psc_alb_prefix}.${local.hub_dns_zone}"
-
-  # hub_us_ep_spoke1_us_psc_ilb_prefix = "ep.us.spoke1-eu-ilb"
-  # hub_us_ep_spoke1_us_psc_nlb_prefix = "ep.us.spoke1-eu-nlb"
-  # hub_us_ep_spoke1_us_psc_alb_prefix = "ep.us.spoke1-eu-alb"
-  # hub_us_ep_spoke1_us_psc_ilb_fqdn   = "${local.hub_us_ep_spoke1_us_psc_ilb_prefix}.${local.hub_dns_zone}"
-  # hub_us_ep_spoke1_us_psc_nlb_fqdn   = "${local.hub_us_ep_spoke1_us_psc_nlb_prefix}.${local.hub_dns_zone}"
-  # hub_us_ep_spoke1_us_psc_alb_fqdn   = "${local.hub_us_ep_spoke1_us_psc_alb_prefix}.${local.hub_dns_zone}"
-
-  # fqdn
-  hub_geo_ilb_prefix = "ilb.geo" # geo-dns resolves to regional ilb endpoint
-  hub_geo_ilb_fqdn   = "${local.hub_geo_ilb_prefix}.${local.hub_dns_zone}"
-
+  # vm instances
   hub_eu_vm_dns_prefix  = "vm.eu"
   hub_eu_ilb_dns_prefix = "ilb.eu"
   hub_eu_nlb_dns_prefix = "nlb.eu"
@@ -309,14 +279,31 @@ locals {
   hub_us_nlb_fqdn       = "${local.hub_us_nlb_dns_prefix}.${local.hub_dns_zone}"
   hub_us_alb_fqdn       = "${local.hub_us_alb_dns_prefix}.${local.hub_dns_zone}"
 
-  # td
-  hub_td_range                       = "172.16.0.0/24"
-  hub_td_envoy_cloud_addr            = cidrhost(local.hub_td_range, 2)
-  hub_td_envoy_hybrid_addr           = cidrhost(local.hub_td_range, 3)
-  hub_td_grpc_cloud_svc              = "grpc-cloud"
-  hub_td_envoy_cloud_svc             = "envoy-cloud"
-  hub_td_envoy_hybrid_svc            = "envoy-hybrid"
-  hub_td_envoy_bridge_ilb_dns_prefix = "ilb.envoy-bridge" # geo-dns resolves to regional endpoint
+  # psc endpoints in hub-eu to connect to spoke1 (producer)
+  hub_eu_psc_ep_svc_spoke1_eu_ilb_addr   = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 66)
+  hub_eu_psc_ep_svc_spoke1_eu_nlb_addr   = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 77)
+  hub_eu_psc_ep_svc_spoke1_eu_alb_addr   = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 88)
+  hub_eu_psc_ep_svc_spoke1_eu_ilb_prefix = "ep.eu.spoke1-eu-ilb"
+  hub_eu_psc_ep_svc_spoke1_eu_nlb_prefix = "ep.eu.spoke1-eu-nlb"
+  hub_eu_psc_ep_svc_spoke1_eu_alb_prefix = "ep.eu.spoke1-eu-alb"
+  hub_eu_psc_ep_svc_spoke1_eu_ilb_fqdn   = "${local.hub_eu_psc_ep_svc_spoke1_eu_ilb_prefix}.${local.hub_dns_zone}"
+  hub_eu_psc_ep_svc_spoke1_eu_nlb_fqdn   = "${local.hub_eu_psc_ep_svc_spoke1_eu_nlb_prefix}.${local.hub_dns_zone}"
+  hub_eu_psc_ep_svc_spoke1_eu_alb_fqdn   = "${local.hub_eu_psc_ep_svc_spoke1_eu_alb_prefix}.${local.hub_dns_zone}"
+
+  # psc endpoints for google apis
+  hub_psc_ep_api_fr_range    = "10.1.0.0/24"                              # vip range
+  hub_psc_ep_api_all_fr_name = "${var.prefix}huball"                      # all-apis forwarding rule name
+  hub_psc_ep_api_sec_fr_name = "${var.prefix}hubsec"                      # vpc-sc forwarding rule name
+  hub_psc_ep_api_all_fr_addr = cidrhost(local.hub_psc_ep_api_fr_range, 1) # all-apis forwarding rule vip
+  hub_psc_ep_api_sec_fr_addr = cidrhost(local.hub_psc_ep_api_fr_range, 2) # vpc-sc forwarding rule vip
+
+  # psc backend for google apis
+  hub_eu_psc_be_api_run_dns = "${local.hub_eu_region}-run.googleapis.com"
+  hub_us_psc_be_api_run_dns = "${local.hub_us_region}-run.googleapis.com"
+
+  # geo-dns for ilb endpoints
+  hub_geo_ilb_prefix = "ilb.geo" # geo-dns resolves to regional ilb endpoint
+  hub_geo_ilb_fqdn   = "${local.hub_geo_ilb_prefix}.${local.hub_dns_zone}"
 }
 
 # spoke1
@@ -364,7 +351,7 @@ locals {
   spoke1_gke_master_cidr2     = "172.16.11.16/28"
   spoke1_eu_psa_range1        = "10.11.120.0/22"
   spoke1_eu_psa_range2        = "10.11.124.0/22"
-  spoke1_psc_api_fr_range     = "10.11.0.0/24" # vip range
+  spoke1_psc_ep_api_fr_range  = "10.11.0.0/24" # vip range
   spoke1_eu_psc4_producer_nat = "192.168.101.0/24"
   spoke1_us_psc4_producer_nat = "192.168.102.0/24"
 
@@ -388,7 +375,7 @@ locals {
     "${local.spoke1_prefix}us-alb-addr" = { ipv4 = local.spoke1_us_alb_addr }
   }
 
-  # fqdn
+  # vm instances
   spoke1_eu_vm_dns_prefix  = "vm.eu"
   spoke1_eu_ilb_dns_prefix = "ilb.eu"
   spoke1_eu_nlb_dns_prefix = "nlb.eu"
@@ -407,15 +394,15 @@ locals {
   spoke1_us_nlb_fqdn       = "${local.spoke1_us_nlb_dns_prefix}.${local.spoke1_dns_zone}"
   spoke1_us_alb_fqdn       = "${local.spoke1_us_alb_dns_prefix}.${local.spoke1_dns_zone}"
 
-  # psc/api
-  spoke1_psc_api_all_fr_name = "${var.prefix}spoke1all"                   # all-apis forwarding rule name
-  spoke1_psc_api_sec_fr_name = "${var.prefix}spoke1sec"                   # vpc-sc forwarding rule name
-  spoke1_psc_api_all_fr_addr = cidrhost(local.spoke1_psc_api_fr_range, 1) # all-apis forwarding rule vip
-  spoke1_psc_api_sec_fr_addr = cidrhost(local.spoke1_psc_api_fr_range, 2) # vpc-sc forwarding rule vip
+  # psc endpoints for google apis
+  spoke1_psc_ep_api_all_fr_name = "${var.prefix}spoke1all"                      # all-apis forwarding rule name
+  spoke1_psc_ep_api_sec_fr_name = "${var.prefix}spoke1sec"                      # vpc-sc forwarding rule name
+  spoke1_psc_ep_api_all_fr_addr = cidrhost(local.spoke1_psc_ep_api_fr_range, 1) # all-apis forwarding rule vip
+  spoke1_psc_ep_api_sec_fr_addr = cidrhost(local.spoke1_psc_ep_api_fr_range, 2) # vpc-sc forwarding rule vip
 
-  # psc/api http(s) service controls
-  spoke1_eu_psc_https_ctrl_run_dns = "${local.spoke1_eu_region}-run.googleapis.com"
-  spoke1_us_psc_https_ctrl_run_dns = "${local.spoke1_us_region}-run.googleapis.com"
+  # psc backend for google apis
+  spoke1_eu_psc_be_api_run_dns = "${local.spoke1_eu_region}-run.googleapis.com"
+  spoke1_us_psc_be_api_run_dns = "${local.spoke1_us_region}-run.googleapis.com"
 
   # reverse dns
   spoke1_eu_ilb_reverse_suffix = format("%s.%s.${local.spoke1_reverse_zone}",
@@ -477,18 +464,15 @@ locals {
   spoke2_gke_master_cidr2     = "172.16.22.16/28"
   spoke2_us_psa_range1        = "10.22.120.0/22"
   spoke2_us_psa_range2        = "10.22.124.0/22"
-  spoke2_psc_api_fr_range     = "10.22.0.0/24" # vip range
+  spoke2_psc_ep_api_fr_range  = "10.22.0.0/24" # vip range
   spoke2_eu_psc4_producer_nat = "192.168.201.0/24"
   spoke2_us_psc4_producer_nat = "192.168.202.0/24"
 
-  spoke2_eu_main_default_gw           = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 1)
-  spoke2_eu_vm_addr                   = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 9)
-  spoke2_eu_ilb_addr                  = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 30)
-  spoke2_eu_nlb_addr                  = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 40)
-  spoke2_eu_alb_addr                  = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 50)
-  spoke2_eu_ep_spoke1_eu_psc_ilb_addr = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 60)
-  spoke2_eu_ep_spoke1_eu_psc_nlb_addr = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 70)
-  spoke2_eu_ep_spoke1_eu_psc_alb_addr = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 80)
+  spoke2_eu_main_default_gw = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 1)
+  spoke2_eu_vm_addr         = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 9)
+  spoke2_eu_ilb_addr        = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 30)
+  spoke2_eu_nlb_addr        = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 40)
+  spoke2_eu_alb_addr        = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 50)
 
   spoke2_us_main_default_gw           = cidrhost(local.spoke2_subnets["us-main"].ip_cidr_range, 1)
   spoke2_us_vm_addr                   = cidrhost(local.spoke2_subnets["us-main"].ip_cidr_range, 9)
@@ -508,7 +492,7 @@ locals {
     "${local.spoke2_prefix}us-alb-addr" = { ipv4 = local.spoke2_us_alb_addr }
   }
 
-  # fqdn
+  # vm instances
   spoke2_eu_vm_dns_prefix  = "vm.eu"
   spoke2_eu_ilb_dns_prefix = "ilb.eu"
   spoke2_eu_nlb_dns_prefix = "nlb.eu"
@@ -527,23 +511,26 @@ locals {
   spoke2_us_nlb_fqdn       = "${local.spoke2_us_nlb_dns_prefix}.${local.spoke2_dns_zone}"
   spoke2_us_alb_fqdn       = "${local.spoke2_us_alb_dns_prefix}.${local.spoke2_dns_zone}"
 
-  # psc/api
-  spoke2_psc_api_all_fr_name = "${var.prefix}spoke2all"                   # all-apis forwarding rule name
-  spoke2_psc_api_sec_fr_name = "${var.prefix}spoke2sec"                   # vpc-sc forwarding rule name
-  spoke2_psc_api_all_fr_addr = cidrhost(local.spoke2_psc_api_fr_range, 1) # all-apis forwarding rule vip
-  spoke2_psc_api_sec_fr_addr = cidrhost(local.spoke2_psc_api_fr_range, 2) # vpc-sc forwarding rule vip
+  # psc endpoints in spoke2-eu to connect to spoke1 (producer)
+  spoke2_eu_psc_ep_svc_spoke1_eu_ilb_addr   = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 66)
+  spoke2_eu_psc_ep_svc_spoke1_eu_nlb_addr   = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 77)
+  spoke2_eu_psc_ep_svc_spoke1_eu_alb_addr   = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 88)
+  spoke2_eu_psc_ep_svc_spoke1_eu_ilb_prefix = "ep.eu.spoke1-eu-ilb"
+  spoke2_eu_psc_ep_svc_spoke1_eu_nlb_prefix = "ep.eu.spoke1-eu-nlb"
+  spoke2_eu_psc_ep_svc_spoke1_eu_alb_prefix = "ep.eu.spoke1-eu-alb"
+  spoke2_eu_psc_ep_svc_spoke1_eu_ilb_fqdn   = "${local.spoke2_eu_psc_ep_svc_spoke1_eu_ilb_prefix}.${local.spoke2_dns_zone}"
+  spoke2_eu_psc_ep_svc_spoke1_eu_nlb_fqdn   = "${local.spoke2_eu_psc_ep_svc_spoke1_eu_nlb_prefix}.${local.spoke2_dns_zone}"
+  spoke2_eu_psc_ep_svc_spoke1_eu_alb_fqdn   = "${local.spoke2_eu_psc_ep_svc_spoke1_eu_alb_prefix}.${local.spoke2_dns_zone}"
 
-  # psc/api http(s) service controls
-  spoke2_eu_psc_https_ctrl_run_dns = "${local.spoke2_eu_region}-run.googleapis.com"
-  spoke2_us_psc_https_ctrl_run_dns = "${local.spoke2_us_region}-run.googleapis.com"
+  # psc endpoints for google apis
+  spoke2_psc_ep_api_all_fr_name = "${var.prefix}spoke2all"                      # all-apis forwarding rule name
+  spoke2_psc_ep_api_sec_fr_name = "${var.prefix}spoke2sec"                      # vpc-sc forwarding rule name
+  spoke2_psc_ep_api_all_fr_addr = cidrhost(local.spoke2_psc_ep_api_fr_range, 1) # all-apis forwarding rule vip
+  spoke2_psc_ep_api_sec_fr_addr = cidrhost(local.spoke2_psc_ep_api_fr_range, 2) # vpc-sc forwarding rule vip
 
-  # psc endpoints --> spoke1
-  spoke2_eu_ep_spoke1_eu_psc_ilb_prefix = "ep.eu.spoke1-eu-ilb"
-  spoke2_eu_ep_spoke1_eu_psc_nlb_prefix = "ep.eu.spoke1-eu-nlb"
-  spoke2_eu_ep_spoke1_eu_psc_alb_prefix = "ep.eu.spoke1-eu-alb"
-  spoke2_eu_ep_spoke1_eu_psc_ilb_fqdn   = "${local.spoke2_eu_ep_spoke1_eu_psc_ilb_prefix}.${local.spoke2_dns_zone}"
-  spoke2_eu_ep_spoke1_eu_psc_nlb_fqdn   = "${local.spoke2_eu_ep_spoke1_eu_psc_nlb_prefix}.${local.spoke2_dns_zone}"
-  spoke2_eu_ep_spoke1_eu_psc_alb_fqdn   = "${local.spoke2_eu_ep_spoke1_eu_psc_alb_prefix}.${local.spoke2_dns_zone}"
+  # psc backend for google apis
+  spoke2_eu_psc_be_api_run_dns = "${local.spoke2_eu_region}-run.googleapis.com"
+  spoke2_us_psc_be_api_run_dns = "${local.spoke2_us_region}-run.googleapis.com"
 
   # reverse dns
   spoke2_us_ilb_reverse_suffix = format("%s.%s.${local.spoke2_reverse_zone}",

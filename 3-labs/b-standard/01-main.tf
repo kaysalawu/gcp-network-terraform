@@ -9,15 +9,60 @@ locals {
   us_repo_name = google_artifact_registry_repository.us_repo.name
   httpbin_port = 80
 
-  hub_psc_api_secure    = false
-  spoke1_psc_api_secure = true
-  spoke2_psc_api_secure = true
+  hub_psc_ep_api_secure = false
+  hub_psc_ep_api_fr_name = (
+    local.hub_psc_ep_api_secure ?
+    local.hub_psc_ep_api_sec_fr_name :
+    local.hub_psc_ep_api_all_fr_name
+  )
+  hub_psc_ep_api_fr_addr = (
+    local.hub_psc_ep_api_secure ?
+    local.hub_psc_ep_api_sec_fr_addr :
+    local.hub_psc_ep_api_all_fr_addr
+  )
+  hub_psc_ep_api_fr_target = (
+    local.hub_psc_ep_api_secure ?
+    "vpc-sc" :
+    "all-apis"
+  )
+
+  spoke1_psc_ep_api_secure = true
+  spoke1_psc_ep_api_fr_name = (
+    local.spoke1_psc_ep_api_secure ?
+    local.spoke1_psc_ep_api_sec_fr_name :
+    local.spoke1_psc_ep_api_all_fr_name
+  )
+  spoke1_psc_ep_api_fr_addr = (
+    local.spoke1_psc_ep_api_secure ?
+    local.spoke1_psc_ep_api_sec_fr_addr :
+    local.spoke1_psc_ep_api_all_fr_addr
+  )
+  spoke1_psc_ep_api_fr_target = (
+    local.spoke1_psc_ep_api_secure ?
+    "vpc-sc" :
+    "all-apis"
+  )
+
+  spoke2_psc_ep_api_secure = true
+  spoke2_psc_ep_api_fr_name = (
+    local.spoke2_psc_ep_api_secure ?
+    local.spoke2_psc_ep_api_sec_fr_name :
+    local.spoke2_psc_ep_api_all_fr_name
+  )
+  spoke2_psc_ep_api_fr_addr = (
+    local.spoke2_psc_ep_api_secure ?
+    local.spoke2_psc_ep_api_sec_fr_addr :
+    local.spoke2_psc_ep_api_all_fr_addr
+  )
+  spoke2_psc_ep_api_fr_target = (
+    local.spoke2_psc_ep_api_secure ?
+    "vpc-sc" :
+    "all-apis"
+  )
 
   enable_ipv6 = true
 
-  hub_eu_run_httpbin_host    = module.hub_eu_run_httpbin.service.uri
-  spoke1_eu_run_httpbin_host = module.spoke1_eu_run_httpbin.service.uri
-  spoke2_us_run_httpbin_host = module.spoke2_us_run_httpbin.service.uri
+  hub_eu_run_httpbin_host = module.hub_eu_run_httpbin.service.uri
 
   spoke1_bucket_name = "${local.spoke1_prefix}${var.project_id_spoke1}-bucket"
   spoke2_bucket_name = "${local.spoke2_prefix}${var.project_id_spoke2}-bucket"
@@ -58,23 +103,23 @@ locals {
     { name = "site1-vm     ", host = local.site1_vm_fqdn, ipv4 = local.site1_vm_addr, probe = true, ping = true },
     { name = "hub-eu-vm    ", host = local.hub_eu_vm_fqdn, ipv4 = local.hub_eu_vm_addr, probe = true, ping = true },
     { name = "spoke1-eu-vm ", host = local.spoke1_eu_vm_fqdn, ipv4 = local.spoke1_eu_vm_addr, probe = true, ping = true },
-    { name = "hub-eu-ilb   ", host = local.hub_eu_ilb_fqdn, ipv4 = local.hub_eu_ilb_addr, curl = false },
-    { name = "hub-eu-nlb   ", host = local.hub_eu_nlb_fqdn, ipv4 = local.hub_eu_nlb_addr, curl = false, ipv6 = false },
-    { name = "hub-eu-alb   ", host = local.hub_eu_alb_fqdn, ipv4 = local.hub_eu_alb_addr, curl = false, ipv6 = false },
+    { name = "hub-eu-ilb   ", host = local.hub_eu_ilb_fqdn, ipv4 = local.hub_eu_ilb_addr, ping = true },
+    { name = "hub-eu-nlb   ", host = local.hub_eu_nlb_fqdn, ipv4 = local.hub_eu_nlb_addr, ipv6 = false },
+    { name = "hub-eu-alb   ", host = local.hub_eu_alb_fqdn, ipv4 = local.hub_eu_alb_addr, ipv6 = false },
     { name = "spoke1-eu-ilb", host = local.spoke1_eu_ilb_fqdn, ipv4 = local.spoke1_eu_ilb_addr, ptr = true, ping = true },
     { name = "spoke1-eu-nlb", host = local.spoke1_eu_nlb_fqdn, ipv4 = local.spoke1_eu_nlb_addr, ptr = true, ipv6 = false },
     { name = "spoke1-eu-alb", host = local.spoke1_eu_alb_fqdn, ipv4 = local.spoke1_eu_alb_addr, ptr = true, ipv6 = false },
-    { name = "spoke2-spoke1-eu-psc-ilb", host = local.spoke2_eu_ep_spoke1_eu_psc_ilb_fqdn, ipv4 = local.spoke2_eu_ep_spoke1_eu_psc_ilb_addr },
-    { name = "spoke2-spoke1-eu-psc-nlb", host = local.spoke2_eu_ep_spoke1_eu_psc_nlb_fqdn, ipv4 = local.spoke2_eu_ep_spoke1_eu_psc_nlb_addr, ipv6 = false },
-    { name = "spoke2-spoke1-eu-psc-alb", host = local.spoke2_eu_ep_spoke1_eu_psc_alb_fqdn, ipv4 = local.spoke2_eu_ep_spoke1_eu_psc_alb_addr, ipv6 = false },
+    { name = "", host = local.hub_eu_psc_ep_svc_spoke1_eu_ilb_fqdn, ipv4 = local.hub_eu_psc_ep_svc_spoke1_eu_ilb_addr },
+    { name = "", host = local.hub_eu_psc_ep_svc_spoke1_eu_nlb_fqdn, ipv4 = local.hub_eu_psc_ep_svc_spoke1_eu_nlb_addr, ipv6 = false },
+    { name = "", host = local.hub_eu_psc_ep_svc_spoke1_eu_alb_fqdn, ipv4 = local.hub_eu_psc_ep_svc_spoke1_eu_alb_addr, ipv6 = false },
   ]
   vm_script_targets_region2 = [
     { name = "site2-vm     ", host = local.site2_vm_fqdn, ipv4 = local.site2_vm_addr, probe = true, ping = true },
     { name = "hub-us-vm    ", host = local.hub_us_vm_fqdn, ipv4 = local.hub_us_vm_addr, probe = true, ping = true },
     { name = "spoke2-us-vm ", host = local.spoke2_us_vm_fqdn, ipv4 = local.spoke2_us_vm_addr, probe = true, ping = true },
-    { name = "hub-us-ilb   ", host = local.hub_us_ilb_fqdn, ipv4 = local.hub_us_ilb_addr, curl = false },
-    { name = "hub-us-nlb   ", host = local.hub_us_nlb_fqdn, ipv4 = local.hub_us_nlb_addr, curl = false, ipv6 = false },
-    { name = "hub-us-alb   ", host = local.hub_us_alb_fqdn, ipv4 = local.hub_us_alb_addr, curl = false, ipv6 = false },
+    { name = "hub-us-ilb   ", host = local.hub_us_ilb_fqdn, ipv4 = local.hub_us_ilb_addr, ping = true },
+    { name = "hub-us-nlb   ", host = local.hub_us_nlb_fqdn, ipv4 = local.hub_us_nlb_addr, ipv6 = false },
+    { name = "hub-us-alb   ", host = local.hub_us_alb_fqdn, ipv4 = local.hub_us_alb_addr, ipv6 = false },
     { name = "spoke2-us-ilb", host = local.spoke2_us_ilb_fqdn, ipv4 = local.spoke2_us_ilb_addr, ptr = true, ping = true },
     { name = "spoke2-us-nlb", host = local.spoke2_us_nlb_fqdn, ipv4 = local.spoke2_us_nlb_addr, ptr = true, ipv6 = false },
     { name = "spoke2-us-alb", host = local.spoke2_us_alb_fqdn, ipv4 = local.spoke2_us_alb_addr, ptr = true, ipv6 = false },
@@ -84,11 +129,11 @@ locals {
     { name = "internet", host = "icanhazip.com", probe = true },
     { name = "www", host = "www.googleapis.com", path = "/generate_204", probe = true },
     { name = "storage", host = "storage.googleapis.com", path = "/generate_204", probe = true },
-    { name = "hub-eu-psc-https", host = local.hub_eu_psc_https_ctrl_run_dns, path = "/generate_204" },
-    { name = "hub-us-psc-https", host = local.hub_us_psc_https_ctrl_run_dns, path = "/generate_204" },
-    { name = "hub-eu-run", host = local.hub_eu_run_httpbin_host, probe = true, path = "/generate_204" },
-    { name = "spoke1-eu-run", host = local.spoke1_eu_run_httpbin_host, probe = true, path = "/generate_204" },
-    { name = "spoke2-us-run", host = local.spoke2_us_run_httpbin_host, probe = true, path = "/generate_204" },
+    { name = "", host = local.hub_eu_psc_be_api_run_dns, path = "/generate_204", psc_be = true },
+    { name = "", host = local.hub_us_psc_be_api_run_dns, path = "/generate_204", psc_be = true },
+    { name = "", host = local.hub_eu_run_httpbin_host, probe = true, path = "/generate_204" },
+    # { name = "spoke1-eu-run", host = local.spoke1_eu_run_httpbin_host, probe = true, path = "/generate_204" },
+    # { name = "spoke2-us-run", host = local.spoke2_us_run_httpbin_host, probe = true, path = "/generate_204" },
   ]
   vm_script_targets = concat(
     local.vm_script_targets_region1,
@@ -372,21 +417,6 @@ locals {
     { zone = "${local.onprem_domain}.", targets = [local.site1_ns_addr, local.site2_ns_addr] },
     { zone = ".", targets = ["169.254.169.254"] },
   ]
-  hub_psc_api_fr_name = (
-    local.hub_psc_api_secure ?
-    local.hub_psc_api_sec_fr_name :
-    local.hub_psc_api_all_fr_name
-  )
-  hub_psc_api_fr_addr = (
-    local.hub_psc_api_secure ?
-    local.hub_psc_api_sec_fr_addr :
-    local.hub_psc_api_all_fr_addr
-  )
-  hub_psc_api_fr_target = (
-    local.hub_psc_api_secure ?
-    "vpc-sc" :
-    "all-apis"
-  )
 }
 
 # addresses
@@ -423,9 +453,8 @@ module "hub_sa" {
 module "hub_eu_run_httpbin" {
   source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/cloud-run-v2?ref=v34.1.0"
   project_id = var.project_id_hub
-  name       = "${local.hub_prefix}us-run-httpbin"
+  name       = "${local.hub_prefix}eu-run-httpbin"
   region     = local.hub_eu_region
-  iam        = { "roles/run.invoker" = ["allUsers"] }
   containers = {
     httpbin = {
       image = "kennethreitz/httpbin"
@@ -435,6 +464,15 @@ module "hub_eu_run_httpbin" {
       resources     = null
       volume_mounts = null
     }
+  }
+  iam = {
+    "roles/run.invoker" = [
+      "serviceAccount:${module.site1_sa.email}",
+      "serviceAccount:${module.site2_sa.email}",
+      "serviceAccount:${module.hub_sa.email}",
+      "serviceAccount:${module.spoke1_sa.email}",
+      "serviceAccount:${module.spoke2_sa.email}",
+    ]
   }
 }
 
@@ -505,24 +543,6 @@ data "google_project" "spoke1_project_number" {
   project_id = var.project_id_spoke1
 }
 
-locals {
-  spoke1_psc_api_fr_name = (
-    local.spoke1_psc_api_secure ?
-    local.spoke1_psc_api_sec_fr_name :
-    local.spoke1_psc_api_all_fr_name
-  )
-  spoke1_psc_api_fr_addr = (
-    local.spoke1_psc_api_secure ?
-    local.spoke1_psc_api_sec_fr_addr :
-    local.spoke1_psc_api_all_fr_addr
-  )
-  spoke1_psc_api_fr_target = (
-    local.spoke1_psc_api_secure ?
-    "vpc-sc" :
-    "all-apis"
-  )
-}
-
 # service account
 
 module "spoke1_sa" {
@@ -535,26 +555,6 @@ module "spoke1_sa" {
     (var.project_id_hub)    = ["roles/owner", ]
     (var.project_id_spoke1) = ["roles/owner", ]
     (var.project_id_spoke2) = ["roles/owner", ]
-  }
-}
-
-# cloud run
-
-module "spoke1_eu_run_httpbin" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/cloud-run-v2?ref=v34.1.0"
-  project_id = var.project_id_spoke1
-  name       = "${local.spoke1_prefix}eu-run-httpbin"
-  region     = local.spoke1_eu_region
-  iam        = { "roles/run.invoker" = ["allUsers"] }
-  containers = {
-    httpbin = {
-      image = "kennethreitz/httpbin"
-      ports = {
-        httpbin = { name = "http1", container_port = local.httpbin_port }
-      }
-      resources     = null
-      volume_mounts = null
-    }
   }
 }
 
@@ -593,24 +593,6 @@ data "google_project" "spoke2_project_number" {
   project_id = var.project_id_spoke2
 }
 
-locals {
-  spoke2_psc_api_fr_name = (
-    local.spoke2_psc_api_secure ?
-    local.spoke2_psc_api_sec_fr_name :
-    local.spoke2_psc_api_all_fr_name
-  )
-  spoke2_psc_api_fr_addr = (
-    local.spoke2_psc_api_secure ?
-    local.spoke2_psc_api_sec_fr_addr :
-    local.spoke2_psc_api_all_fr_addr
-  )
-  spoke2_psc_api_fr_target = (
-    local.spoke2_psc_api_secure ?
-    "vpc-sc" :
-    "all-apis"
-  )
-}
-
 # service account
 
 module "spoke2_sa" {
@@ -623,26 +605,6 @@ module "spoke2_sa" {
     (var.project_id_hub)    = ["roles/owner", ]
     (var.project_id_spoke1) = ["roles/owner", ]
     (var.project_id_spoke2) = ["roles/owner", ]
-  }
-}
-
-# cloud run
-
-module "spoke2_us_run_httpbin" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/cloud-run-v2?ref=v34.1.0"
-  project_id = var.project_id_spoke2
-  name       = "${local.spoke2_prefix}us-run-httpbin"
-  region     = local.spoke2_us_region
-  iam        = { "roles/run.invoker" = ["allUsers"] }
-  containers = {
-    httpbin = {
-      image = "kennethreitz/httpbin"
-      ports = {
-        httpbin = { name = "http1", container_port = local.httpbin_port }
-      }
-      resources     = null
-      volume_mounts = null
-    }
   }
 }
 
