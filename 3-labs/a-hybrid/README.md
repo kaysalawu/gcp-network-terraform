@@ -9,7 +9,6 @@ Contents
 - [Running Tests from VM Instances](#running-tests-from-vm-instances)
 - [Site1 (On-premises EU)](#site1-on-premises-eu)
 - [Site2 (On-premises US)](#site2-on-premises-us)
-- [Spoke2 (US Region)](#spoke2-us-region)
 - [Cleanup](#cleanup)
 - [Requirements](#requirements)
 - [Inputs](#inputs)
@@ -164,11 +163,11 @@ Each virtual machine (VM) is pre-configured with a shell [script](../../scripts/
 
     ping ipv4 ...
 
-   site1-vm      - 10.10.1.9 -OK 0.046 ms
-   hub-eu-vm     - 10.1.11.9 -OK 3.771 ms
+   site1-vm      - 10.10.1.9 -OK 0.043 ms
+   hub-eu-vm     - 10.1.11.9 -OK 3.141 ms
    hub-eu-ilb    - 10.1.11.70 -NA
-   site2-vm      - 10.20.1.9 -OK 138.571 ms
-   hub-us-vm     - 10.1.21.9 -OK 137.895 ms
+   site2-vm      - 10.20.1.9 -OK 138.340 ms
+   hub-us-vm     - 10.1.21.9 -OK 137.950 ms
    hub-us-ilb    - 10.1.21.70 -NA
    ```
    </Details>
@@ -191,12 +190,12 @@ Each virtual machine (VM) is pre-configured with a shell [script](../../scripts/
 
     ping dns ipv4 ...
 
-   vm.site1.corp - 10.10.1.9 -OK 0.042 ms
-   vm.eu.hub.g.corp - 10.1.11.9 -OK 3.381 ms
-   ilb.eu.hub.g.corp -  -NA
-   vm.site2.corp - 10.20.1.9 -OK 138.700 ms
-   vm.us.hub.g.corp - 10.1.21.9 -OK 137.894 ms
-   ilb.us.hub.g.corp -  -NA
+   vm.site1.corp - 10.10.1.9 -OK 0.033 ms
+   vm.eu.hub.g.corp - 10.1.11.9 -OK 3.178 ms
+   ilb.eu.hub.g.corp - 10.1.11.70 -NA
+   vm.site2.corp - 10.20.1.9 -OK 138.421 ms
+   vm.us.hub.g.corp - 10.1.21.9 -OK 137.733 ms
+   ilb.us.hub.g.corp - 10.1.21.70 -NA
    ```
    </Details>
    <p>
@@ -216,12 +215,12 @@ Each virtual machine (VM) is pre-configured with a shell [script](../../scripts/
    ```sh
    admin_cloudtuple_com@a-site1-vm:~$ ping-dns6
     ping dns ipv6 ...
-   vm.site1.corp - fd20:c26:beb5:4000:: -OK 0.048 ms
-   vm.eu.hub.g.corp - fd20:ff2:421b:4001:0:1:: -OK 1.799 ms
-   ilb.eu.hub.g.corp -  -NA
+   vm.site1.corp - fd20:c26:beb5:4000:: -OK 0.039 ms
+   vm.eu.hub.g.corp - fd20:ff2:421b:4001:0:1:: -OK 1.639 ms
+   ilb.eu.hub.g.corp - fd20:ff2:421b:4001:0:4:: -NA
    vm.site2.corp - fd20:5a3:654b:8000:: -NA
-   vm.us.hub.g.corp - fd20:ff2:421b:8000:0:1:: -OK 137.598 ms
-   ilb.us.hub.g.corp -  -NA
+   vm.us.hub.g.corp - fd20:ff2:421b:8000:0:1:: -OK 138.509 ms
+   ilb.us.hub.g.corp - fd20:ff2:421b:8000:0:4:: -NA
    ```
    </Details>
    <p>
@@ -239,35 +238,27 @@ Each virtual machine (VM) is pre-configured with a shell [script](../../scripts/
    <Summary>🟢 Sample output (expand to view)</Summary>
 
    ```sh
-   admin_cloudtuple_com@b-site1-vm:~$ curl-dns4
+   admin_cloudtuple_com@a-site1-vm:~$ curl-dns4
 
     curl dns ipv4 ...
 
-   200 (0.008111s) - 10.10.1.9 - vm.site1.corp
-   200 (0.008707s) - 10.1.11.9 - vm.eu.hub.g.corp
-   200 (0.007315s) - 10.11.11.9 - vm.eu.spoke1.g.corp
-   200 (0.007905s) - 10.1.11.70 - ilb.eu.hub.g.corp
-   200 (0.023711s) - 10.1.11.80 - nlb.eu.hub.g.corp
-   200 (0.023825s) - 10.1.11.90 - alb.eu.hub.g.corp
-   200 (0.005212s) - 10.11.11.30 - ilb.eu.spoke1.g.corp
-   200 (0.020641s) - 10.11.11.40 - nlb.eu.spoke1.g.corp
-   200 (0.023526s) - 10.11.11.50 - alb.eu.spoke1.g.corp
-   200 (0.017780s) - 10.1.11.66 - ep.eu.spoke1-eu-ilb.hub.g.corp
-   200 (0.012227s) - 10.1.11.77 - ep.eu.spoke1-eu-nlb.hub.g.corp
-   200 (0.017261s) - 10.1.11.88 - ep.eu.spoke1-eu-alb.hub.g.corp
-   200 (0.286969s) - 10.20.1.9 - vm.site2.corp
-   200 (0.276842s) - 10.1.21.9 - vm.us.hub.g.corp
-   200 (0.283544s) - 10.22.21.9 - vm.us.spoke2.g.corp
-   200 (0.277318s) - 10.1.21.70 - ilb.us.hub.g.corp
+   200 (0.007163s) - 10.10.1.9 - vm.site1.corp
+   200 (0.010171s) - 10.1.11.9 - vm.eu.hub.g.corp
+   200 (0.007856s) - 10.1.11.70 - ilb.eu.hub.g.corp
+   200 (0.028382s) - 10.1.11.80 - nlb.eu.hub.g.corp
+   200 (0.019979s) - 10.1.11.90 - alb.eu.hub.g.corp
+   200 (0.286873s) - 10.20.1.9 - vm.site2.corp
+   200 (0.277139s) - 10.1.21.9 - vm.us.hub.g.corp
+   200 (0.276939s) - 10.1.21.70 - ilb.us.hub.g.corp
     - nlb.us.hub.g.corp
     - alb.us.hub.g.corp
-   200 (0.015702s) - 10.1.11.70 - ilb.geo.hub.g.corp
-   200 (0.026692s) - 104.16.185.241 - icanhazip.com
-   204 (0.019666s) - 142.250.179.234 - www.googleapis.com
-   204 (0.012112s) - 10.1.0.1 - storage.googleapis.com
-   204 (0.043873s) - 10.1.11.90 - europe-west2-run.googleapis.com
+   200 (0.027902s) - 10.1.11.70 - ilb.geo.hub.g.corp
+   200 (0.057410s) - 104.16.184.241 - icanhazip.com
+   204 (0.018704s) - 172.217.169.10 - www.googleapis.com
+   204 (0.012137s) - 10.1.0.1 - storage.googleapis.com
+   204 (0.045604s) - 10.1.11.90 - europe-west2-run.googleapis.com
     - us-west2-run.googleapis.com
-   403 (0.243257s) - 10.1.0.1 - https://b-hub-eu-run-httpbin-wapotrwjpq-nw.a.run.app
+   403 (0.277557s) - 10.1.0.1 - https://a-hub-eu-run-httpbin-wapotrwjpq-nw.a.run.app
    ```
 
    </Details>
@@ -286,35 +277,27 @@ Each virtual machine (VM) is pre-configured with a shell [script](../../scripts/
    <Summary>🟢 Sample output (expand to view)</Summary>
 
    ```sh
-   admin_cloudtuple_com@b-site1-vm:~$ curl-dns6
+   admin_cloudtuple_com@a-site1-vm:~$ curl-dns6
 
     curl dns ipv6 ...
 
-   200 (0.010662s) - fd20:35a:3e79:4000:0:a:: - vm.site1.corp
-   200 (0.022900s) - fd20:ccd:8944:4000:0:13:: - vm.eu.hub.g.corp
-   200 (0.017259s) - fd20:a37:7dec:4000:0:12:: - vm.eu.spoke1.g.corp
-   200 (0.019619s) - fd20:ccd:8944:4000:0:4:: - ilb.eu.hub.g.corp
-   000 (0.014108s) -  - nlb.eu.hub.g.corp
-   000 (0.009802s) -  - alb.eu.hub.g.corp
-   200 (0.010900s) - fd20:a37:7dec:4000:0:3:: - ilb.eu.spoke1.g.corp
-   000 (0.006560s) -  - nlb.eu.spoke1.g.corp
-   000 (0.005450s) -  - alb.eu.spoke1.g.corp
-   000 (0.006595s) -  - ep.eu.spoke1-eu-ilb.hub.g.corp
-   000 (0.005485s) -  - ep.eu.spoke1-eu-nlb.hub.g.corp
-   000 (0.005473s) -  - ep.eu.spoke1-eu-alb.hub.g.corp
-   000 (1.502127s) -  - vm.site2.corp
-   200 (0.283614s) - fd20:ccd:8944:8000:0:13:: - vm.us.hub.g.corp
-   200 (0.284461s) - fd20:c2f:6706:8000:0:5:: - vm.us.spoke2.g.corp
-   200 (0.283403s) - fd20:ccd:8944:8000:0:4:: - ilb.us.hub.g.corp
-   000 (0.006571s) -  - nlb.us.hub.g.corp
-   000 (0.006523s) -  - alb.us.hub.g.corp
-   000 (0.006612s) -  - ilb.geo.hub.g.corp
-   000 (2.251715s) -  - icanhazip.com
-   404 (0.109225s) - 2a00:1450:4009:817::200a - www.googleapis.com
-   000 (0.002264s) -  - storage.googleapis.com
-   000 (0.003316s) -  - europe-west2-run.googleapis.com
-   000 (0.001168s) -  - us-west2-run.googleapis.com
-   000 (0.001148s) -  - https://b-hub-eu-run-httpbin-wapotrwjpq-nw.a.run.app
+   200 (0.008121s) - fd20:c26:beb5:4000:: - vm.site1.corp
+   200 (0.007832s) - fd20:ff2:421b:4001:0:1:: - vm.eu.hub.g.corp
+   200 (0.007668s) - fd20:ff2:421b:4001:0:4:: - ilb.eu.hub.g.corp
+   000 (0.003450s) -  - nlb.eu.hub.g.corp
+   000 (0.003467s) -  - alb.eu.hub.g.corp
+   000 (1.500854s) -  - vm.site2.corp
+   200 (0.278524s) - fd20:ff2:421b:8000:0:1:: - vm.us.hub.g.corp
+   200 (0.278729s) - fd20:ff2:421b:8000:0:4:: - ilb.us.hub.g.corp
+   000 (0.003494s) -  - nlb.us.hub.g.corp
+   000 (0.003447s) -  - alb.us.hub.g.corp
+   000 (0.003516s) -  - ilb.geo.hub.g.corp
+   000 (2.252129s) -  - icanhazip.com
+   404 (0.103209s) - 2a00:1450:4009:826::200a - www.googleapis.com
+   000 (0.002323s) -  - storage.googleapis.com
+   000 (0.003426s) -  - europe-west2-run.googleapis.com
+   000 (0.003473s) -  - us-west2-run.googleapis.com
+   000 (0.002342s) -  - https://a-hub-eu-run-httpbin-wapotrwjpq-nw.a.run.app
    ```
 
    </Details>
@@ -333,13 +316,13 @@ Each virtual machine (VM) is pre-configured with a shell [script](../../scripts/
    <Summary>🟢 Sample output (expand to view)</Summary>
 
    ```sh
-   admin_cloudtuple_com@b-site1-vm:~$ curl-psc-backend
+   admin_cloudtuple_com@a-site1-vm:~$ curl-psc-backend
 
     curl psc backend ...
 
-   204 (0.024659s) - 10.1.11.90 - europe-west2-run.googleapis.com
+   204 (0.049128s) - 10.1.11.90 - europe-west2-run.googleapis.com
     - us-west2-run.googleapis.com
-   200 (1.889214s) - 10.1.0.1 - https://b-hub-eu-run-httpbin-wapotrwjpq-nw.a.run.app
+   200 (0.877506s) - 10.1.0.1 - https://a-hub-eu-run-httpbin-wapotrwjpq-nw.a.run.app
    ```
    </Details>
    <p>
@@ -407,24 +390,21 @@ Each virtual machine (VM) is pre-configured with a shell [script](../../scripts/
    <Summary>🟢 Sample output (expand to view)</Summary>
 
    ```sh
-   admin_cloudtuple_com@b-site2-vm:~$ ping-ipv4
+   admin_cloudtuple_com@a-site2-vm:~$ ping-ipv4
 
     ping ipv4 ...
 
-   site1-vm      - 10.10.1.9 -OK 139.534 ms
-   hub-eu-vm     - 10.1.11.9 -OK 137.848 ms
-   spoke1-eu-vm  - 10.11.11.9 -OK 136.851 ms
+   site1-vm      - 10.10.1.9 -OK 138.686 ms
+   hub-eu-vm     - 10.1.11.9 -OK 138.094 ms
    hub-eu-ilb    - 10.1.11.70 -NA
-   spoke1-eu-ilb - 10.11.11.30 -NA
-   site2-vm      - 10.20.1.9 -OK 0.060 ms
-   hub-us-vm     - 10.1.21.9 -OK 2.128 ms
-   spoke2-us-vm  - 10.22.21.9 -OK 3.561 ms
+   site2-vm      - 10.20.1.9 -OK 0.056 ms
+   hub-us-vm     - 10.1.21.9 -OK 2.807 ms
    hub-us-ilb    - 10.1.21.70 -NA
    ```
    </Details>
    <p>
 
-   The internal passthrough load balancers - `hub-eu-ilb`, `hub-us-ilb`, and `spoke1-eu-ilb` - are not pingable because their forwarding rules are configured for TCP traffic only and do not respond to ICMP. The forwarding rule need to be configured for `L3_DEFAULT` to allow ICMP traffic.
+   The internal passthrough load balancers - `hub-eu-ilb` and `hub-us-ilb` - are not pingable because their forwarding rules are configured for TCP traffic only and do not respond to ICMP. The forwarding rule need to be configured for `L3_DEFAULT` to allow ICMP traffic.
 
 
 3. Ping DNS for IPv4 addresses
@@ -437,18 +417,15 @@ Each virtual machine (VM) is pre-configured with a shell [script](../../scripts/
    <Summary>🟢 Sample output (expand to view)</Summary>
 
    ```sh
-   admin_cloudtuple_com@b-site2-vm:~$ ping-dns4
+   admin_cloudtuple_com@a-site2-vm:~$  ping-dns4
 
     ping dns ipv4 ...
 
-   vm.site1.corp - 10.10.1.9 -OK 139.371 ms
-   vm.eu.hub.g.corp - 10.1.11.9 -OK 137.754 ms
-   vm.eu.spoke1.g.corp - 10.11.11.9 -OK 136.336 ms
+   vm.site1.corp - 10.10.1.9 -OK 138.210 ms
+   vm.eu.hub.g.corp - 10.1.11.9 -OK 137.924 ms
    ilb.eu.hub.g.corp - 10.1.11.70 -NA
-   ilb.eu.spoke1.g.corp - 10.11.11.30 -NA
-   vm.site2.corp - 10.20.1.9 -OK 0.041 ms
-   vm.us.hub.g.corp - 10.1.21.9 -OK 1.925 ms
-   vm.us.spoke2.g.corp - 10.22.21.9 -OK 2.762 ms
+   vm.site2.corp - 10.20.1.9 -OK 0.051 ms
+   vm.us.hub.g.corp - 10.1.21.9 -OK 2.082 ms
    ilb.us.hub.g.corp - 10.1.21.70 -NA
    ```
    </Details>
@@ -466,17 +443,14 @@ Each virtual machine (VM) is pre-configured with a shell [script](../../scripts/
    <Summary>🟢 Sample output (expand to view)</Summary>
 
    ```sh
-   admin_cloudtuple_com@b-site2-vm:~$ ping-dns6
+   admin_cloudtuple_com@a-site2-vm:~$ ping-dns6
     ping dns ipv6 ...
-   vm.site1.corp - fd20:35a:3e79:4000:0:a:: -NA
-   vm.eu.hub.g.corp - fd20:ccd:8944:4000:0:13:: -OK 137.714 ms
-   vm.eu.spoke1.g.corp - fd20:a37:7dec:4000:0:12:: -OK 137.215 ms
-   ilb.eu.hub.g.corp - fd20:ccd:8944:4000:0:4:: -NA
-   ilb.eu.spoke1.g.corp - fd20:a37:7dec:4000:0:3:: -NA
-   vm.site2.corp - fd20:9a5:1ed4:8000:0:a:: -OK 0.052 ms
-   vm.us.hub.g.corp - fd20:ccd:8944:8000:0:13:: -OK 1.997 ms
-   vm.us.spoke2.g.corp - fd20:c2f:6706:8000:0:5:: -OK 1.979 ms
-   ilb.us.hub.g.corp - fd20:ccd:8944:8000:0:4:: -NA
+   vm.site1.corp - fd20:c26:beb5:4000:: -NA
+   vm.eu.hub.g.corp - fd20:ff2:421b:4001:0:1:: -OK 137.471 ms
+   ilb.eu.hub.g.corp - fd20:ff2:421b:4001:0:4:: -NA
+   vm.site2.corp - fd20:5a3:654b:8000:: -OK 0.049 ms
+   vm.us.hub.g.corp - fd20:ff2:421b:8000:0:1:: -OK 2.381 ms
+   ilb.us.hub.g.corp - fd20:ff2:421b:8000:0:4:: -NA
    ```
    </Details>
    <p>
@@ -493,41 +467,33 @@ Each virtual machine (VM) is pre-configured with a shell [script](../../scripts/
    <Summary>🟢 Sample output (expand to view)</Summary>
 
    ```sh
-   admin_cloudtuple_com@b-site2-vm:~$ curl-dns4
+   admin_cloudtuple_com@a-site2-vm:~$ curl-dns4
 
     curl dns ipv4 ...
 
-   200 (0.281099s) - 10.10.1.9 - vm.site1.corp
-   200 (0.278324s) - 10.1.11.9 - vm.eu.hub.g.corp
-   200 (0.278135s) - 10.11.11.9 - vm.eu.spoke1.g.corp
-   200 (0.276582s) - 10.1.11.70 - ilb.eu.hub.g.corp
+   200 (0.282197s) - 10.10.1.9 - vm.site1.corp
+   200 (0.278729s) - 10.1.11.9 - vm.eu.hub.g.corp
+   200 (0.279401s) - 10.1.11.70 - ilb.eu.hub.g.corp
     - nlb.eu.hub.g.corp
     - alb.eu.hub.g.corp
-   200 (0.277704s) - 10.11.11.30 - ilb.eu.spoke1.g.corp
-    - nlb.eu.spoke1.g.corp
-    - alb.eu.spoke1.g.corp
-    - ep.eu.spoke1-eu-ilb.hub.g.corp
-    - ep.eu.spoke1-eu-nlb.hub.g.corp
-    - ep.eu.spoke1-eu-alb.hub.g.corp
-   200 (0.004303s) - 10.20.1.9 - vm.site2.corp
-   200 (0.008436s) - 10.1.21.9 - vm.us.hub.g.corp
-   200 (0.008877s) - 10.22.21.9 - vm.us.spoke2.g.corp
-   200 (0.008224s) - 10.1.21.70 - ilb.us.hub.g.corp
-   200 (0.020736s) - 10.1.21.90 - nlb.us.hub.g.corp
-   200 (0.023240s) - 10.1.21.80 - alb.us.hub.g.corp
-   200 (0.020866s) - 10.1.21.70 - ilb.geo.hub.g.corp
-   200 (0.034876s) - 104.16.185.241 - icanhazip.com
-   204 (0.016178s) - 142.250.176.10 - www.googleapis.com
-   204 (0.013185s) - 10.1.0.1 - storage.googleapis.com
+   200 (0.004576s) - 10.20.1.9 - vm.site2.corp
+   200 (0.007781s) - 10.1.21.9 - vm.us.hub.g.corp
+   200 (0.007433s) - 10.1.21.70 - ilb.us.hub.g.corp
+   200 (0.030998s) - 10.1.21.90 - nlb.us.hub.g.corp
+   200 (0.027027s) - 10.1.21.80 - alb.us.hub.g.corp
+   200 (0.022949s) - 10.1.21.70 - ilb.geo.hub.g.corp
+   200 (0.049007s) - 104.16.184.241 - icanhazip.com
+   204 (0.017943s) - 142.250.189.10 - www.googleapis.com
+   204 (0.015810s) - 10.1.0.1 - storage.googleapis.com
     - europe-west2-run.googleapis.com
-   204 (0.025057s) - 10.1.21.80 - us-west2-run.googleapis.com
-   403 (1.038142s) - 10.1.0.1 - https://b-hub-eu-run-httpbin-wapotrwjpq-nw.a.run.app
+   204 (0.043250s) - 10.1.21.80 - us-west2-run.googleapis.com
+   403 (1.077727s) - 10.1.0.1 - https://a-hub-eu-run-httpbin-wapotrwjpq-nw.a.run.app
    ```
 
    </Details>
    <p>
 
-   The unreachable services are regional `eu` services that cannot be accessed from the on-premises site with HA-VPN in `us` region. The internal passthrough load balancer `ilb.eu.spoke1.g.corp` is reachable in `eu` region from `us` region because we enabled global access for the frontend.
+   The unreachable services are regional `eu` services that cannot be accessed from the on-premises site with HA-VPN in `us` region. The internal passthrough load balancer `ilb.eu.hub.g.corp` is reachable in `eu` region from `us` region because we enabled global access for the frontend.
 
 6. Curl IPv6 DNS
 
@@ -539,35 +505,27 @@ Each virtual machine (VM) is pre-configured with a shell [script](../../scripts/
    <Summary>🟢 Sample output (expand to view)</Summary>
 
    ```sh
-   admin_cloudtuple_com@b-site2-vm:~$ curl-dns6
+   admin_cloudtuple_com@a-site2-vm:~$ curl-dns6
 
     curl dns ipv6 ...
 
-   000 (1.506285s) -  - vm.site1.corp
-   200 (0.292778s) - fd20:ccd:8944:4000:0:13:: - vm.eu.hub.g.corp
-   200 (0.297321s) - fd20:a37:7dec:4000:0:12:: - vm.eu.spoke1.g.corp
-   200 (0.297064s) - fd20:ccd:8944:4000:0:4:: - ilb.eu.hub.g.corp
-   000 (0.013167s) -  - nlb.eu.hub.g.corp
-   000 (0.011072s) -  - alb.eu.hub.g.corp
-   200 (0.286670s) - fd20:a37:7dec:4000:0:3:: - ilb.eu.spoke1.g.corp
-   000 (0.008900s) -  - nlb.eu.spoke1.g.corp
-   000 (0.008805s) -  - alb.eu.spoke1.g.corp
-   000 (0.007843s) -  - ep.eu.spoke1-eu-ilb.hub.g.corp
-   000 (0.010048s) -  - ep.eu.spoke1-eu-nlb.hub.g.corp
-   000 (0.008939s) -  - ep.eu.spoke1-eu-alb.hub.g.corp
-   200 (0.008297s) - fd20:9a5:1ed4:8000:0:a:: - vm.site2.corp
-   200 (0.015539s) - fd20:ccd:8944:8000:0:13:: - vm.us.hub.g.corp
-   200 (0.016153s) - fd20:c2f:6706:8000:0:5:: - vm.us.spoke2.g.corp
-   200 (0.016385s) - fd20:ccd:8944:8000:0:4:: - ilb.us.hub.g.corp
-   000 (0.008942s) -  - nlb.us.hub.g.corp
-   000 (0.008876s) -  - alb.us.hub.g.corp
-   000 (0.012075s) -  - ilb.geo.hub.g.corp
-   000 (2.253583s) -  - icanhazip.com
-   404 (0.113178s) - 2607:f8b0:4007:810::200a - www.googleapis.com
-   000 (0.003346s) -  - storage.googleapis.com
-   000 (0.003432s) -  - europe-west2-run.googleapis.com
-   000 (0.003355s) -  - us-west2-run.googleapis.com
-   000 (0.002235s) -  - https://b-hub-eu-run-httpbin-wapotrwjpq-nw.a.run.app
+   000 (1.500561s) -  - vm.site1.corp
+   200 (0.278511s) - fd20:ff2:421b:4001:0:1:: - vm.eu.hub.g.corp
+   200 (0.276859s) - fd20:ff2:421b:4001:0:4:: - ilb.eu.hub.g.corp
+   000 (0.007891s) -  - nlb.eu.hub.g.corp
+   000 (0.006886s) -  - alb.eu.hub.g.corp
+   200 (0.029059s) - fd20:5a3:654b:8000:: - vm.site2.corp
+   200 (0.006776s) - fd20:ff2:421b:8000:0:1:: - vm.us.hub.g.corp
+   200 (0.007642s) - fd20:ff2:421b:8000:0:4:: - ilb.us.hub.g.corp
+   000 (0.004582s) -  - nlb.us.hub.g.corp
+   000 (0.004649s) -  - alb.us.hub.g.corp
+   000 (0.004538s) -  - ilb.geo.hub.g.corp
+   000 (2.251325s) -  - icanhazip.com
+   404 (0.103538s) - 2607:f8b0:4007:80f::200a - www.googleapis.com
+   000 (0.003537s) -  - storage.googleapis.com
+   000 (0.004547s) -  - europe-west2-run.googleapis.com
+   000 (0.004575s) -  - us-west2-run.googleapis.com
+   000 (0.004477s) -  - https://a-hub-eu-run-httpbin-wapotrwjpq-nw.a.run.app
    ```
 
    </Details>
@@ -586,13 +544,13 @@ Each virtual machine (VM) is pre-configured with a shell [script](../../scripts/
    <Summary>🟢 Sample output (expand to view)</Summary>
 
    ```sh
-   admin_cloudtuple_com@b-site2-vm:~$ curl-psc-backend
+   admin_cloudtuple_com@a-site2-vm:~$  curl-psc-backend
 
     curl psc backend ...
 
     - europe-west2-run.googleapis.com
-   204 (0.032184s) - 10.1.21.80 - us-west2-run.googleapis.com
-   200 (0.868642s) - 10.1.0.1 - https://b-hub-eu-run-httpbin-wapotrwjpq-nw.a.run.app
+   204 (0.025540s) - 10.1.21.80 - us-west2-run.googleapis.com
+   200 (1.159016s) - 10.1.0.1 - https://a-hub-eu-run-httpbin-wapotrwjpq-nw.a.run.app
    ```
    </Details>
    <p>
@@ -600,258 +558,6 @@ Each virtual machine (VM) is pre-configured with a shell [script](../../scripts/
    We can reach the `us` cloud run services `us-west2-run.googleapis.com` through the PSC backend for API access. The VM in `site2` connects to the internal application load balancer in the hub `us` region. The load balancer uses a Network Endpoint Group (NEG) backend to route traffic to the Cloud Run service.
 
    The endpoint in `eu` region is not reachable because the on-premises site is connected to the `us` region. We also have access to the cloud run data plane through the PSC endpoint for API access on private IP address **10.1.0.1**.
-
-
-8. Test access to all Google APIs using the [discoverz.py](../../scripts/startup/discoverz.py) script.
-
-   ```sh
-   cd /var/lib/gcp/fastapi/app/app && \
-   python3 discoverz.py
-   ```
-
-   <Details>
-   <Summary>🟢 Sample output (expand to view)</Summary>
-
-   ```sh
-   scanning all api endpoints ...
-
-   204 - abusiveexperiencereport    v1         https://abusiveexperiencereport.googleapis.com/generate_204
-   204 - acceleratedmobilepageurl   v1         https://acceleratedmobilepageurl.googleapis.com/generate_204
-   204 - accessapproval             v1         https://accessapproval.googleapis.com/generate_204
-   204 - accesscontextmanager       v1         https://accesscontextmanager.googleapis.com/generate_204
-   204 - addressvalidation          v1         https://addressvalidation.googleapis.com/generate_204
-   204 - adexchangebuyer2           v2beta1    https://adexchangebuyer2.googleapis.com/generate_204
-   204 - adexperiencereport         v1         https://adexperiencereport.googleapis.com/generate_204
-   204 - admin                      datatransfer_v1 https://admin.googleapis.com/generate_204
-   204 - admin                      directory_v1 https://admin.googleapis.com/generate_204
-   204 - admin                      reports_v1 https://admin.googleapis.com/generate_204
-   ...
-   [truncated]
-   ...
-   204 - workloadmanager            v1         https://workloadmanager.googleapis.com/generate_204
-   204 - workspaceevents            v1         https://workspaceevents.googleapis.com/generate_204
-   204 - workstations               v1         https://workstations.googleapis.com/generate_204
-   204 - workstations               v1         https://workstations.googleapis.com/generate_204
-   204 - youtube                    v1         https://youtube.googleapis.com/generate_204
-   204 - youtubeAnalytics           v1         https://youtubeAnalytics.googleapis.com/generate_204
-   204 - youtubereporting           v1         https://youtubereporting.googleapis.com/generate_204
-
-   unreachable api endpoints ...
-
-   err - cloudbilling               v1         https://cloudbilling.googleapis.com/generate_204
-   err - cloudbilling               v1         https://cloudbilling.googleapis.com/generate_204
-   err - fcmdata                    v1         https://fcmdata.googleapis.com/generate_204
-   ```
-
-   </Details>
-   <p>
-
-
-## Spoke2 (US Region)
-
-1. Login to the instance `b-spoke2-us-vm` using the [SSH-in-Browser](https://cloud.google.com/compute/docs/ssh-in-browser) from the Google Cloud console.
-
-2. Run IP ping test
-
-   ```sh
-   ping-ipv4
-   ```
-
-   <Details>
-   <Summary>🟢 Sample output (expand to view)</Summary>
-
-   ```sh
-   admin_cloudtuple_com@b-spoke2-us-vm:~$ ping-ipv4
-
-    ping ipv4 ...
-
-   site1-vm      - 10.10.1.9 -OK 136.790 ms
-   hub-eu-vm     - 10.1.11.9 -OK 135.853 ms
-   spoke1-eu-vm  - 10.11.11.9 -OK 136.454 ms
-   hub-eu-ilb    - 10.1.11.70 -NA
-   spoke1-eu-ilb - 10.11.11.30 -NA
-   site2-vm      - 10.20.1.9 -OK 3.434 ms
-   hub-us-vm     - 10.1.21.9 -OK 0.557 ms
-   spoke2-us-vm  - 10.22.21.9 -OK 0.041 ms
-   hub-us-ilb    - 10.1.21.70 -NA
-   ```
-   </Details>
-   <p>
-
-   The internal passthrough load balancers - `hub-eu-ilb`, `hub-us-ilb`, and `spoke1-eu-ilb` - are not pingable because their forwarding rules are configured for TCP traffic only and do not respond to ICMP. The forwarding rule need to be configured for `L3_DEFAULT` to allow ICMP traffic.
-
-
-3. Ping DNS for IPv4 addresses
-
-   ```sh
-   ping-dns4
-   ```
-
-   <Details>
-   <Summary>🟢 Sample output (expand to view)</Summary>
-
-   ```sh
-   admin_cloudtuple_com@b-spoke2-us-vm:~$ ping-dns4
-
-    ping dns ipv4 ...
-
-   vm.site1.corp - 10.10.1.9 -OK 136.468 ms
-   vm.eu.hub.g.corp - 10.1.11.9 -OK 135.714 ms
-   vm.eu.spoke1.g.corp - 10.11.11.9 -OK 136.361 ms
-   ilb.eu.hub.g.corp - 10.1.11.70 -NA
-   ilb.eu.spoke1.g.corp - 10.11.11.30 -NA
-   vm.site2.corp - 10.20.1.9 -OK 2.727 ms
-   vm.us.hub.g.corp - 10.1.21.9 -OK 0.549 ms
-   vm.us.spoke2.g.corp - 10.22.21.9 -OK 0.028 ms
-   ilb.us.hub.g.corp - 10.1.21.70 -NA
-   ```
-   </Details>
-   <p>
-
-   This confirms our onpremises and hybrid-cloud DNS works. We have the same ping results as the IPv4 ping test.
-
-4. Ping DNS for IPv6 addresses
-
-   ```sh
-   ping-dns6
-   ```
-
-   <Details>
-   <Summary>🟢 Sample output (expand to view)</Summary>
-
-   ```sh
-   admin_cloudtuple_com@b-spoke2-us-vm:~$ ping-dns6
-    ping dns ipv6 ...
-   vm.site1.corp - fd20:35a:3e79:4000:0:a:: -OK 136.500 ms
-   vm.eu.hub.g.corp - fd20:ccd:8944:4000:0:13:: -OK 135.995 ms
-   vm.eu.spoke1.g.corp - fd20:a37:7dec:4000:0:12:: -OK 135.347 ms
-   ilb.eu.hub.g.corp - fd20:ccd:8944:4000:0:4:: -NA
-   ilb.eu.spoke1.g.corp - fd20:a37:7dec:4000:0:3:: -NA
-   vm.site2.corp - fd20:9a5:1ed4:8000:0:a:: -OK 2.212 ms
-   vm.us.hub.g.corp - fd20:ccd:8944:8000:0:13:: -OK 0.639 ms
-   vm.us.spoke2.g.corp - fd20:c2f:6706:8000:0:5:: -OK 0.029 ms
-   ilb.us.hub.g.corp - fd20:ccd:8944:8000:0:4:: -NA
-   ```
-   </Details>
-   <p>
-
-   We have the same results as the IPv4 tests woth only one exception - the IPv6 address for `vm.site2.corp` is not reachable because Network Connectivity Center (NCC) does not yet support IPv6.
-
-5. Curl IPv4 DNS
-
-   ```sh
-   curl-dns4
-   ```
-
-   <Details>
-   <Summary>🟢 Sample output (expand to view)</Summary>
-
-   ```sh
-   admin_cloudtuple_com@b-spoke2-us-vm:~$ curl-dns4
-
-    curl dns ipv4 ...
-
-   200 (0.278005s) - 10.10.1.9 - vm.site1.corp
-   200 (0.276345s) - 10.1.11.9 - vm.eu.hub.g.corp
-   200 (0.274998s) - 10.11.11.9 - vm.eu.spoke1.g.corp
-   200 (0.272853s) - 10.1.11.70 - ilb.eu.hub.g.corp
-    - nlb.eu.hub.g.corp
-    - alb.eu.hub.g.corp
-   200 (0.275390s) - 10.11.11.30 - ilb.eu.spoke1.g.corp
-    - nlb.eu.spoke1.g.corp
-    - alb.eu.spoke1.g.corp
-    - ep.eu.spoke1-eu-ilb.hub.g.corp
-    - ep.eu.spoke1-eu-nlb.hub.g.corp
-    - ep.eu.spoke1-eu-alb.hub.g.corp
-   200 (0.009255s) - 10.20.1.9 - vm.site2.corp
-   200 (0.005436s) - 10.1.21.9 - vm.us.hub.g.corp
-   200 (0.003661s) - 10.22.21.9 - vm.us.spoke2.g.corp
-   200 (0.004745s) - 10.1.21.70 - ilb.us.hub.g.corp
-   200 (0.008737s) - 10.1.21.90 - nlb.us.hub.g.corp
-   200 (0.009051s) - 10.1.21.80 - alb.us.hub.g.corp
-   200 (0.007006s) - 10.1.21.70 - ilb.geo.hub.g.corp
-   200 (0.028517s) - 104.16.185.241 - icanhazip.com
-   204 (0.002446s) - 142.250.176.10 - www.googleapis.com
-   204 (0.005772s) - 10.22.0.2 - storage.googleapis.com
-   204 (0.003715s) - 10.22.0.2 - europe-west2-run.googleapis.com
-   204 (0.004150s) - 10.22.0.2 - us-west2-run.googleapis.com
-   403 (0.978613s) - 10.22.0.2 - https://b-hub-eu-run-httpbin-wapotrwjpq-nw.a.run.app
-   ```
-
-   </Details>
-   <p>
-
-   The unreachable services are regional `eu` services that cannot be accessed from the on-premises site with HA-VPN in `us` region. The internal passthrough load balancer `ilb.eu.spoke1.g.corp` is reachable in `eu` region from `us` region because we enabled global access for the frontend.
-
-6. Curl IPv6 DNS
-
-   ```sh
-   curl-dns4
-   ```
-
-   <Details>
-   <Summary>🟢 Sample output (expand to view)</Summary>
-
-   ```sh
-   admin_cloudtuple_com@b-spoke2-us-vm:~$ curl-dns6
-
-    curl dns ipv6 ...
-
-   200 (0.564266s) - fd20:35a:3e79:4000:0:a:: - vm.site1.corp
-   200 (0.281879s) - fd20:ccd:8944:4000:0:13:: - vm.eu.hub.g.corp
-   200 (0.278967s) - fd20:a37:7dec:4000:0:12:: - vm.eu.spoke1.g.corp
-   200 (0.278942s) - fd20:ccd:8944:4000:0:4:: - ilb.eu.hub.g.corp
-   000 (0.005551s) -  - nlb.eu.hub.g.corp
-   000 (0.003390s) -  - alb.eu.hub.g.corp
-   200 (0.276953s) - fd20:a37:7dec:4000:0:3:: - ilb.eu.spoke1.g.corp
-   000 (0.003358s) -  - nlb.eu.spoke1.g.corp
-   000 (0.002262s) -  - alb.eu.spoke1.g.corp
-   000 (0.002404s) -  - ep.eu.spoke1-eu-ilb.hub.g.corp
-   000 (0.002253s) -  - ep.eu.spoke1-eu-nlb.hub.g.corp
-   000 (0.002347s) -  - ep.eu.spoke1-eu-alb.hub.g.corp
-   200 (0.155110s) - fd20:9a5:1ed4:8000:0:a:: - vm.site2.corp
-   200 (0.006650s) - fd20:ccd:8944:8000:0:13:: - vm.us.hub.g.corp
-   200 (0.006183s) - fd20:c2f:6706:8000:0:5:: - vm.us.spoke2.g.corp
-   200 (0.007195s) - fd20:ccd:8944:8000:0:4:: - ilb.us.hub.g.corp
-   000 (0.002306s) -  - nlb.us.hub.g.corp
-   000 (0.002369s) -  - alb.us.hub.g.corp
-   000 (0.005546s) -  - ilb.geo.hub.g.corp
-   000 (2.252486s) -  - icanhazip.com
-   404 (0.105264s) - 2607:f8b0:4007:814::200a - www.googleapis.com
-   400 (0.009179s) - 2607:f8b0:4007:811::201b - storage.googleapis.com
-   404 (0.826209s) - 2607:f8b0:4007:810::200a - europe-west2-run.googleapis.com
-   404 (0.006428s) - 2607:f8b0:4007:801::200a - us-west2-run.googleapis.com
-   403 (1.079109s) - 2001:4860:4802:38::35 - https://b-hub-eu-run-httpbin-wapotrwjpq-nw.a.run.app
-   ```
-
-   </Details>
-   <p>
-
-   We have the same results as IPv4 curl with the exception of internal network proxy load balancer (nlb) and internal application load balancer (alb) that don't support IPv6 yet.
-
-
-7. Run an authenticated test to services using the [PSC backend for API access](https://cloud.google.com/vpc/docs/private-service-connect-backends).
-
-   ```sh
-   curl-psc-backend
-   ```
-
-   <Details>
-   <Summary>🟢 Sample output (expand to view)</Summary>
-
-   ```sh
-   admin_cloudtuple_com@b-spoke2-us-vm:~$ curl-psc-backend
-
-    curl psc backend ...
-
-   204 (0.017555s) - 10.22.0.2 - europe-west2-run.googleapis.com
-   204 (0.013675s) - 10.22.0.2 - us-west2-run.googleapis.com
-   200 (1.739257s) - 10.22.0.2 - https://b-hub-eu-run-httpbin-wapotrwjpq-nw.a.run.app
-   ```
-   </Details>
-   <p>
-
-   We can reach all services through VPC peering.
 
 
 8. Test access to all Google APIs using the [discoverz.py](../../scripts/startup/discoverz.py) script.
@@ -929,8 +635,6 @@ No requirements.
 | <a name="input_project_id_host"></a> [project\_id\_host](#input\_project\_id\_host) | host project id | `any` | n/a | yes |
 | <a name="input_project_id_hub"></a> [project\_id\_hub](#input\_project\_id\_hub) | hub project id | `any` | n/a | yes |
 | <a name="input_project_id_onprem"></a> [project\_id\_onprem](#input\_project\_id\_onprem) | onprem project id (for onprem site1 and site2) | `any` | n/a | yes |
-| <a name="input_project_id_spoke1"></a> [project\_id\_spoke1](#input\_project\_id\_spoke1) | spoke1 project id (service project id attached to the host project | `any` | n/a | yes |
-| <a name="input_project_id_spoke2"></a> [project\_id\_spoke2](#input\_project\_id\_spoke2) | spoke2 project id (standalone project) | `any` | n/a | yes |
 
 ## Outputs
 

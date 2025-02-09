@@ -44,7 +44,7 @@ Ensure you meet all requirements in the [prerequisites](../../prerequisites/READ
 2. Navigate to the lab directory
 
    ```sh
-   cd gcp-network-terraform/1-blueprints-nextgen/b-simple-hybrid
+   cd gcp-network-terraform/3-labs/b-standard
    ```
 
 3. (Optional) If you want to enable additional features such as IPv6, VPC flow logs and logging set the following variables to `true` in the [`01-main.tf`](./01-main.tf) file.
@@ -142,18 +142,6 @@ The table below shows the auto-generated output files from the lab. They are loc
 ## Running Tests from VM Instances
 
 Each virtual machine (VM) is pre-configured with a shell [script](../../scripts/server.sh) to run various types of network reachability tests. Serial console access has been configured for all virtual machines. In each VM instance, Pre-configured test scripts are located in directory `/usr/local/bin/playz`. The scripts run various reachability tests.
-
-The full list of the scripts in each VM instance is shown below:
-
-```sh
-$ ls -l /usr/local/bin/
--rwxr-xr-x 1 root root   98 Aug 17 14:58 aiz
--rwxr-xr-x 1 root root  203 Aug 17 14:58 bucketz
--rw-r--r-- 1 root root 1383 Aug 17 14:58 discoverz.py
--rwxr-xr-x 1 root root 1692 Aug 17 14:58 pingz
--rwxr-xr-x 1 root root 5986 Aug 17 14:58 playz
--rwxr-xr-x 1 root root 1957 Aug 17 14:58 probez
-```
 
 - **[test-scripts](./_output/startup.sh)** - Test access to selected Google Cloud Storage buckets
 - **[discoverz.py](../../scripts/startup/discoverz.py)** - HTTP test to all google API endpoints
