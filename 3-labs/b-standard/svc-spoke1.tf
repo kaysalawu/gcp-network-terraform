@@ -1,6 +1,5 @@
 
 locals {
-  # spoke1_eu_run_httpbin_host = module.spoke1_eu_run_httpbin.service.uri
   spoke1_eu_ilb_ipv6 = split("/", module.spoke1_eu_ilb.forwarding_rule_addresses["fr-ipv6"])[0]
 }
 
@@ -11,7 +10,8 @@ locals {
 # ilb
 
 module "spoke1_eu_ilb" {
-  source        = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-int?ref=v34.1.0"
+  source = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-int?ref=v34.1.0"
+  # source        = "../../modules/net-lb-int"
   project_id    = var.project_id_spoke1
   region        = local.spoke1_eu_region
   name          = "${local.spoke1_prefix}eu-ilb"
@@ -99,7 +99,8 @@ module "spoke1_eu_nlb_vm" {
 # nlb
 
 module "spoke1_eu_nlb" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-proxy-int?ref=v34.1.0"
+  source = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-proxy-int?ref=v34.1.0"
+  # source     = "../../modules/net-lb-proxy-int"
   project_id = var.project_id_spoke1
   region     = local.spoke1_eu_region
   name       = "${local.spoke1_prefix}eu-nlb"
@@ -171,7 +172,8 @@ module "spoke1_eu_alb_vm" {
 # alb
 
 module "spoke1_eu_alb" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-app-int?ref=v34.1.0"
+  source = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-lb-app-int?ref=v34.1.0"
+  # source     = "../../modules/net-lb-app-int"
   project_id = var.project_id_spoke1
   name       = "${local.spoke1_prefix}eu-alb"
   region     = local.spoke1_eu_region
@@ -227,37 +229,6 @@ module "spoke1_eu_alb" {
     automatic_connection = true
   }
 }
-
-####################################################
-# cloud run
-####################################################
-
-# module "spoke1_eu_run_httpbin" {
-#   source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/cloud-run-v2?ref=v34.1.0"
-#   project_id = var.project_id_spoke1
-#   name       = "${local.spoke1_prefix}eu-run-httpbin"
-#   region     = local.spoke1_eu_region
-#   containers = {
-#     httpbin = {
-#       image = "kennethreitz/httpbin"
-#       ports = {
-#         httpbin = { name = "http1", container_port = local.httpbin_port }
-#       }
-#       resources     = null
-#       volume_mounts = null
-#     }
-#   }
-#   iam = {
-#     "roles/run.invoker" = [
-#       "serviceAccount:${module.site1_sa.email}",
-#       "serviceAccount:${module.site2_sa.email}",
-#       "serviceAccount:${module.hub_sa.email}",
-#       "serviceAccount:${module.spoke1_sa.email}",
-#       "serviceAccount:${module.spoke2_sa.email}",
-#     ]
-#   }
-# }
-
 
 ####################################################
 # dns recordsets

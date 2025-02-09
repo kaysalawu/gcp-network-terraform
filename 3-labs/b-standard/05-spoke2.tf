@@ -446,9 +446,9 @@ module "spoke2_dns_private_zone" {
   source      = "../../modules/dns"
   project_id  = var.project_id_spoke2
   name        = "${local.spoke2_prefix}private"
-  description = "spoke2 network attached"
+  description = "local data"
   zone_config = {
-    domain = "${local.spoke2_domain}.${local.cloud_domain}."
+    domain = "${local.spoke2_dns_zone}."
     private = {
       client_networks = [
         module.hub_vpc.self_link,
@@ -504,7 +504,7 @@ module "spoke2_reverse_zone" {
 }
 
 ####################################################
-# vm
+# workload
 ####################################################
 
 # instance
@@ -531,4 +531,18 @@ module "spoke2_us_vm" {
   metadata = {
     user-data = module.vm_cloud_init.cloud_config
   }
+}
+
+####################################################
+# output files
+####################################################
+
+locals {
+  spoke2_files = {}
+}
+
+resource "local_file" "spoke2_files" {
+  for_each = local.spoke2_files
+  filename = each.key
+  content  = each.value
 }

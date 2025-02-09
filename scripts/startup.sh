@@ -51,7 +51,7 @@ echo -e "\n curl ipv4 ...\n"
 %{ for target in TARGETS ~}
 %{~ if try(target.curl, true) ~}
 %{~ if try(target.ipv4, "") != "" ~}
-echo  "$(timeout 3 curl -4 -kL --max-time 3.0 -H 'Cache-Control: no-cache' -w "%%{http_code} (%%{time_total}s) - %%{remote_ip}" -s -o /dev/null ${target.ipv4}) - ${target.name} [${target.ipv4}]"
+echo  "$(timeout 3 curl -4 -kL --max-time 3.0 -H 'Cache-Control: no-cache' -w "%%{http_code} (%%{time_total}s) - %%{remote_ip}" -s -o /dev/null ${target.ipv4}${try(target.path, "")}) - ${target.name} [${target.ipv4}]"
 %{ endif ~}
 %{ endif ~}
 %{ endfor ~}
@@ -63,11 +63,23 @@ cat <<'EOF' >/usr/local/bin/curl-dns4
 echo -e "\n curl dns ipv4 ...\n"
 %{ for target in TARGETS ~}
 %{~ if try(target.curl, true) ~}
-echo  "$(timeout 3 curl -4 -kL --max-time 3.0 -H 'Cache-Control: no-cache' -w "%%{http_code} (%%{time_total}s) - %%{remote_ip}" -s -o /dev/null ${target.host}) - ${target.host}"
+echo  "$(timeout 3 curl -4 -kL --max-time 3.0 -H 'Cache-Control: no-cache' -w "%%{http_code} (%%{time_total}s) - %%{remote_ip}" -s -o /dev/null ${target.host}${try(target.path, "")}) - ${target.host}"
 %{ endif ~}
 %{ endfor ~}
 EOF
 chmod a+x /usr/local/bin/curl-dns4
+
+curl-psc-backend
+cat <<'EOF' >/usr/local/bin/curl-psc-backend
+echo -e "\n curl psc backend ...\n"
+export BEARER_TOKEN=$(gcloud auth print-identity-token)
+%{ for target in TARGETS ~}
+%{~ if try(target.psc_be, false) ~}
+echo "$(timeout 3 curl -4 -kL --max-time 3.0 -H 'Cache-Control: no-cache' -H "Authorization: Bearer $BEARER_TOKEN" -w '%%{http_code} (%%{time_total}s) - %%{remote_ip}' -s -o /dev/null ${target.host}${try(target.path, "")}) - ${target.host}"
+%{ endif ~}
+%{ endfor ~}
+EOF
+chmod a+x /usr/local/bin/curl-psc-backend
 
 # trace-ipv4
 cat <<'EOF' >/usr/local/bin/trace-ipv4

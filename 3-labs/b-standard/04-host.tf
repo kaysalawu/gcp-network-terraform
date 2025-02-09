@@ -145,7 +145,7 @@ module "spoke1_vpc_fw_policy" {
       }
     }
     # ipv6
-    smtp-6 = {
+    smtp-ipv6 = {
       priority = 901
       match = {
         destination_ranges = ["0::/0"]
@@ -270,7 +270,7 @@ resource "google_project_organization_policy" "spoke1_subnets_for_spoke1_only" {
 }
 
 ####################################################
-# psc api
+# psc endpoint for apis
 ####################################################
 
 # address

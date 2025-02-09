@@ -57,16 +57,16 @@ module "hub_eu_ilb" {
       response           = local.uhc_config.response
     }
   }
-  service_attachments = {
-    fr-ipv4 = {
-      nat_subnets          = [module.hub_vpc.subnets_psc["${local.hub_eu_region}/eu-psc-ilb-nat"].self_link]
-      automatic_connection = true
-    }
-    fr-ipv6 = {
-      nat_subnets          = [module.hub_vpc.subnets_psc["${local.hub_eu_region}/eu-psc-ilb-nat6"].self_link]
-      automatic_connection = true
-    }
-  }
+  # service_attachments = {
+  #   fr-ipv4 = {
+  #     nat_subnets          = [module.hub_vpc.subnets_psc["${local.hub_eu_region}/eu-psc-ilb-nat"].self_link]
+  #     automatic_connection = true
+  #   }
+  #   fr-ipv6 = {
+  #     nat_subnets          = [module.hub_vpc.subnets_psc["${local.hub_eu_region}/eu-psc-ilb-nat6"].self_link]
+  #     automatic_connection = true
+  #   }
+  # }
 }
 
 ####################################################
@@ -135,10 +135,10 @@ module "hub_eu_nlb" {
       response           = local.uhc_config.response
     }
   }
-  service_attachment = {
-    nat_subnets          = [module.hub_vpc.subnets_psc["${local.hub_eu_region}/eu-psc-nlb-nat"].self_link]
-    automatic_connection = true
-  }
+  # service_attachment = {
+  #   nat_subnets          = [module.hub_vpc.subnets_psc["${local.hub_eu_region}/eu-psc-nlb-nat"].self_link]
+  #   automatic_connection = true
+  # }
 }
 
 ####################################################
@@ -244,10 +244,10 @@ module "hub_eu_alb" {
       }
     }
   }
-  service_attachment = {
-    nat_subnets          = [module.hub_vpc.subnets_psc["${local.hub_eu_region}/eu-psc-alb-nat"].self_link]
-    automatic_connection = true
-  }
+  # service_attachment = {
+  #   nat_subnets          = [module.hub_vpc.subnets_psc["${local.hub_eu_region}/eu-psc-alb-nat"].self_link]
+  #   automatic_connection = true
+  # }
 }
 
 ####################################################
@@ -301,16 +301,16 @@ module "hub_us_ilb" {
       response           = local.uhc_config.response
     }
   }
-  service_attachments = {
-    fr-ipv4 = {
-      nat_subnets          = [module.hub_vpc.subnets_psc["${local.hub_us_region}/us-psc-ilb-nat"].self_link]
-      automatic_connection = true
-    }
-    fr-ipv6 = {
-      nat_subnets          = [module.hub_vpc.subnets_psc["${local.hub_us_region}/us-psc-ilb-nat6"].self_link]
-      automatic_connection = true
-    }
-  }
+  # service_attachments = {
+  #   fr-ipv4 = {
+  #     nat_subnets          = [module.hub_vpc.subnets_psc["${local.hub_us_region}/us-psc-ilb-nat"].self_link]
+  #     automatic_connection = true
+  #   }
+  #   fr-ipv6 = {
+  #     nat_subnets          = [module.hub_vpc.subnets_psc["${local.hub_us_region}/us-psc-ilb-nat6"].self_link]
+  #     automatic_connection = true
+  #   }
+  # }
 }
 
 ####################################################
@@ -379,10 +379,10 @@ module "hub_us_nlb" {
       response           = local.uhc_config.response
     }
   }
-  service_attachment = {
-    nat_subnets          = [module.hub_vpc.subnets_psc["${local.hub_us_region}/us-psc-nlb-nat"].self_link]
-    automatic_connection = true
-  }
+  # service_attachment = {
+  #   nat_subnets          = [module.hub_vpc.subnets_psc["${local.hub_us_region}/us-psc-nlb-nat"].self_link]
+  #   automatic_connection = true
+  # }
 }
 
 ####################################################
@@ -568,4 +568,84 @@ module "hub_dns_private_zone_records" {
     #   ]
     # }
   }
+}
+
+
+####################################################
+# psc endpoints --> spoke1
+####################################################
+
+# ipv4
+#--------------------------------------
+
+# ilb
+
+resource "google_compute_address" "hub_eu_psc_ep_svc_spoke1_eu_ilb_fr_ipv4" {
+  provider     = google-beta
+  project      = var.project_id_hub
+  name         = "${local.hub_prefix}eu-psc-ep-svc-spoke1-eu-ilb-fr-ipv4"
+  region       = local.hub_eu_region
+  subnetwork   = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
+  address      = local.hub_eu_psc_ep_svc_spoke1_eu_ilb_addr
+  address_type = "INTERNAL"
+  ip_version   = "IPV4"
+}
+
+resource "google_compute_forwarding_rule" "hub_eu_psc_ep_svc_spoke1_eu_ilb_fr_ipv4" {
+  provider              = google-beta
+  project               = var.project_id_hub
+  name                  = "${local.hub_prefix}eu-psc-ep-svc-spoke1-eu-ilb-fr-ipv4"
+  region                = local.hub_eu_region
+  network               = module.hub_vpc.self_link
+  target                = module.spoke1_eu_ilb.service_attachment_ids["fr-ipv4"]
+  ip_address            = google_compute_address.hub_eu_psc_ep_svc_spoke1_eu_ilb_fr_ipv4.id
+  load_balancing_scheme = ""
+}
+
+# nlb
+
+resource "google_compute_address" "hub_eu_psc_ep_svc_spoke1_eu_nlb_fr_ipv4" {
+  provider     = google-beta
+  project      = var.project_id_hub
+  name         = "${local.hub_prefix}eu-psc-ep-svc-spoke1-eu-nlb-fr-ipv4"
+  region       = local.hub_eu_region
+  subnetwork   = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
+  address      = local.hub_eu_psc_ep_svc_spoke1_eu_nlb_addr
+  address_type = "INTERNAL"
+  ip_version   = "IPV4"
+}
+
+resource "google_compute_forwarding_rule" "hub_eu_psc_ep_svc_spoke1_eu_nlb_fr_ipv4" {
+  provider              = google-beta
+  project               = var.project_id_hub
+  name                  = "${local.hub_prefix}eu-psc-ep-svc-spoke1-eu-nlb-fr-ipv4"
+  region                = local.hub_eu_region
+  network               = module.hub_vpc.self_link
+  target                = module.spoke1_eu_nlb.service_attachment_id
+  ip_address            = google_compute_address.hub_eu_psc_ep_svc_spoke1_eu_nlb_fr_ipv4.id
+  load_balancing_scheme = ""
+}
+
+# alb
+
+resource "google_compute_address" "hub_eu_psc_ep_svc_spoke1_eu_alb_fr_ipv4" {
+  provider     = google-beta
+  project      = var.project_id_hub
+  name         = "${local.hub_prefix}eu-psc-ep-svc-spoke1-eu-alb-fr-ipv4"
+  region       = local.hub_eu_region
+  subnetwork   = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
+  address      = local.hub_eu_psc_ep_svc_spoke1_eu_alb_addr
+  address_type = "INTERNAL"
+  ip_version   = "IPV4"
+}
+
+resource "google_compute_forwarding_rule" "hub_eu_psc_ep_svc_spoke1_eu_alb_fr_ipv4" {
+  provider              = google-beta
+  project               = var.project_id_hub
+  name                  = "${local.hub_prefix}eu-psc-ep-svc-spoke1-eu-alb-fr-ipv4"
+  region                = local.hub_eu_region
+  network               = module.hub_vpc.self_link
+  target                = module.spoke1_eu_alb.service_attachment_id
+  ip_address            = google_compute_address.hub_eu_psc_ep_svc_spoke1_eu_alb_fr_ipv4.id
+  load_balancing_scheme = ""
 }

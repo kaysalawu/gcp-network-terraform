@@ -114,7 +114,7 @@ resource "google_compute_address" "spoke2_us_main_addresses" {
 ####################################################
 
 module "spoke2_nat_eu" {
-  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
+  source         = # "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
   project_id     = var.project_id_spoke2
   region         = local.spoke2_eu_region
   name           = "${local.spoke2_prefix}eu-nat"
@@ -127,7 +127,7 @@ module "spoke2_nat_eu" {
 }
 
 module "spoke2_nat_us" {
-  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
+  source         = # "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
   project_id     = var.project_id_spoke2
   region         = local.spoke2_us_region
   name           = "${local.spoke2_prefix}us-nat"
@@ -287,8 +287,8 @@ resource "google_dns_policy" "spoke2_dns_policy" {
 
 locals {
   spoke2_dns_rp_rules = {
-    # drp-rule-eu-psc-https-ctrl = { dns_name = "${local.spoke2_eu_psc_https_ctrl_run_dns}.", local_data = { A = { rrdatas = [local.spoke2_eu_alb_addr] } } }
-    # drp-rule-us-psc-https-ctrl = { dns_name = "${local.spoke2_us_psc_https_ctrl_run_dns}.", local_data = { A = { rrdatas = [local.spoke2_us_alb_addr] } } }
+    # drp-rule-eu-psc-be = { dns_name = "${local.spoke2_eu_psc_be_run_dns}.", local_data = { A = { rrdatas = [local.spoke2_eu_alb_addr] } } }
+    # drp-rule-us-psc-be = { dns_name = "${local.spoke2_us_psc_be_run_dns}.", local_data = { A = { rrdatas = [local.spoke2_us_alb_addr] } } }
     drp-rule-runapp        = { dns_name = "*.run.app.", local_data = { A = { rrdatas = [local.spoke2_psc_api_fr_addr] } } }
     drp-rule-gcr           = { dns_name = "*.gcr.io.", local_data = { A = { rrdatas = [local.spoke2_psc_api_fr_addr] } } }
     drp-rule-apis          = { dns_name = "*.googleapis.com.", local_data = { A = { rrdatas = [local.spoke2_psc_api_fr_addr] } } }

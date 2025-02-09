@@ -120,9 +120,6 @@ locals {
     { name = "hub-us-ilb   ", host = local.hub_us_ilb_fqdn, ipv4 = local.hub_us_ilb_addr, ping = true },
     { name = "hub-us-nlb   ", host = local.hub_us_nlb_fqdn, ipv4 = local.hub_us_nlb_addr, ipv6 = false },
     { name = "hub-us-alb   ", host = local.hub_us_alb_fqdn, ipv4 = local.hub_us_alb_addr, ipv6 = false },
-    { name = "spoke2-us-ilb", host = local.spoke2_us_ilb_fqdn, ipv4 = local.spoke2_us_ilb_addr, ptr = true, ping = true },
-    { name = "spoke2-us-nlb", host = local.spoke2_us_nlb_fqdn, ipv4 = local.spoke2_us_nlb_addr, ptr = true, ipv6 = false },
-    { name = "spoke2-us-alb", host = local.spoke2_us_alb_fqdn, ipv4 = local.spoke2_us_alb_addr, ptr = true, ipv6 = false },
   ]
   vm_script_targets_misc = [
     { name = "hub-geo-ilb", host = local.hub_geo_ilb_fqdn },
@@ -131,9 +128,7 @@ locals {
     { name = "storage", host = "storage.googleapis.com", path = "/generate_204", probe = true },
     { name = "", host = local.hub_eu_psc_be_api_run_dns, path = "/generate_204", psc_be = true },
     { name = "", host = local.hub_us_psc_be_api_run_dns, path = "/generate_204", psc_be = true },
-    { name = "", host = local.hub_eu_run_httpbin_host, probe = true, path = "/generate_204" },
-    # { name = "spoke1-eu-run", host = local.spoke1_eu_run_httpbin_host, probe = true, path = "/generate_204" },
-    # { name = "spoke2-us-run", host = local.spoke2_us_run_httpbin_host, probe = true, path = "/generate_204" },
+    { name = "", host = local.hub_eu_run_httpbin_host, path = "/ip", probe = true, psc_be = true },
   ]
   vm_script_targets = concat(
     local.vm_script_targets_region1,
@@ -177,6 +172,7 @@ locals {
     "${local.init_dir}/fastapi/app/app/_app.py"              = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/fastapi/app/app/_app.py", {}) }
     "${local.init_dir}/fastapi/app/app/main.py"              = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/fastapi/app/app/main.py", {}) }
     "${local.init_dir}/fastapi/app/app/requirements.txt"     = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/fastapi/app/app/requirements.txt", {}) }
+    "${local.init_dir}/fastapi/app/app/discoverz.py"         = { owner = "root", permissions = "0744", content = templatefile("../../scripts/startup/discoverz.py", {}) }
   }
   vm_startup_init_files = {
     "${local.init_dir}/init/startup.sh" = { owner = "root", permissions = "0744", content = templatefile("../../scripts/startup.sh", local.vm_init_vars) }
@@ -210,132 +206,6 @@ module "probe_vm_cloud_init" {
     "HOSTNAME=$(hostname) docker compose -f ${local.init_dir}/fastapi/docker-compose-http-80.yml up -d",
     "HOSTNAME=$(hostname) docker compose -f ${local.init_dir}/fastapi/docker-compose-http-8080.yml up -d",
   ]
-}
-
-############################################
-# firewall rules
-############################################
-
-locals {
-  firewall_policies = {
-    site_egress_rules = {
-      smtp = {
-        priority = 900
-        match = {
-          destination_ranges = ["0.0.0.0/0"]
-          layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
-        }
-      }
-      all = {
-        priority = 910
-        action   = "allow"
-        match = {
-          destination_ranges = ["0.0.0.0/0"]
-          layer4_configs     = [{ protocol = "all", ports = [] }]
-        }
-      }
-    }
-    site_egress_rules_ipv6 = {
-      smtp = {
-        priority = 901
-        match = {
-          destination_ranges = ["0::/0"]
-          layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
-        }
-      }
-      all = {
-        priority = 911
-        action   = "allow"
-        match = {
-          destination_ranges = ["0::/0"]
-          layer4_configs     = [{ protocol = "all", ports = [] }]
-        }
-      }
-    }
-    site_ingress_rules = {
-      # ipv4
-      internal = {
-        priority = 1000
-        match = {
-          source_ranges  = local.netblocks.internal
-          layer4_configs = [{ protocol = "all" }]
-        }
-      }
-      dns = {
-        priority = 1100
-        match = {
-          source_ranges  = local.netblocks.dns
-          layer4_configs = [{ protocol = "all", ports = [] }]
-        }
-      }
-      ssh = {
-        priority       = 1200
-        enable_logging = true
-        match = {
-          source_ranges  = ["0.0.0.0/0", ]
-          layer4_configs = [{ protocol = "tcp", ports = ["22"] }]
-        }
-      }
-      iap = {
-        priority       = 1300
-        enable_logging = true
-        match = {
-          source_ranges  = local.netblocks.iap
-          layer4_configs = [{ protocol = "all", ports = [] }]
-        }
-      }
-      vpn = {
-        priority = 1400
-        match = {
-          source_ranges = ["0.0.0.0/0", ]
-          layer4_configs = [
-            { protocol = "udp", ports = ["500", "4500", ] },
-            { protocol = "esp", ports = [] }
-          ]
-        }
-      }
-      gfe = {
-        priority = 1500
-        match = {
-          source_ranges  = local.netblocks.gfe
-          layer4_configs = [{ protocol = "all", ports = [] }]
-        }
-      }
-      # ipv6
-      internal-6 = {
-        priority = 1001
-        match = {
-          source_ranges  = local.netblocks_ipv6.internal
-          layer4_configs = [{ protocol = "all" }]
-        }
-      }
-      ssh-6 = {
-        priority       = 1201
-        enable_logging = true
-        match = {
-          source_ranges  = ["0::/0", ]
-          layer4_configs = [{ protocol = "tcp", ports = ["22"] }]
-        }
-      }
-      vpn-6 = {
-        priority = 1401
-        match = {
-          source_ranges = ["0::/0", ]
-          layer4_configs = [
-            { protocol = "udp", ports = ["500", "4500", ] },
-            { protocol = "esp", ports = [] }
-          ]
-        }
-      }
-      gfe-6 = {
-        priority = 1501
-        match = {
-          source_ranges  = local.netblocks_ipv6.gfe
-          layer4_configs = [{ protocol = "all", ports = [] }]
-        }
-      }
-    }
-  }
 }
 
 ############################################

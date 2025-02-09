@@ -185,11 +185,11 @@ module "spoke1_eu_alb" {
     default_service = "default"
     host_rules = [
       { path_matcher = "main", hosts = [local.spoke1_eu_alb_fqdn, ] },
-      { path_matcher = "psc-neg", hosts = [local.spoke1_eu_psc_https_ctrl_run_dns, ] }
+      { path_matcher = "psc-be", hosts = [local.spoke1_eu_psc_be_run_dns, ] }
     ]
     path_matchers = {
-      main    = { default_service = "default" }
-      psc-neg = { default_service = "psc-neg" }
+      main   = { default_service = "default" }
+      psc-be = { default_service = "psc-be" }
     }
   }
   backend_service_configs = {
@@ -204,11 +204,11 @@ module "spoke1_eu_alb" {
         },
       ]
     }
-    psc-neg = {
+    psc-be = {
       health_checks = []
       backends = [
         {
-          group          = "psc-neg"
+          group          = "psc-be"
           balancing_mode = "UTILIZATION"
           max_rate       = { capacity_scaler = 1.0 }
         }
@@ -223,10 +223,10 @@ module "spoke1_eu_alb" {
     }
   }
   neg_configs = {
-    psc-neg = {
+    psc-be = {
       psc = {
         region         = local.spoke1_eu_region
-        target_service = local.spoke1_eu_psc_https_ctrl_run_dns
+        target_service = local.spoke1_eu_psc_be_run_dns
       }
     }
   }

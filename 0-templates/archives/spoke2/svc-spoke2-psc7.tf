@@ -37,7 +37,7 @@ resource "google_compute_instance_group" "spoke2_us_ilb7_ig" {
   }
 }
 
-# psc neg
+# psc backend
 
 locals {
   spoke2_us_ilb7_psc_neg_name      = "${local.spoke2_prefix}us-ilb7-psc-neg"

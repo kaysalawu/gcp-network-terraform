@@ -243,124 +243,124 @@ module "hub_vpc_firewall" {
 
 # policy
 
-# module "hub_vpc_fw_policy" {
-#   source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v34.1.0"
-#   source    = "../../modules/net-firewall-policy"
-#   name      = "${local.hub_prefix}vpc-fw-policy"
-#   parent_id = var.project_id_hub
-#   region    = "global"
-#   attachments = {
-#     hub-vpc = module.hub_vpc.self_link
-#   }
-#   egress_rules = {
-#     # ipv4
-#     smtp = {
-#       priority = 900
-#       match = {
-#         destination_ranges = ["0.0.0.0/0"]
-#         layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
-#       }
-#     }
-#     # ipv6
-#     smtp-ipv6 = {
-#       priority = 901
-#       match = {
-#         destination_ranges = ["0::/0"]
-#         layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
-#       }
-#     }
-#   }
-#   ingress_rules = {
-#     # ipv4
-#     internal = {
-#       priority = 1000
-#       match = {
-#         source_ranges  = local.netblocks.internal
-#         layer4_configs = [{ protocol = "all" }]
-#       }
-#     }
-#     dns = {
-#       priority    = 1100
-#       target_tags = [local.hub_vpc_tags_dns.id, local.hub_vpc_tags_nva.id, ]
-#       match = {
-#         source_ranges  = local.netblocks.dns
-#         layer4_configs = [{ protocol = "all", ports = [] }]
-#       }
-#     }
-#     ssh = {
-#       priority       = 1200
-#       target_tags    = [local.hub_vpc_tags_nva.id, ]
-#       enable_logging = true
-#       match = {
-#         source_ranges  = ["0.0.0.0/0", ]
-#         layer4_configs = [{ protocol = "tcp", ports = ["22"] }]
-#       }
-#     }
-#     iap = {
-#       priority       = 1300
-#       enable_logging = true
-#       match = {
-#         source_ranges  = local.netblocks.iap
-#         layer4_configs = [{ protocol = "all", ports = [] }]
-#       }
-#     }
-#     vpn = {
-#       priority    = 1400
-#       target_tags = [local.hub_vpc_tags_nva.id, ]
-#       match = {
-#         source_ranges = ["0.0.0.0/0", ]
-#         layer4_configs = [
-#           { protocol = "udp", ports = ["500", "4500", ] },
-#           { protocol = "esp", ports = [] }
-#         ]
-#       }
-#     }
-#     gfe = {
-#       priority    = 1500
-#       target_tags = [local.hub_vpc_tags_gfe.id, ]
-#       match = {
-#         source_ranges  = local.netblocks.gfe
-#         layer4_configs = [{ protocol = "all", ports = [] }]
-#       }
-#     }
-#     # ipv6
-#     internal-6 = {
-#       priority = 1001
-#       match = {
-#         source_ranges  = local.netblocks_ipv6.internal
-#         layer4_configs = [{ protocol = "all" }]
-#       }
-#     }
-#     ssh-6 = {
-#       priority       = 1201
-#       target_tags    = [local.hub_vpc_tags_nva.id, ]
-#       enable_logging = true
-#       match = {
-#         source_ranges  = ["0::/0"]
-#         layer4_configs = [{ protocol = "tcp", ports = ["22"] }]
-#       }
-#     }
-#     vpn-6 = {
-#       priority    = 1401
-#       target_tags = [local.hub_vpc_tags_nva.id, ]
-#       match = {
-#         source_ranges = ["0::/0"]
-#         layer4_configs = [
-#           { protocol = "udp", ports = ["500", "4500", ] },
-#           { protocol = "esp", ports = [] }
-#         ]
-#       }
-#     }
-#     gfe-6 = {
-#       priority    = 1501
-#       target_tags = [local.hub_vpc_tags_gfe.id, ]
-#       match = {
-#         source_ranges  = local.netblocks_ipv6.gfe
-#         layer4_configs = [{ protocol = "all", ports = [] }]
-#       }
-#     }
-#   }
-# }
+module "hub_vpc_fw_policy" {
+  # source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v34.1.0"
+  source    = "../../modules/net-firewall-policy"
+  name      = "${local.hub_prefix}vpc-fw-policy"
+  parent_id = var.project_id_hub
+  region    = "global"
+  attachments = {
+    hub-vpc = module.hub_vpc.self_link
+  }
+  egress_rules = {
+    # ipv4
+    smtp = {
+      priority = 900
+      match = {
+        destination_ranges = ["0.0.0.0/0"]
+        layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
+      }
+    }
+    # ipv6
+    smtp-ipv6 = {
+      priority = 901
+      match = {
+        destination_ranges = ["0::/0"]
+        layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
+      }
+    }
+  }
+  ingress_rules = {
+    # ipv4
+    internal = {
+      priority = 1000
+      match = {
+        source_ranges  = local.netblocks.internal
+        layer4_configs = [{ protocol = "all" }]
+      }
+    }
+    dns = {
+      priority    = 1100
+      target_tags = [local.hub_vpc_tags_dns.id, local.hub_vpc_tags_nva.id, ]
+      match = {
+        source_ranges  = local.netblocks.dns
+        layer4_configs = [{ protocol = "all", ports = [] }]
+      }
+    }
+    ssh = {
+      priority       = 1200
+      target_tags    = [local.hub_vpc_tags_nva.id, ]
+      enable_logging = true
+      match = {
+        source_ranges  = ["0.0.0.0/0", ]
+        layer4_configs = [{ protocol = "tcp", ports = ["22"] }]
+      }
+    }
+    iap = {
+      priority       = 1300
+      enable_logging = true
+      match = {
+        source_ranges  = local.netblocks.iap
+        layer4_configs = [{ protocol = "all", ports = [] }]
+      }
+    }
+    vpn = {
+      priority    = 1400
+      target_tags = [local.hub_vpc_tags_nva.id, ]
+      match = {
+        source_ranges = ["0.0.0.0/0", ]
+        layer4_configs = [
+          { protocol = "udp", ports = ["500", "4500", ] },
+          { protocol = "esp", ports = [] }
+        ]
+      }
+    }
+    gfe = {
+      priority    = 1500
+      target_tags = [local.hub_vpc_tags_gfe.id, ]
+      match = {
+        source_ranges  = local.netblocks.gfe
+        layer4_configs = [{ protocol = "all", ports = [] }]
+      }
+    }
+    # ipv6
+    internal-6 = {
+      priority = 1001
+      match = {
+        source_ranges  = local.netblocks_ipv6.internal
+        layer4_configs = [{ protocol = "all" }]
+      }
+    }
+    ssh-6 = {
+      priority       = 1201
+      target_tags    = [local.hub_vpc_tags_nva.id, ]
+      enable_logging = true
+      match = {
+        source_ranges  = ["0::/0", ]
+        layer4_configs = [{ protocol = "tcp", ports = ["22"] }]
+      }
+    }
+    vpn-6 = {
+      priority    = 1401
+      target_tags = [local.hub_vpc_tags_nva.id, ]
+      match = {
+        source_ranges = ["0::/0", ]
+        layer4_configs = [
+          { protocol = "udp", ports = ["500", "4500", ] },
+          { protocol = "esp", ports = [] }
+        ]
+      }
+    }
+    gfe-6 = {
+      priority    = 1501
+      target_tags = [local.hub_vpc_tags_gfe.id, ]
+      match = {
+        source_ranges  = local.netblocks_ipv6.gfe
+        layer4_configs = [{ protocol = "all", ports = [] }]
+      }
+    }
+  }
+}
 
 ####################################################
 # custom dns
@@ -489,7 +489,8 @@ locals {
 # policy
 
 module "hub_dns_response_policy" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns-response-policy?ref=v34.1.0"
+  # source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns-response-policy?ref=v34.1.0"
+  source     = "../../modules/dns-response-policy"
   project_id = var.project_id_hub
   name       = "${local.hub_prefix}drp"
   rules      = local.hub_dns_rp_rules
@@ -505,14 +506,19 @@ module "hub_dns_response_policy" {
 # psc zone
 
 module "hub_dns_psc" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
+  # source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
+  source      = "../../modules/dns"
   project_id  = var.project_id_hub
   name        = "${local.hub_prefix}psc"
   description = "psc"
   zone_config = {
     domain = "${local.hub_psc_ep_api_fr_name}.p.googleapis.com."
     private = {
-      client_networks = [module.hub_vpc.self_link, ]
+      client_networks = [
+        module.hub_vpc.self_link,
+        module.spoke1_vpc.self_link,
+        module.spoke2_vpc.self_link,
+      ]
     }
   }
   recordsets = {
@@ -523,13 +529,40 @@ module "hub_dns_psc" {
   ]
 }
 
+# local zone
+
+module "hub_dns_private_zone" {
+  # source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
+  source      = "../../modules/dns"
+  project_id  = var.project_id_hub
+  name        = "${local.hub_prefix}private"
+  description = "local data"
+  zone_config = {
+    domain = "${local.hub_dns_zone}."
+    private = {
+      client_networks = [
+        module.hub_vpc.self_link,
+        module.spoke1_vpc.self_link,
+        module.spoke2_vpc.self_link,
+      ]
+    }
+  }
+  recordsets = {
+    "A ${local.hub_eu_vm_dns_prefix}"    = { ttl = 300, records = [local.hub_eu_vm_addr, ] },
+    "A ${local.hub_us_vm_dns_prefix}"    = { ttl = 300, records = [local.hub_us_vm_addr, ] },
+    "AAAA ${local.hub_eu_vm_dns_prefix}" = { ttl = 300, records = [local.hub_eu_vm_main_ipv6, ] },
+    "AAAA ${local.hub_us_vm_dns_prefix}" = { ttl = 300, records = [local.hub_us_vm_main_ipv6, ] },
+  }
+}
+
 # onprem zone
 
 module "hub_dns_forward_to_onprem" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
+  # source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
+  source      = "../../modules/dns"
   project_id  = var.project_id_hub
   name        = "${local.hub_prefix}to-onprem"
-  description = "local data"
+  description = "forward to onprem"
   zone_config = {
     domain = "${local.onprem_domain}."
     forwarding = {
@@ -539,27 +572,6 @@ module "hub_dns_forward_to_onprem" {
         (local.hub_us_ns_addr) = "private"
       }
     }
-  }
-}
-
-# local zone
-
-module "hub_dns_private_zone" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
-  project_id  = var.project_id_hub
-  name        = "${local.hub_prefix}private"
-  description = "local data"
-  zone_config = {
-    domain = "${local.hub_dns_zone}."
-    private = {
-      client_networks = [module.hub_vpc.self_link, ]
-    }
-  }
-  recordsets = {
-    "A ${local.hub_eu_vm_dns_prefix}"    = { ttl = 300, records = [local.hub_eu_vm_addr, ] },
-    "A ${local.hub_us_vm_dns_prefix}"    = { ttl = 300, records = [local.hub_us_vm_addr, ] },
-    "AAAA ${local.hub_eu_vm_dns_prefix}" = { ttl = 300, records = [local.hub_eu_vm_main_ipv6, ] },
-    "AAAA ${local.hub_us_vm_dns_prefix}" = { ttl = 300, records = [local.hub_us_vm_main_ipv6, ] },
   }
 }
 

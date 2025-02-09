@@ -66,8 +66,8 @@ locals {
     { name = "internet", host = "icanhazip.com", probe = true },
     { name = "www", host = "www.googleapis.com", path = "/generate_204", probe = true },
     { name = "storage", host = "storage.googleapis.com", path = "/generate_204", probe = true },
-    { name = "hub-eu-psc-https", host = local.hub_eu_psc_https_ctrl_run_dns, path = "/generate_204" },
-    { name = "hub-us-psc-https", host = local.hub_us_psc_https_ctrl_run_dns, path = "/generate_204" },
+    { name = "hub-eu-psc-https", host = local.hub_eu_psc_be_run_dns, path = "/generate_204" },
+    { name = "hub-us-psc-https", host = local.hub_us_psc_be_run_dns, path = "/generate_204" },
     { name = "hub-eu-run", host = local.hub_eu_run_httpbin_host, probe = true, path = "/generate_204" },
   ]
   vm_script_targets = concat(

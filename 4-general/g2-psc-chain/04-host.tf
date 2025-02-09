@@ -117,7 +117,7 @@ resource "google_compute_address" "spoke1_us_main_addresses" {
 ####################################################
 
 module "spoke1_nat_eu" {
-  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
+  source         = # "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
   project_id     = var.project_id_host
   region         = local.spoke1_eu_region
   name           = "${local.spoke1_prefix}eu-nat"
@@ -130,7 +130,7 @@ module "spoke1_nat_eu" {
 }
 
 module "spoke1_nat_us" {
-  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
+  source         = # "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
   project_id     = var.project_id_host
   region         = local.spoke1_us_region
   name           = "${local.spoke1_prefix}us-nat"

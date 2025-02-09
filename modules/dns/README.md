@@ -4,9 +4,20 @@ This module allows simple management of Google Cloud DNS zones and records. It s
 
 For DNSSEC configuration, refer to the [`dns_managed_zone` documentation](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/dns_managed_zone#dnssec_config).
 
-## Examples
+<!-- BEGIN TOC -->
+- [Google Cloud DNS Module (Updated for customer Reverse lookup))](#google-cloud-dns-module-updated-for-customer-reverse-lookup)
+  - [Private Zone](#private-zone)
+    - [Forwarding Zone](#forwarding-zone)
+    - [Peering Zone](#peering-zone)
+    - [Routing Policies](#routing-policies)
+    - [Reverse Lookup Zone](#reverse-lookup-zone)
+    - [Public Zone](#public-zone)
+  - [Variables](#variables)
+  - [Outputs](#outputs)
+  - [Fixtures](#fixtures)
+<!-- END TOC -->
 
-### Private Zone
+## Private Zone
 
 ```hcl
 module "private-dns" {
@@ -181,32 +192,3 @@ module "public-dns" {
 - [compute-mig.tf](../../tests/fixtures/compute-mig.tf)
 - [net-lb-app-int-cross-region.tf](../../tests/fixtures/net-lb-app-int-cross-region.tf)
 <!-- END TFDOC -->
-
-<!-- BEGIN_TF_DOCS -->
-## Requirements
-
-No requirements.
-
-## Inputs
-
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
-| <a name="input_description"></a> [description](#input\_description) | Domain description. | `string` | `"Terraform managed."` | no |
-| <a name="input_force_destroy"></a> [force\_destroy](#input\_force\_destroy) | Set this to true to delete all records in the zone upon zone destruction. | `bool` | `null` | no |
-| <a name="input_iam"></a> [iam](#input\_iam) | IAM bindings in {ROLE => [MEMBERS]} format. | `map(list(string))` | `null` | no |
-| <a name="input_name"></a> [name](#input\_name) | Zone name, must be unique within the project. | `string` | n/a | yes |
-| <a name="input_project_id"></a> [project\_id](#input\_project\_id) | Project id for the zone. | `string` | n/a | yes |
-| <a name="input_recordsets"></a> [recordsets](#input\_recordsets) | Map of DNS recordsets in "type name" => {ttl, [records]} format. | <pre>map(object({<br>    ttl     = optional(number, 300)<br>    records = optional(list(string))<br>    geo_routing = optional(list(object({<br>      location = string<br>      records  = optional(list(string))<br>      health_checked_targets = optional(list(object({<br>        load_balancer_type = string<br>        ip_address         = string<br>        port               = string<br>        ip_protocol        = string<br>        network_url        = string<br>        project            = string<br>        region             = optional(string)<br>      })))<br>    })))<br>    wrr_routing = optional(list(object({<br>      weight  = number<br>      records = list(string)<br>    })))<br>  }))</pre> | `{}` | no |
-| <a name="input_zone_config"></a> [zone\_config](#input\_zone\_config) | DNS zone configuration. | <pre>object({<br>    domain = string<br>    forwarding = optional(object({<br>      forwarders      = optional(map(string))<br>      client_networks = list(string)<br>    }))<br>    peering = optional(object({<br>      client_networks = list(string)<br>      peer_network    = string<br>    }))<br>    public = optional(object({<br>      dnssec_config = optional(object({<br>        non_existence = optional(string, "nsec3")<br>        state         = string<br>        key_signing_key = optional(object(<br>          { algorithm = string, key_length = number }),<br>          { algorithm = "rsasha256", key_length = 2048 }<br>        )<br>        zone_signing_key = optional(object(<br>          { algorithm = string, key_length = number }),<br>          { algorithm = "rsasha256", key_length = 1024 }<br>        )<br>      }))<br>      enable_logging = optional(bool, false)<br>    }))<br>    private = optional(object({<br>      client_networks             = list(string)<br>      service_directory_namespace = optional(string)<br>    }))<br>  })</pre> | `null` | no |
-
-## Outputs
-
-| Name | Description |
-|------|-------------|
-| <a name="output_dns_keys"></a> [dns\_keys](#output\_dns\_keys) | DNSKEY and DS records of DNSSEC-signed managed zones. |
-| <a name="output_domain"></a> [domain](#output\_domain) | The DNS zone domain. |
-| <a name="output_id"></a> [id](#output\_id) | Fully qualified zone id. |
-| <a name="output_name"></a> [name](#output\_name) | The DNS zone name. |
-| <a name="output_name_servers"></a> [name\_servers](#output\_name\_servers) | The DNS zone name servers. |
-| <a name="output_zone"></a> [zone](#output\_zone) | DNS zone resource. |
-<!-- END_TF_DOCS -->

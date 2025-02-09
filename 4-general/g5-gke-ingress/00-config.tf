@@ -269,8 +269,8 @@ locals {
   hub_psc_api_sec_fr_addr = cidrhost(local.hub_psc_api_fr_range, 2) # vpc-sc forwarding rule vip
 
   # psc/api http(s) service controls
-  hub_eu_psc_https_ctrl_run_dns = "${local.hub_eu_region}-run.googleapis.com"
-  hub_us_psc_https_ctrl_run_dns = "${local.hub_us_region}-run.googleapis.com"
+  hub_eu_psc_be_run_dns = "${local.hub_eu_region}-run.googleapis.com"
+  hub_us_psc_be_run_dns = "${local.hub_us_region}-run.googleapis.com"
 
   # psc endpoints --> spoke1
   hub_eu_ep_spoke1_eu_psc_ilb_prefix = "ep.eu.spoke1-eu-ilb"
@@ -416,8 +416,8 @@ locals {
   spoke1_psc_api_sec_fr_addr = cidrhost(local.spoke1_psc_api_fr_range, 2) # vpc-sc forwarding rule vip
 
   # psc/api http(s) service controls
-  spoke1_eu_psc_https_ctrl_run_dns = "${local.spoke1_eu_region}-run.googleapis.com"
-  spoke1_us_psc_https_ctrl_run_dns = "${local.spoke1_us_region}-run.googleapis.com"
+  spoke1_eu_psc_be_run_dns = "${local.spoke1_eu_region}-run.googleapis.com"
+  spoke1_us_psc_be_run_dns = "${local.spoke1_us_region}-run.googleapis.com"
 
   # reverse dns
   spoke1_eu_ilb_reverse_suffix = format("%s.%s.${local.spoke1_reverse_zone}",
@@ -538,8 +538,8 @@ locals {
   spoke2_psc_api_sec_fr_addr = cidrhost(local.spoke2_psc_api_fr_range, 2) # vpc-sc forwarding rule vip
 
   # psc/api http(s) service controls
-  spoke2_eu_psc_https_ctrl_run_dns = "${local.spoke2_eu_region}-run.googleapis.com"
-  spoke2_us_psc_https_ctrl_run_dns = "${local.spoke2_us_region}-run.googleapis.com"
+  spoke2_eu_psc_be_run_dns = "${local.spoke2_eu_region}-run.googleapis.com"
+  spoke2_us_psc_be_run_dns = "${local.spoke2_us_region}-run.googleapis.com"
 
   # psc endpoints --> spoke1
   spoke2_eu_ep_spoke1_eu_psc_ilb_prefix = "ep.eu.spoke1-eu-ilb"

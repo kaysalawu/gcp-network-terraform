@@ -49,21 +49,6 @@ module "site1_nat" {
 # firewall
 ####################################################
 
-# policy
-
-module "site1_vpc_fw_policy" {
-  # source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v34.1.0"
-  source    = "../../modules/net-firewall-policy"
-  name      = "${local.site1_prefix}vpc-fw-policy"
-  parent_id = var.project_id_onprem
-  region    = "global"
-  attachments = {
-    site1-vpc = module.site1_vpc.self_link
-  }
-  egress_rules  = local.firewall_policies.site_egress_rules
-  ingress_rules = local.firewall_policies.site_ingress_rules
-}
-
 # vpc
 
 module "site1_vpc_firewall" {
@@ -184,7 +169,7 @@ locals {
   # hosts redirected to psc endpoint
   onprem_redirected_hosts_site1 = [
     {
-      class = "IN", ttl = "3600", type = "A", rdata = local.hub_psc_ep_api_all_fr_addr
+      class = "IN", ttl = "3600", type = "A", rdata = local.hub_psc_ep_api_fr_addr
       hosts = [
         "storage.googleapis.com",
         "bigquery.googleapis.com",

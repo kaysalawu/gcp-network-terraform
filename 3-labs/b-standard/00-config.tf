@@ -280,9 +280,9 @@ locals {
   hub_us_alb_fqdn       = "${local.hub_us_alb_dns_prefix}.${local.hub_dns_zone}"
 
   # psc endpoints in hub-eu to connect to spoke1 (producer)
-  hub_eu_psc_ep_svc_spoke1_eu_ilb_addr   = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 66)
-  hub_eu_psc_ep_svc_spoke1_eu_nlb_addr   = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 77)
-  hub_eu_psc_ep_svc_spoke1_eu_alb_addr   = cidrhost(local.spoke2_subnets["eu-main"].ip_cidr_range, 88)
+  hub_eu_psc_ep_svc_spoke1_eu_ilb_addr   = cidrhost(local.hub_subnets["eu-main"].ip_cidr_range, 66)
+  hub_eu_psc_ep_svc_spoke1_eu_nlb_addr   = cidrhost(local.hub_subnets["eu-main"].ip_cidr_range, 77)
+  hub_eu_psc_ep_svc_spoke1_eu_alb_addr   = cidrhost(local.hub_subnets["eu-main"].ip_cidr_range, 88)
   hub_eu_psc_ep_svc_spoke1_eu_ilb_prefix = "ep.eu.spoke1-eu-ilb"
   hub_eu_psc_ep_svc_spoke1_eu_nlb_prefix = "ep.eu.spoke1-eu-nlb"
   hub_eu_psc_ep_svc_spoke1_eu_alb_prefix = "ep.eu.spoke1-eu-alb"
