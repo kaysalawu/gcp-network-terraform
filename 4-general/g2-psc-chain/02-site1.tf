@@ -20,7 +20,7 @@ module "site1_vpc" {
 ####################################################
 
 module "site1_nat" {
-  source         = # "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
+  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
   project_id     = var.project_id_onprem
   region         = local.site1_region
   name           = "${local.site1_prefix}nat"

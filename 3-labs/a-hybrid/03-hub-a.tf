@@ -11,7 +11,7 @@ locals {
 
   hub_vpc_ipv6_cidr   = module.hub_vpc.internal_ipv6_range
   hub_eu_vm_main_ipv6 = module.hub_eu_vm.internal_ipv6
-  # hub_us_vm_main_ipv6 = module.hub_us_vm.internal_ipv6
+  hub_us_vm_main_ipv6 = module.hub_us_vm.internal_ipv6
 }
 
 ####################################################
@@ -84,15 +84,15 @@ resource "google_compute_address" "hub_eu_main_addresses" {
   region       = local.hub_eu_region
 }
 
-# resource "google_compute_address" "hub_us_main_addresses" {
-#   for_each     = local.hub_us_main_addresses
-#   project      = var.project_id_hub
-#   name         = each.key
-#   subnetwork   = module.hub_vpc.subnet_ids["${local.hub_us_region}/us-main"]
-#   address_type = "INTERNAL"
-#   address      = each.value.ipv4
-#   region       = local.hub_us_region
-# }
+resource "google_compute_address" "hub_us_main_addresses" {
+  for_each     = local.hub_us_main_addresses
+  project      = var.project_id_hub
+  name         = each.key
+  subnetwork   = module.hub_vpc.subnet_ids["${local.hub_us_region}/us-main"]
+  address_type = "INTERNAL"
+  address      = each.value.ipv4
+  region       = local.hub_us_region
+}
 
 ####################################################
 # service networking connection
@@ -114,7 +114,8 @@ resource "google_compute_address" "hub_eu_main_addresses" {
 ####################################################
 
 module "hub_nat_eu" {
-  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
+  # source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
+  source         = "../../modules/net-cloudnat"
   project_id     = var.project_id_hub
   region         = local.hub_eu_region
   name           = "${local.hub_prefix}eu-nat"
@@ -126,18 +127,19 @@ module "hub_nat_eu" {
   }
 }
 
-# module "hub_nat_us" {
-#   source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
-#   project_id     = var.project_id_hub
-#   region         = local.hub_us_region
-#   name           = "${local.hub_prefix}us-nat"
-#   router_network = module.hub_vpc.self_link
-#   router_create  = true
+module "hub_nat_us" {
+  # source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
+  source         = "../../modules/net-cloudnat"
+  project_id     = var.project_id_hub
+  region         = local.hub_us_region
+  name           = "${local.hub_prefix}us-nat"
+  router_network = module.hub_vpc.self_link
+  router_create  = true
 
-#   config_source_subnetworks = {
-#     primary_ranges_only = true
-#   }
-# }
+  config_source_subnetworks = {
+    primary_ranges_only = true
+  }
+}
 
 ####################################################
 # firewall
@@ -150,7 +152,8 @@ module "hub_nat_eu" {
 # vpc
 
 module "hub_vpc_firewall" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc-firewall?ref=v34.1.0"
+  # source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc-firewall?ref=v34.1.0"
+  source     = "../../modules/net-vpc-firewall"
   project_id = var.project_id_hub
   network    = module.hub_vpc.name
 
@@ -238,31 +241,208 @@ module "hub_vpc_firewall" {
   }
 }
 
+# policy
+
+module "hub_vpc_fw_policy" {
+  # source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v34.1.0"
+  source    = "../../modules/net-firewall-policy"
+  name      = "${local.hub_prefix}vpc-fw-policy"
+  parent_id = var.project_id_hub
+  region    = "global"
+  attachments = {
+    hub-vpc = module.hub_vpc.self_link
+  }
+  egress_rules = {
+    # ipv4
+    smtp = {
+      priority = 900
+      match = {
+        destination_ranges = ["0.0.0.0/0"]
+        layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
+      }
+    }
+    # ipv6
+    smtp-ipv6 = {
+      priority = 901
+      match = {
+        destination_ranges = ["0::/0"]
+        layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
+      }
+    }
+  }
+  ingress_rules = {
+    # ipv4
+    internal = {
+      priority = 1000
+      match = {
+        source_ranges  = local.netblocks.internal
+        layer4_configs = [{ protocol = "all" }]
+      }
+    }
+    dns = {
+      priority    = 1100
+      target_tags = [local.hub_vpc_tags_dns.id, local.hub_vpc_tags_nva.id, ]
+      match = {
+        source_ranges  = local.netblocks.dns
+        layer4_configs = [{ protocol = "all", ports = [] }]
+      }
+    }
+    ssh = {
+      priority       = 1200
+      target_tags    = [local.hub_vpc_tags_nva.id, ]
+      enable_logging = true
+      match = {
+        source_ranges  = ["0.0.0.0/0", ]
+        layer4_configs = [{ protocol = "tcp", ports = ["22"] }]
+      }
+    }
+    iap = {
+      priority       = 1300
+      enable_logging = true
+      match = {
+        source_ranges  = local.netblocks.iap
+        layer4_configs = [{ protocol = "all", ports = [] }]
+      }
+    }
+    vpn = {
+      priority    = 1400
+      target_tags = [local.hub_vpc_tags_nva.id, ]
+      match = {
+        source_ranges = ["0.0.0.0/0", ]
+        layer4_configs = [
+          { protocol = "udp", ports = ["500", "4500", ] },
+          { protocol = "esp", ports = [] }
+        ]
+      }
+    }
+    gfe = {
+      priority    = 1500
+      target_tags = [local.hub_vpc_tags_gfe.id, ]
+      match = {
+        source_ranges  = local.netblocks.gfe
+        layer4_configs = [{ protocol = "all", ports = [] }]
+      }
+    }
+    # ipv6
+    internal-6 = {
+      priority = 1001
+      match = {
+        source_ranges  = local.netblocks_ipv6.internal
+        layer4_configs = [{ protocol = "all" }]
+      }
+    }
+    ssh-6 = {
+      priority       = 1201
+      target_tags    = [local.hub_vpc_tags_nva.id, ]
+      enable_logging = true
+      match = {
+        source_ranges  = ["0::/0", ]
+        layer4_configs = [{ protocol = "tcp", ports = ["22"] }]
+      }
+    }
+    vpn-6 = {
+      priority    = 1401
+      target_tags = [local.hub_vpc_tags_nva.id, ]
+      match = {
+        source_ranges = ["0::/0", ]
+        layer4_configs = [
+          { protocol = "udp", ports = ["500", "4500", ] },
+          { protocol = "esp", ports = [] }
+        ]
+      }
+    }
+    gfe-6 = {
+      priority    = 1501
+      target_tags = [local.hub_vpc_tags_gfe.id, ]
+      match = {
+        source_ranges  = local.netblocks_ipv6.gfe
+        layer4_configs = [{ protocol = "all", ports = [] }]
+      }
+    }
+  }
+}
+
 ####################################################
-# psc/api
+# custom dns
+####################################################
+
+# eu
+
+module "hub_eu_dns" {
+  source     = "../../modules/compute-vm"
+  project_id = var.project_id_hub
+  name       = "${local.hub_prefix}eu-dns"
+  zone       = "${local.hub_eu_region}-b"
+  tags       = [local.tag_dns, local.tag_ssh]
+  tag_bindings_firewall = {
+    (local.hub_vpc_tags_dns.parent) = local.hub_vpc_tags_dns.id
+  }
+  network_interfaces = [{
+    stack_type = local.enable_ipv6 ? "IPV4_IPV6" : "IPV4_ONLY"
+    network    = module.hub_vpc.self_link
+    subnetwork = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
+    addresses = {
+      internal = local.hub_eu_ns_addr
+    }
+  }]
+  service_account = {
+    email  = module.hub_sa.email
+    scopes = ["cloud-platform"]
+  }
+  metadata_startup_script = local.hub_unbound_config
+}
+
+# us
+
+module "hub_us_dns" {
+  source     = "../../modules/compute-vm"
+  project_id = var.project_id_hub
+  name       = "${local.hub_prefix}us-dns"
+  zone       = "${local.hub_us_region}-b"
+  tags       = [local.tag_dns, local.tag_ssh]
+  tag_bindings_firewall = {
+    (local.hub_vpc_tags_dns.parent) = local.hub_vpc_tags_dns.id
+  }
+  network_interfaces = [{
+    stack_type = local.enable_ipv6 ? "IPV4_IPV6" : "IPV4_ONLY"
+    network    = module.hub_vpc.self_link
+    subnetwork = module.hub_vpc.subnet_self_links["${local.hub_us_region}/us-main"]
+    addresses = {
+      internal = local.hub_us_ns_addr
+    }
+  }]
+  service_account = {
+    email  = module.hub_sa.email
+    scopes = ["cloud-platform"]
+  }
+  metadata_startup_script = local.hub_unbound_config
+}
+
+####################################################
+# psc endpoint for apis
 ####################################################
 
 # address
 
-resource "google_compute_global_address" "hub_psc_api_fr_addr" {
+resource "google_compute_global_address" "hub_psc_ep_api_fr_addr" {
   provider     = google-beta
   project      = var.project_id_hub
-  name         = local.hub_psc_api_fr_name
+  name         = local.hub_psc_ep_api_fr_name
   address_type = "INTERNAL"
   purpose      = "PRIVATE_SERVICE_CONNECT"
   network      = module.hub_vpc.self_link
-  address      = local.hub_psc_api_fr_addr
+  address      = local.hub_psc_ep_api_fr_addr
 }
 
 # forwarding rule
 
-resource "google_compute_global_forwarding_rule" "hub_psc_api_fr" {
+resource "google_compute_global_forwarding_rule" "hub_psc_ep_api_fr" {
   provider              = google-beta
   project               = var.project_id_hub
-  name                  = local.hub_psc_api_fr_name
-  target                = local.hub_psc_api_fr_target
+  name                  = local.hub_psc_ep_api_fr_name
+  target                = local.hub_psc_ep_api_fr_target
   network               = module.hub_vpc.self_link
-  ip_address            = google_compute_global_address.hub_psc_api_fr_addr.id
+  ip_address            = google_compute_global_address.hub_psc_ep_api_fr_addr.id
   load_balancing_scheme = ""
 }
 
@@ -283,23 +463,34 @@ resource "google_dns_policy" "hub_dns_policy" {
 # dns response policy
 ####################################################
 
+resource "time_sleep" "hub_dns_forward_to_dns_wait" {
+  create_duration = "120s"
+  depends_on = [
+    module.hub_eu_dns,
+    module.hub_us_dns,
+  ]
+}
+
 # rules - local
 
 locals {
   hub_dns_rp_rules = {
-    drp-rule-runapp        = { dns_name = "*.run.app.", local_data = { A = { rrdatas = [local.hub_psc_api_fr_addr] } } }
-    drp-rule-gcr           = { dns_name = "*.gcr.io.", local_data = { A = { rrdatas = [local.hub_psc_api_fr_addr] } } }
-    drp-rule-apis          = { dns_name = "*.googleapis.com.", local_data = { A = { rrdatas = [local.hub_psc_api_fr_addr] } } }
-    drp-rule-bypass-www    = { dns_name = "www.googleapis.com.", behavior = "bypassResponsePolicy" }
-    drp-rule-bypass-ouath2 = { dns_name = "oauth2.googleapis.com.", behavior = "bypassResponsePolicy" }
-    drp-rule-bypass-psc    = { dns_name = "*.p.googleapis.com.", behavior = "bypassResponsePolicy" }
+    drp-rule-hub-eu-psc-be-api-run = { dns_name = "${local.hub_eu_psc_be_api_run_dns}.", local_data = { A = { rrdatas = [local.hub_eu_alb_addr] } } }
+    drp-rule-hub-us-psc-be-api-run = { dns_name = "${local.hub_us_psc_be_api_run_dns}.", local_data = { A = { rrdatas = [local.hub_us_alb_addr] } } }
+    drp-rule-runapp                = { dns_name = "*.run.app.", local_data = { A = { rrdatas = [local.hub_psc_ep_api_fr_addr] } } }
+    drp-rule-gcr                   = { dns_name = "*.gcr.io.", local_data = { A = { rrdatas = [local.hub_psc_ep_api_fr_addr] } } }
+    drp-rule-apis                  = { dns_name = "*.googleapis.com.", local_data = { A = { rrdatas = [local.hub_psc_ep_api_fr_addr] } } }
+    drp-rule-bypass-www            = { dns_name = "www.googleapis.com.", behavior = "bypassResponsePolicy" }
+    drp-rule-bypass-ouath2         = { dns_name = "oauth2.googleapis.com.", behavior = "bypassResponsePolicy" }
+    drp-rule-bypass-psc            = { dns_name = "*.p.googleapis.com.", behavior = "bypassResponsePolicy" }
   }
 }
 
 # policy
 
 module "hub_dns_response_policy" {
-  source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns-response-policy?ref=v34.1.0"
+  # source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns-response-policy?ref=v34.1.0"
+  source     = "../../modules/dns-response-policy"
   project_id = var.project_id_hub
   name       = "${local.hub_prefix}drp"
   rules      = local.hub_dns_rp_rules
@@ -315,25 +506,32 @@ module "hub_dns_response_policy" {
 # psc zone
 
 module "hub_dns_psc" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
+  # source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
+  source      = "../../modules/dns"
   project_id  = var.project_id_hub
   name        = "${local.hub_prefix}psc"
   description = "psc"
   zone_config = {
-    domain = "${local.hub_psc_api_fr_name}.p.googleapis.com."
+    domain = "${local.hub_psc_ep_api_fr_name}.p.googleapis.com."
     private = {
-      client_networks = [module.hub_vpc.self_link, ]
+      client_networks = [
+        module.hub_vpc.self_link,
+      ]
     }
   }
   recordsets = {
-    "A " = { ttl = 300, records = [local.hub_psc_api_fr_addr] }
+    "A " = { ttl = 300, records = [local.hub_psc_ep_api_fr_addr] }
   }
+  depends_on = [
+    time_sleep.hub_dns_forward_to_dns_wait,
+  ]
 }
 
 # local zone
 
 module "hub_dns_private_zone" {
-  source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
+  # source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
+  source      = "../../modules/dns"
   project_id  = var.project_id_hub
   name        = "${local.hub_prefix}private"
   description = "local data"
@@ -347,7 +545,29 @@ module "hub_dns_private_zone" {
   }
   recordsets = {
     "A ${local.hub_eu_vm_dns_prefix}"    = { ttl = 300, records = [local.hub_eu_vm_addr, ] },
+    "A ${local.hub_us_vm_dns_prefix}"    = { ttl = 300, records = [local.hub_us_vm_addr, ] },
     "AAAA ${local.hub_eu_vm_dns_prefix}" = { ttl = 300, records = [local.hub_eu_vm_main_ipv6, ] },
+    "AAAA ${local.hub_us_vm_dns_prefix}" = { ttl = 300, records = [local.hub_us_vm_main_ipv6, ] },
+  }
+}
+
+# onprem zone
+
+module "hub_dns_forward_to_onprem" {
+  # source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
+  source      = "../../modules/dns"
+  project_id  = var.project_id_hub
+  name        = "${local.hub_prefix}to-onprem"
+  description = "forward to onprem"
+  zone_config = {
+    domain = "${local.onprem_domain}."
+    forwarding = {
+      client_networks = [module.hub_vpc.self_link, ]
+      forwarders = {
+        (local.hub_eu_ns_addr) = "private"
+        (local.hub_us_ns_addr) = "private"
+      }
+    }
   }
 }
 
@@ -355,7 +575,7 @@ module "hub_dns_private_zone" {
 # workload
 ####################################################
 
-# eu
+# instance
 
 module "hub_eu_vm" {
   source     = "../../modules/compute-vm"
@@ -381,12 +601,38 @@ module "hub_eu_vm" {
   }
 }
 
+module "hub_us_vm" {
+  source     = "../../modules/compute-vm"
+  project_id = var.project_id_hub
+  name       = "${local.hub_prefix}us-vm"
+  zone       = "${local.hub_us_region}-b"
+  tags       = [local.tag_ssh, local.tag_gfe]
+  tag_bindings_firewall = {
+    (local.hub_vpc_tags_gfe.parent) = local.hub_vpc_tags_gfe.id
+  }
+  network_interfaces = [{
+    stack_type = local.enable_ipv6 ? "IPV4_IPV6" : "IPV4_ONLY"
+    network    = module.hub_vpc.self_link
+    subnetwork = module.hub_vpc.subnet_self_links["${local.hub_us_region}/us-main"]
+    addresses  = { internal = local.hub_us_vm_addr }
+  }]
+  service_account = {
+    email  = module.hub_sa.email
+    scopes = ["cloud-platform"]
+  }
+  metadata = {
+    user-data = module.vm_cloud_init.cloud_config
+  }
+}
+
 ####################################################
 # output files
 ####################################################
 
 locals {
-  hub_files = {}
+  hub_files = {
+    "output/hub-unbound.sh" = local.hub_unbound_config
+  }
 }
 
 resource "local_file" "hub_files" {

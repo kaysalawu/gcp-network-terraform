@@ -24,8 +24,9 @@ In this lab:
 * Hybrid connectivity to simulated on-premises sites is achieved using HA VPN.
 * Network Connectivity Center (NCC) is used to connect the on-premises sites together via the external Hub VPC.
 * Networking features such as Cloud DNS, PSC for Google APIs and load balancers are also deployed in this lab.
+* Spoke networks are connected to the hub network using VPC peering.
 
-<img src="./image.png" alt="Simple Hybrid Connectivity" width="1000">
+<img src="./images/overview.png" alt="Simple Hybrid Connectivity" width="900">
 
 ## Prerequisites
 
@@ -58,7 +59,7 @@ Ensure you meet all requirements in the [prerequisites](../../prerequisites/READ
     ```sh
     terraform init
     terraform plan
-    terraform apply -parallelism=50
+    terraform apply -auto-approve
     ```
 
 5. (Optional) Deploy a firewall endpoint in the hub VPC in zone europe-west2-b to match `region1` set in the config file - [00-config](./00-config.tf#L25).
@@ -140,7 +141,7 @@ The table below shows the auto-generated output files from the lab. They are loc
 
 ## Running Tests from VM Instances
 
-Each virtual machine (VM) is pre-configured with a shell [script](../../scripts/server.sh) to run various types of network reachability tests. Serial console access has been configured for all virtual machines. In each VM instance, The pre-configured test script `/usr/local/bin/playz` can be run from the SSH terminal to test network reachability.
+Each virtual machine (VM) is pre-configured with a shell [script](../../scripts/server.sh) to run various types of network reachability tests. Serial console access has been configured for all virtual machines. In each VM instance, Pre-configured test scripts are located in directory `/usr/local/bin/playz`. The scripts run various reachability tests.
 
 The full list of the scripts in each VM instance is shown below:
 

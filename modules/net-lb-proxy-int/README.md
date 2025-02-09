@@ -7,19 +7,20 @@ Due to the complexity of the underlying resources, changes to the configuration 
 ## Examples
 
 <!-- BEGIN TOC -->
-- [Examples](#examples)
-  - [Minimal Example](#minimal-example)
-  - [Health Checks](#health-checks)
-  - [Instance Groups](#instance-groups)
-  - [Network Endpoint Groups (NEGs)](#network-endpoint-groups-negs)
-    - [Zonal NEG creation](#zonal-neg-creation)
-    - [Hybrid NEG creation](#hybrid-neg-creation)
-    - [Private Service Connect NEG creation](#private-service-connect-neg-creation)
-    - [Internet NEG creation](#internet-neg-creation)
-- [Deploying changes to load balancer configurations](#deploying-changes-to-load-balancer-configurations)
-- [Files](#files)
-- [Variables](#variables)
-- [Outputs](#outputs)
+- [Internal Proxy Network Load Balancer Module](#internal-proxy-network-load-balancer-module)
+  - [Examples](#examples)
+    - [Minimal Example](#minimal-example)
+    - [Health Checks](#health-checks)
+    - [Instance Groups](#instance-groups)
+    - [Network Endpoint Groups (NEGs)](#network-endpoint-groups-negs)
+      - [Zonal NEG creation](#zonal-neg-creation)
+      - [Hybrid NEG creation](#hybrid-neg-creation)
+      - [Private Service Connect NEG creation](#private-service-connect-neg-creation)
+      - [Internet NEG creation](#internet-neg-creation)
+  - [Deploying changes to load balancer configurations](#deploying-changes-to-load-balancer-configurations)
+  - [Files](#files)
+  - [Variables](#variables)
+  - [Outputs](#outputs)
 <!-- END TOC -->
 
 ### Minimal Example

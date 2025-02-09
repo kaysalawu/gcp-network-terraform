@@ -476,10 +476,6 @@ module "hub_dns_private_zone_records" {
     "A ${local.hub_us_nlb_dns_prefix}" = { ttl = 300, records = [local.hub_us_nlb_addr, ] },
     "A ${local.hub_us_alb_dns_prefix}" = { ttl = 300, records = [local.hub_us_alb_addr, ] },
 
-    "A ${local.hub_eu_psc_ep_svc_spoke1_eu_ilb_prefix}" = { ttl = 300, records = [local.hub_eu_psc_ep_svc_spoke1_eu_ilb_addr] },
-    "A ${local.hub_eu_psc_ep_svc_spoke1_eu_nlb_prefix}" = { ttl = 300, records = [local.hub_eu_psc_ep_svc_spoke1_eu_nlb_addr] },
-    "A ${local.hub_eu_psc_ep_svc_spoke1_eu_alb_prefix}" = { ttl = 300, records = [local.hub_eu_psc_ep_svc_spoke1_eu_alb_addr] },
-
     "AAAA ${local.hub_eu_ilb_dns_prefix}" = { ttl = 300, records = [local.hub_eu_ilb_ipv6, ] },
     "AAAA ${local.hub_us_ilb_dns_prefix}" = { ttl = 300, records = [local.hub_us_ilb_ipv6, ] },
 
@@ -538,82 +534,3 @@ module "hub_dns_private_zone_records" {
   }
 }
 
-
-####################################################
-# psc endpoints --> spoke1
-####################################################
-
-# ipv4
-#--------------------------------------
-
-# ilb
-
-resource "google_compute_address" "hub_eu_psc_ep_svc_spoke1_eu_ilb_fr_ipv4" {
-  provider     = google-beta
-  project      = var.project_id_hub
-  name         = "${local.hub_prefix}eu-psc-ep-svc-spoke1-eu-ilb-fr-ipv4"
-  region       = local.hub_eu_region
-  subnetwork   = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
-  address      = local.hub_eu_psc_ep_svc_spoke1_eu_ilb_addr
-  address_type = "INTERNAL"
-  ip_version   = "IPV4"
-}
-
-resource "google_compute_forwarding_rule" "hub_eu_psc_ep_svc_spoke1_eu_ilb_fr_ipv4" {
-  provider              = google-beta
-  project               = var.project_id_hub
-  name                  = "${local.hub_prefix}eu-psc-ep-svc-spoke1-eu-ilb-fr-ipv4"
-  region                = local.hub_eu_region
-  network               = module.hub_vpc.self_link
-  target                = module.spoke1_eu_ilb.service_attachment_ids["fr-ipv4"]
-  ip_address            = google_compute_address.hub_eu_psc_ep_svc_spoke1_eu_ilb_fr_ipv4.id
-  load_balancing_scheme = ""
-}
-
-# nlb
-
-resource "google_compute_address" "hub_eu_psc_ep_svc_spoke1_eu_nlb_fr_ipv4" {
-  provider     = google-beta
-  project      = var.project_id_hub
-  name         = "${local.hub_prefix}eu-psc-ep-svc-spoke1-eu-nlb-fr-ipv4"
-  region       = local.hub_eu_region
-  subnetwork   = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
-  address      = local.hub_eu_psc_ep_svc_spoke1_eu_nlb_addr
-  address_type = "INTERNAL"
-  ip_version   = "IPV4"
-}
-
-resource "google_compute_forwarding_rule" "hub_eu_psc_ep_svc_spoke1_eu_nlb_fr_ipv4" {
-  provider              = google-beta
-  project               = var.project_id_hub
-  name                  = "${local.hub_prefix}eu-psc-ep-svc-spoke1-eu-nlb-fr-ipv4"
-  region                = local.hub_eu_region
-  network               = module.hub_vpc.self_link
-  target                = module.spoke1_eu_nlb.service_attachment_id
-  ip_address            = google_compute_address.hub_eu_psc_ep_svc_spoke1_eu_nlb_fr_ipv4.id
-  load_balancing_scheme = ""
-}
-
-# alb
-
-resource "google_compute_address" "hub_eu_psc_ep_svc_spoke1_eu_alb_fr_ipv4" {
-  provider     = google-beta
-  project      = var.project_id_hub
-  name         = "${local.hub_prefix}eu-psc-ep-svc-spoke1-eu-alb-fr-ipv4"
-  region       = local.hub_eu_region
-  subnetwork   = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
-  address      = local.hub_eu_psc_ep_svc_spoke1_eu_alb_addr
-  address_type = "INTERNAL"
-  ip_version   = "IPV4"
-}
-
-resource "google_compute_forwarding_rule" "hub_eu_psc_ep_svc_spoke1_eu_alb_fr_ipv4" {
-  provider              = google-beta
-  project               = var.project_id_hub
-  name                  = "${local.hub_prefix}eu-psc-ep-svc-spoke1-eu-alb-fr-ipv4"
-  region                = local.hub_eu_region
-  network               = module.hub_vpc.self_link
-  target                = module.spoke1_eu_alb.service_attachment_id
-  ip_address            = google_compute_address.hub_eu_psc_ep_svc_spoke1_eu_alb_fr_ipv4.id
-  load_balancing_scheme = ""
-}

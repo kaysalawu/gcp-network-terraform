@@ -1,8 +1,8 @@
 
 locals {
   advertised_prefixes = {
-    site1_to_hub = { (local.site1_supernet) = "site1 supernet" }
-    site2_to_hub = { (local.site2_supernet) = "site2 supernet" }
+    site1_to_hub = { (local.site1_supernet) = "site1 supernet", (local.site1_vpc_ipv6_cidr) = "site1 ipv6" }
+    site2_to_hub = { (local.site2_supernet) = "site2 supernet", (local.site2_vpc_ipv6_cidr) = "site2 ipv6" }
     hub_to_site1 = { (local.supernet) = "supernet" }
     hub_to_site2 = { (local.supernet) = "supernet" }
   }

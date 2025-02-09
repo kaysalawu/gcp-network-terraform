@@ -9,11 +9,28 @@ locals {
   us_repo_name = google_artifact_registry_repository.us_repo.name
   httpbin_port = 80
 
-  hub_psc_api_secure = false
+  hub_psc_ep_api_secure = false
+  hub_psc_ep_api_fr_name = (
+    local.hub_psc_ep_api_secure ?
+    local.hub_psc_ep_api_sec_fr_name :
+    local.hub_psc_ep_api_all_fr_name
+  )
+  hub_psc_ep_api_fr_addr = (
+    local.hub_psc_ep_api_secure ?
+    local.hub_psc_ep_api_sec_fr_addr :
+    local.hub_psc_ep_api_all_fr_addr
+  )
+  hub_psc_ep_api_fr_target = (
+    local.hub_psc_ep_api_secure ?
+    "vpc-sc" :
+    "all-apis"
+  )
+
+
+  enable_ipv6 = true
 
   hub_eu_run_httpbin_host = module.hub_eu_run_httpbin.service.uri
 
-  enable_ipv6 = true
 }
 
 ####################################################
@@ -50,14 +67,14 @@ locals {
   vm_script_targets_region1 = [
     { name = "site1-vm     ", host = local.site1_vm_fqdn, ipv4 = local.site1_vm_addr, probe = true, ping = true },
     { name = "hub-eu-vm    ", host = local.hub_eu_vm_fqdn, ipv4 = local.hub_eu_vm_addr, probe = true, ping = true },
-    { name = "hub-eu-ilb   ", host = local.hub_eu_ilb_fqdn, ipv4 = local.hub_eu_ilb_addr, },
+    { name = "hub-eu-ilb   ", host = local.hub_eu_ilb_fqdn, ipv4 = local.hub_eu_ilb_addr, ping = true },
     { name = "hub-eu-nlb   ", host = local.hub_eu_nlb_fqdn, ipv4 = local.hub_eu_nlb_addr, ipv6 = false },
     { name = "hub-eu-alb   ", host = local.hub_eu_alb_fqdn, ipv4 = local.hub_eu_alb_addr, ipv6 = false },
   ]
   vm_script_targets_region2 = [
     { name = "site2-vm     ", host = local.site2_vm_fqdn, ipv4 = local.site2_vm_addr, probe = true, ping = true },
     { name = "hub-us-vm    ", host = local.hub_us_vm_fqdn, ipv4 = local.hub_us_vm_addr, probe = true, ping = true },
-    { name = "hub-us-ilb   ", host = local.hub_us_ilb_fqdn, ipv4 = local.hub_us_ilb_addr },
+    { name = "hub-us-ilb   ", host = local.hub_us_ilb_fqdn, ipv4 = local.hub_us_ilb_addr, ping = true },
     { name = "hub-us-nlb   ", host = local.hub_us_nlb_fqdn, ipv4 = local.hub_us_nlb_addr, ipv6 = false },
     { name = "hub-us-alb   ", host = local.hub_us_alb_fqdn, ipv4 = local.hub_us_alb_addr, ipv6 = false },
   ]
@@ -66,9 +83,9 @@ locals {
     { name = "internet", host = "icanhazip.com", probe = true },
     { name = "www", host = "www.googleapis.com", path = "/generate_204", probe = true },
     { name = "storage", host = "storage.googleapis.com", path = "/generate_204", probe = true },
-    { name = "hub-eu-psc-https", host = local.hub_eu_psc_be_run_dns, path = "/generate_204" },
-    { name = "hub-us-psc-https", host = local.hub_us_psc_be_run_dns, path = "/generate_204" },
-    { name = "hub-eu-run", host = local.hub_eu_run_httpbin_host, probe = true, path = "/generate_204" },
+    { name = "", host = local.hub_eu_psc_be_api_run_dns, path = "/generate_204", psc_be = true },
+    { name = "", host = local.hub_us_psc_be_api_run_dns, path = "/generate_204", psc_be = true },
+    { name = "", host = local.hub_eu_run_httpbin_host, path = "/ip", probe = true, psc_be = true },
   ]
   vm_script_targets = concat(
     local.vm_script_targets_region1,
@@ -112,23 +129,13 @@ locals {
     "${local.init_dir}/fastapi/app/app/_app.py"              = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/fastapi/app/app/_app.py", {}) }
     "${local.init_dir}/fastapi/app/app/main.py"              = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/fastapi/app/app/main.py", {}) }
     "${local.init_dir}/fastapi/app/app/requirements.txt"     = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/fastapi/app/app/requirements.txt", {}) }
+    "${local.init_dir}/fastapi/app/app/discoverz.py"         = { owner = "root", permissions = "0744", content = templatefile("../../scripts/startup/discoverz.py", {}) }
   }
   vm_startup_init_files = {
     "${local.init_dir}/init/startup.sh" = { owner = "root", permissions = "0744", content = templatefile("../../scripts/startup.sh", local.vm_init_vars) }
   }
   probe_startup_init_files = {
     "${local.init_dir}/init/startup.sh" = { owner = "root", permissions = "0744", content = templatefile("../../scripts/startup.sh", local.probe_init_vars) }
-  }
-  proxy_startup_files = {
-    "${local.init_dir}/unbound/Dockerfile"         = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/unbound/Dockerfile", {}) }
-    "${local.init_dir}/unbound/docker-compose.yml" = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/unbound/docker-compose.yml", {}) }
-    "${local.init_dir}/unbound/setup-unbound.sh"   = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/unbound/setup-unbound.sh", local.proxy_init_vars) }
-    "/etc/unbound/unbound.conf"                    = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/unbound/unbound.conf", local.proxy_init_vars) }
-
-    "${local.init_dir}/squid/docker-compose.yml" = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/squid/docker-compose.yml", local.proxy_init_vars) }
-    "${local.init_dir}/squid/setup-squid.sh"     = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/squid/setup-squid.sh", local.proxy_init_vars) }
-    "/etc/squid/blocked_sites"                   = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/squid/blocked_sites", local.proxy_init_vars) }
-    "/etc/squid/squid.conf"                      = { owner = "root", permissions = "0744", content = templatefile("../../scripts/init/squid/squid.conf", local.proxy_init_vars) }
   }
 }
 
@@ -156,161 +163,6 @@ module "probe_vm_cloud_init" {
     "HOSTNAME=$(hostname) docker compose -f ${local.init_dir}/fastapi/docker-compose-http-80.yml up -d",
     "HOSTNAME=$(hostname) docker compose -f ${local.init_dir}/fastapi/docker-compose-http-8080.yml up -d",
   ]
-}
-
-module "proxy_vm_cloud_init" {
-  source = "../../modules/cloud-config-gen"
-  files  = local.proxy_startup_files
-  run_commands = [
-    "sysctl -w net.ipv4.ip_forward=1",
-    "sysctl -w net.ipv4.conf.eth0.disable_xfrm=1",
-    "sysctl -w net.ipv4.conf.eth0.disable_policy=1",
-    "echo 'net.ipv4.ip_forward=1' >> /etc/sysctl.conf",
-    "sysctl -w net.ipv6.conf.all.forwarding=1",
-    "echo 'net.ipv6.conf.all.forwarding=1' >> /etc/sysctl.conf",
-    "sysctl -p",
-    "echo iptables-persistent iptables-persistent/autosave_v4 boolean false | debconf-set-selections",
-    "echo iptables-persistent iptables-persistent/autosave_v6 boolean false | debconf-set-selections",
-    "apt-get -y install iptables-persistent",
-    "iptables -P FORWARD ACCEPT",
-    "iptables -P INPUT ACCEPT",
-    "iptables -P OUTPUT ACCEPT",
-    "iptables -t nat -A POSTROUTING -d 10.0.0.0/8 -j ACCEPT",
-    "iptables -t nat -A POSTROUTING -d 172.16.0.0/12 -j ACCEPT",
-    "iptables -t nat -A POSTROUTING -d 192.168.0.0/16 -j ACCEPT",
-    "iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE",
-    ". ${local.init_dir}/init/startup.sh",
-    ". ${local.init_dir}/unbound/setup-unbound.sh",
-    ". ${local.init_dir}/squid/setup-squid.sh",
-    "docker compose -f ${local.init_dir}/unbound/docker-compose.yml up -d",
-    "docker compose -f ${local.init_dir}/squid/docker-compose.yml up -d",
-  ]
-}
-
-############################################
-# firewall rules
-############################################
-
-locals {
-  firewall_policies = {
-    site_egress_rules = {
-      smtp = {
-        priority = 900
-        match = {
-          destination_ranges = ["0.0.0.0/0"]
-          layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
-        }
-      }
-      all = {
-        priority = 910
-        action   = "allow"
-        match = {
-          destination_ranges = ["0.0.0.0/0"]
-          layer4_configs     = [{ protocol = "all", ports = [] }]
-        }
-      }
-    }
-    site_egress_rules_ipv6 = {
-      smtp = {
-        priority = 901
-        match = {
-          destination_ranges = ["0::/0"]
-          layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
-        }
-      }
-      all = {
-        priority = 911
-        action   = "allow"
-        match = {
-          destination_ranges = ["0::/0"]
-          layer4_configs     = [{ protocol = "all", ports = [] }]
-        }
-      }
-    }
-    site_ingress_rules = {
-      # ipv4
-      internal = {
-        priority = 1000
-        match = {
-          source_ranges  = local.netblocks.internal
-          layer4_configs = [{ protocol = "all" }]
-        }
-      }
-      dns = {
-        priority = 1100
-        match = {
-          source_ranges  = local.netblocks.dns
-          layer4_configs = [{ protocol = "all", ports = [] }]
-        }
-      }
-      ssh = {
-        priority       = 1200
-        enable_logging = true
-        match = {
-          source_ranges  = ["0.0.0.0/0", ]
-          layer4_configs = [{ protocol = "tcp", ports = ["22"] }]
-        }
-      }
-      iap = {
-        priority       = 1300
-        enable_logging = true
-        match = {
-          source_ranges  = local.netblocks.iap
-          layer4_configs = [{ protocol = "all", ports = [] }]
-        }
-      }
-      vpn = {
-        priority = 1400
-        match = {
-          source_ranges = ["0.0.0.0/0", ]
-          layer4_configs = [
-            { protocol = "udp", ports = ["500", "4500", ] },
-            { protocol = "esp", ports = [] }
-          ]
-        }
-      }
-      gfe = {
-        priority = 1500
-        match = {
-          source_ranges  = local.netblocks.gfe
-          layer4_configs = [{ protocol = "all", ports = [] }]
-        }
-      }
-      # ipv6
-      internal-6 = {
-        priority = 1001
-        match = {
-          source_ranges  = local.netblocks_ipv6.internal
-          layer4_configs = [{ protocol = "all" }]
-        }
-      }
-      ssh-6 = {
-        priority       = 1201
-        enable_logging = true
-        match = {
-          source_ranges  = ["0::/0", ]
-          layer4_configs = [{ protocol = "tcp", ports = ["22"] }]
-        }
-      }
-      vpn-6 = {
-        priority = 1401
-        match = {
-          source_ranges = ["0::/0", ]
-          layer4_configs = [
-            { protocol = "udp", ports = ["500", "4500", ] },
-            { protocol = "esp", ports = [] }
-          ]
-        }
-      }
-      gfe-6 = {
-        priority = 1501
-        match = {
-          source_ranges  = local.netblocks_ipv6.gfe
-          layer4_configs = [{ protocol = "all", ports = [] }]
-        }
-      }
-    }
-  }
 }
 
 ############################################
@@ -388,21 +240,6 @@ locals {
     { zone = "${local.onprem_domain}.", targets = [local.site1_ns_addr, local.site2_ns_addr] },
     { zone = ".", targets = ["169.254.169.254"] },
   ]
-  hub_psc_api_fr_name = (
-    local.hub_psc_api_secure ?
-    local.hub_psc_api_sec_fr_name :
-    local.hub_psc_api_all_fr_name
-  )
-  hub_psc_api_fr_addr = (
-    local.hub_psc_api_secure ?
-    local.hub_psc_api_sec_fr_addr :
-    local.hub_psc_api_all_fr_addr
-  )
-  hub_psc_api_fr_target = (
-    local.hub_psc_api_secure ?
-    "vpc-sc" :
-    "all-apis"
-  )
 }
 
 # addresses
@@ -437,9 +274,8 @@ module "hub_sa" {
 module "hub_eu_run_httpbin" {
   source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/cloud-run-v2?ref=v34.1.0"
   project_id = var.project_id_hub
-  name       = "${local.hub_prefix}us-run-httpbin"
+  name       = "${local.hub_prefix}eu-run-httpbin"
   region     = local.hub_eu_region
-  iam        = { "roles/run.invoker" = ["allUsers"] }
   containers = {
     httpbin = {
       image = "kennethreitz/httpbin"
@@ -449,6 +285,13 @@ module "hub_eu_run_httpbin" {
       resources     = null
       volume_mounts = null
     }
+  }
+  iam = {
+    "roles/run.invoker" = [
+      "serviceAccount:${module.site1_sa.email}",
+      "serviceAccount:${module.site2_sa.email}",
+      "serviceAccount:${module.hub_sa.email}",
+    ]
   }
 }
 

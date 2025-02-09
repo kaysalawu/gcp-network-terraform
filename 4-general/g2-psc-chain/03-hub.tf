@@ -103,7 +103,7 @@ resource "google_compute_address" "hub_eu_main_addresses" {
 ####################################################
 
 module "hub_nat_eu" {
-  source         = # "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
+  source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
   project_id     = var.project_id_hub
   region         = local.hub_eu_region
   name           = "${local.hub_prefix}eu-nat"

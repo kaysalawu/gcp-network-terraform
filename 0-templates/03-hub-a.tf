@@ -516,8 +516,6 @@ module "hub_dns_psc" {
     private = {
       client_networks = [
         module.hub_vpc.self_link,
-        module.spoke1_vpc.self_link,
-        module.spoke2_vpc.self_link,
       ]
     }
   }
@@ -542,8 +540,6 @@ module "hub_dns_private_zone" {
     private = {
       client_networks = [
         module.hub_vpc.self_link,
-        module.spoke1_vpc.self_link,
-        module.spoke2_vpc.self_link,
       ]
     }
   }

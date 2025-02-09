@@ -57,16 +57,6 @@ module "hub_eu_ilb" {
       response           = local.uhc_config.response
     }
   }
-  # service_attachments = {
-  #   fr-ipv4 = {
-  #     nat_subnets          = [module.hub_vpc.subnets_psc["${local.hub_eu_region}/eu-psc-ilb-nat"].self_link]
-  #     automatic_connection = true
-  #   }
-  #   fr-ipv6 = {
-  #     nat_subnets          = [module.hub_vpc.subnets_psc["${local.hub_eu_region}/eu-psc-ilb-nat6"].self_link]
-  #     automatic_connection = true
-  #   }
-  # }
 }
 
 ####################################################
@@ -135,10 +125,6 @@ module "hub_eu_nlb" {
       response           = local.uhc_config.response
     }
   }
-  # service_attachment = {
-  #   nat_subnets          = [module.hub_vpc.subnets_psc["${local.hub_eu_region}/eu-psc-nlb-nat"].self_link]
-  #   automatic_connection = true
-  # }
 }
 
 ####################################################
@@ -244,10 +230,6 @@ module "hub_eu_alb" {
       }
     }
   }
-  # service_attachment = {
-  #   nat_subnets          = [module.hub_vpc.subnets_psc["${local.hub_eu_region}/eu-psc-alb-nat"].self_link]
-  #   automatic_connection = true
-  # }
 }
 
 ####################################################
@@ -301,16 +283,6 @@ module "hub_us_ilb" {
       response           = local.uhc_config.response
     }
   }
-  # service_attachments = {
-  #   fr-ipv4 = {
-  #     nat_subnets          = [module.hub_vpc.subnets_psc["${local.hub_us_region}/us-psc-ilb-nat"].self_link]
-  #     automatic_connection = true
-  #   }
-  #   fr-ipv6 = {
-  #     nat_subnets          = [module.hub_vpc.subnets_psc["${local.hub_us_region}/us-psc-ilb-nat6"].self_link]
-  #     automatic_connection = true
-  #   }
-  # }
 }
 
 ####################################################
@@ -379,10 +351,6 @@ module "hub_us_nlb" {
       response           = local.uhc_config.response
     }
   }
-  # service_attachment = {
-  #   nat_subnets          = [module.hub_vpc.subnets_psc["${local.hub_us_region}/us-psc-nlb-nat"].self_link]
-  #   automatic_connection = true
-  # }
 }
 
 ####################################################
