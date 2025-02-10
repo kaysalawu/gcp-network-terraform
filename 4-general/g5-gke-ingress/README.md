@@ -29,7 +29,7 @@ Many organisations use a [hub and spoke](https://cloud.google.com/architecture/d
 
 The ingress receives internal and external traffic and forwards to the spokes. The ingress layer typically comprises of resources such as network firewalls, network load balancers, application load balancers or a combination of any these. In other cases, customers need a custom ingress solution to handle specific business logic that regular cloud load balancers cannot manage. In such situations, the ingress could be a Google Kubernetes Engine (GKE) cluster that routes traffic to the spoke clusters - that are also GKE clusters. This is what this lab is about.
 
-<img src="images/centralised-ingress.png" alt="Hub and Spoke GKE Ingress" width="700"/>
+<img src="images/centralised-ingress.png" alt="Hub and Spoke GKE Ingress" width="800"/>
 
 
 ### Hub and Spoke GKE Ingress
@@ -43,7 +43,7 @@ Assumptions made for this design:
 3. The hub cluster has a private DNS zone for the internal domain name resolution.
 <p>
 
-<img src="images/image.png" alt="Hub and Spoke GKE Ingress" width="750"/>
+<img src="images/image.png" alt="Hub and Spoke GKE Ingress" width="850"/>
 <p>
 
 In this lab, the ingress will rote both HTTP and TCP traffic. For HTTP traffic, the ingress forwards to a backend based on the host name header. The ingress uses host names in SNI to route TCP traffic to the target pod.
