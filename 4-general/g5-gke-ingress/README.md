@@ -43,7 +43,7 @@ Assumptions made for this design:
 3. The hub cluster has a private DNS zone for the internal domain name resolution.
 <p>
 
-<img src="images/image.png" alt="Hub and Spoke GKE Ingress" width="850"/>
+<img src="images/image.png" alt="Hub and Spoke GKE Ingress" width="900"/>
 <p>
 
 In this lab, the ingress will rote both HTTP and TCP traffic. For HTTP traffic, the ingress forwards to a backend based on the host name header. The ingress uses host names in SNI to route TCP traffic to the target pod.
