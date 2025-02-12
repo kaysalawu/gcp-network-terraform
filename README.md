@@ -25,7 +25,7 @@ In this lab:
 * Network Connectivity Center (NCC) is used to connect the on-premises sites together via the external Hub VPC.
 * Other networking features such as Cloud DNS, PSC for Google APIs and load balancers are also deployed in this lab.
 
-<img src="./3-labs/a-hybrid/image.png" alt="Hub and Spoke" width="500">
+<img src="./3-labs/a-hybrid/images/overview.png" alt="Hub and Spoke" width="800">
 
 ## B. Hub and Spoke with Appliance IPsec Tunnel to On-premises
 
@@ -39,6 +39,6 @@ In this lab:
 * Network Connectivity Center (NCC) is used to connect the on-premises sites together via the external Hub VPC.
 * Other networking features such as Cloud DNS, PSC for Google APIs and load balancers are also deployed in this lab.
 
-<img src="./3-labs/b-standard/image.png" alt="Hub and Spoke with Shared VPC" width="1000">
+<img src="./3-labs/b-standard/images/overview.png" alt="Hub and Spoke with Shared VPC" width="1000">
 
 
