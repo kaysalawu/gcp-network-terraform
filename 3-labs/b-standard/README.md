@@ -26,7 +26,7 @@ In this lab:
 * Networking features such as Cloud DNS, PSC for Google APIs and load balancers are also deployed in this lab.
 * Spoke networks are connected to the hub network using VPC peering.
 
-<img src="./images/overview.png" alt="Simple Hybrid Connectivity" width="900">
+<img src="./images/overview.png" alt="Simple Hybrid Connectivity" width="1000">
 
 ## Prerequisites
 
