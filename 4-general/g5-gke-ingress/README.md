@@ -46,7 +46,7 @@ Assumptions made for this design:
 <img src="images/image.png" alt="Hub and Spoke GKE Ingress" width="900"/>
 <p>
 
-In this lab, the ingress will rote both HTTP and TCP traffic. For HTTP traffic, the ingress forwards to a backend based on the host name header. The ingress uses host names in SNI to route TCP traffic to the target pod.
+In this lab, the ingress will route both HTTP and TCP traffic. For HTTP traffic, the ingress forwards to a backend based on the host name header. For TCP traffic, the ingress uses host names in [SNI](https://en.wikipedia.org/wiki/Server_Name_Indication) to route TCP traffic to the target pod.
 
 ### Service Discovery Operator State Machine
 
