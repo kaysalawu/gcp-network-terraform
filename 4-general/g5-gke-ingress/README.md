@@ -62,9 +62,9 @@ The HAProxy has a [ConfigMap](artifacts/discovery/haproxy/charts_rendered/1-hapr
 ### User Application
 
 We are simulating user applications that run in the spoke cluster. The application is simply a pod with containers configured as follows:
-- HTTP server on port **7474**
-- HTTPS server on port **7473**
-- TCP server on port **7687**
+- HTTP server on port **8000**
+- HTTPS server on port **7000**
+- TCP server on port **9000**
 
 ## 2. Prerequisites
 
@@ -723,7 +723,7 @@ The frontend configurations:
 
    ```yaml
        frontend fe-http
-         bind *:7474
+         bind *:8000
          mode http
          acl host_user1-orch01_and_port hdr_beg(host) -i user1-orch01.hub.g.corp
          acl host_user2-orch01_and_port hdr_beg(host) -i user2-orch01.hub.g.corp
@@ -742,7 +742,7 @@ The frontend configurations:
 
    ```yaml
        frontend fe-https
-         bind *:7473 ssl crt /etc/ssl/certs/tls-combined.pem
+         bind *:7000 ssl crt /etc/ssl/certs/tls-combined.pem
          mode http
          acl host_user1-orch01_and_port hdr_beg(host) -i user1-orch01.hub.g.corp
          acl host_user2-orch01_and_port hdr_beg(host) -i user2-orch01.hub.g.corp
@@ -761,7 +761,7 @@ The frontend configurations:
 
    ```yaml
        frontend fe-bolt
-         bind *:7687 #ssl crt /etc/ssl/certs/tls-combined.pem
+         bind *:9000 #ssl crt /etc/ssl/certs/tls-combined.pem
          mode tcp
          default_backend be_user1-orch01_tcp
    ```
@@ -777,16 +777,16 @@ The frontend configurations:
        backend be_user1-orch01_http
          mode http
          option forwardfor
-         server user1-orch01 user1-orch01.hub.g.corp:7474 check
+         server user1-orch01 user1-orch01.hub.g.corp:8000 check
 
        backend be_user1-orch01_https
          mode http
          option forwardfor
-         server user1-orch01 user1-orch01.hub.g.corp:7473 check
+         server user1-orch01 user1-orch01.hub.g.corp:7000 check
 
        backend be_user1-orch01_tcp
          mode tcp
-         server user1-orch01 user1-orch01.hub.g.corp:7687 check
+         server user1-orch01 user1-orch01.hub.g.corp:9000 check
    ```
    </Details>
    <p>
@@ -798,16 +798,16 @@ The frontend configurations:
        backend be_user2-orch01_http
          mode http
          option forwardfor
-         server user2-orch01 user2-orch01.hub.g.corp:7474 check
+         server user2-orch01 user2-orch01.hub.g.corp:8000 check
 
        backend be_user2-orch01_https
          mode http
          option forwardfor
-         server user2-orch01 user2-orch01.hub.g.corp:7473 check
+         server user2-orch01 user2-orch01.hub.g.corp:7000 check
 
        backend be_user2-orch01_tcp
          mode tcp
-         server user2-orch01 user2-orch01.hub.g.corp:7687 check
+         server user2-orch01 user2-orch01.hub.g.corp:9000 check
    ```
    </Details>
    <p>
@@ -846,7 +846,7 @@ Now let's deploy the HAProxy.
 3. Test HTTP endpoint `user1-orch01.hub.g.corp` and verify the response
 
    ```sh
-   curl -H "Host: user1-orch01.hub.g.corp" http://${HAPROXY_EXTERNAL_LOAD_BALANCER_IP}:7474
+   curl -H "Host: user1-orch01.hub.g.corp" http://${HAPROXY_EXTERNAL_LOAD_BALANCER_IP}:8000
    ```
 
    Sample output:
@@ -872,7 +872,7 @@ Now let's deploy the HAProxy.
 4. Connect to the HTTPS application for `user1-orch01.hub.g.corp` and verify the response
 
    ```sh
-   curl -k -H "Host: user1-orch01.hub.g.corp" https://${HAPROXY_EXTERNAL_LOAD_BALANCER_IP}:7473
+   curl -k -H "Host: user1-orch01.hub.g.corp" https://${HAPROXY_EXTERNAL_LOAD_BALANCER_IP}:7000
    ```
 
    Sample output:
@@ -895,18 +895,18 @@ Now let's deploy the HAProxy.
 5. Connect to all other endpoints for `user2` and `orch02` and verify the response
 
    ```sh
-   curl -H "Host: user2-orch01.hub.g.corp" http://${HAPROXY_EXTERNAL_LOAD_BALANCER_IP}:7474 && \
-   curl -k -H "Host: user2-orch01.hub.g.corp" https://${HAPROXY_EXTERNAL_LOAD_BALANCER_IP}:7473 && \
-   curl -H "Host: user1-orch02.hub.g.corp" http://${HAPROXY_EXTERNAL_LOAD_BALANCER_IP}:7474 && \
-   curl -k -H "Host: user1-orch02.hub.g.corp" https://${HAPROXY_EXTERNAL_LOAD_BALANCER_IP}:7473
+   curl -H "Host: user2-orch01.hub.g.corp" http://${HAPROXY_EXTERNAL_LOAD_BALANCER_IP}:8000 && \
+   curl -k -H "Host: user2-orch01.hub.g.corp" https://${HAPROXY_EXTERNAL_LOAD_BALANCER_IP}:7000 && \
+   curl -H "Host: user1-orch02.hub.g.corp" http://${HAPROXY_EXTERNAL_LOAD_BALANCER_IP}:8000 && \
+   curl -k -H "Host: user1-orch02.hub.g.corp" https://${HAPROXY_EXTERNAL_LOAD_BALANCER_IP}:7000
    ```
 
    Similarly, we can see that traffic reached the HTTPS service of `user1` via the HAProxy.
 
-6. Test the TCP endpoint using netcat on port **7687**
+6. Test the TCP endpoint using netcat on port **9000**
 
    ```sh
-   nc ${HAPROXY_EXTERNAL_LOAD_BALANCER_IP} 7687
+   nc ${HAPROXY_EXTERNAL_LOAD_BALANCER_IP} 9000
    ```
 
    Sample output:
@@ -966,7 +966,7 @@ Now let's deploy the HAProxy.
 8. Test the HTTP endpoint `user1-orch01.hub.g.corp` and verify the response
 
     ```sh
-    curl -H "Host: user1-orch01.hub.g.corp" http://${HAPROXY_EXTERNAL_LOAD_BALANCER_IP}:7474
+    curl -H "Host: user1-orch01.hub.g.corp" http://${HAPROXY_EXTERNAL_LOAD_BALANCER_IP}:8000
     ```
 
     Sample output:
@@ -980,7 +980,7 @@ Now let's deploy the HAProxy.
 9. We should still be able to reach the `user2` pod via the HAProxy
 
    ```sh
-   curl -H "Host: user2-orch01.hub.g.corp" http://${HAPROXY_EXTERNAL_LOAD_BALANCER_IP}:7474
+   curl -H "Host: user2-orch01.hub.g.corp" http://${HAPROXY_EXTERNAL_LOAD_BALANCER_IP}:8000
    ```
 
    Sample output:

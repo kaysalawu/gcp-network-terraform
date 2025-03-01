@@ -2,7 +2,7 @@
 import socket
 import os
 
-PORT = 7687
+PORT = 9000
 hostname = socket.gethostname()
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:

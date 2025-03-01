@@ -1,8 +1,8 @@
 
 serviceAccountName: cluster-ksa
-portAppyHttp: 7474
-portAppyHttps: 7473
-portAppyBolt: 7687
+portAppyHttp: 8000
+portAppyHttps: 7000
+portAppyBolt: 9000
 portAppyBackup: 6362
 portGraphiteMonitoring: 2003
 portPrometheusMetrics: 2004
@@ -16,24 +16,24 @@ users:
   - name: user1-orch01
     host: user1-orch01.hub.g.corp
     k6_traffic_profile: high
-    k6_traffic_url: https://user1-orch01.hub.g.corp:7473
+    k6_traffic_url: https://user1-orch01.hub.g.corp:7000
     scale: 40
     rate_limit: 50
   - name: user2-orch01
     host: user2-orch01.hub.g.corp
     k6_traffic_profile: normal
-    k6_traffic_url: http://user2-orch01.hub.g.corp:7474
+    k6_traffic_url: http://user2-orch01.hub.g.corp:8000
     scale: 2
     rate_limit: 50
   - name: user1-orch02
     host: user1-orch02.hub.g.corp
     k6_traffic_profile: high
-    k6_traffic_url: https://user1-orch02.hub.g.corp:7473
+    k6_traffic_url: https://user1-orch02.hub.g.corp:7000
     scale: 40
     rate_limit: 50
   - name: user2-orch02
     host: user2-orch02.hub.g.corp
     k6_traffic_profile: normal
-    k6_traffic_url: http://user2-orch02.hub.g.corp:7474
+    k6_traffic_url: http://user2-orch02.hub.g.corp:8000
     scale: 2
     rate_limit: 50
