@@ -11,7 +11,7 @@ defaultHost: default.hub.g.corp
 nameSpace: default
 letsencryptIssuerRef: letsencrypt-staging
 letsencrpytAcmeServer: https://acme-staging-v02.api.letsencrypt.org/directory
-bolt_use_sni: false
+stream_use_sni: false
 users:
   - name: user1-orch01
     host: user1-orch01.hub.g.corp

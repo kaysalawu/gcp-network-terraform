@@ -38,10 +38,10 @@ data:
       use_backend be_{{ $user.name }}_https if host_{{ $user.name }}_and_port
     {{- end }}
 
-    frontend fe-bolt
+    frontend fe-stream
       bind *:{{ .Values.portAppyBolt }} #ssl crt /etc/ssl/certs/tls-combined.pem
       mode tcp
-    {{- if .Values.bolt_use_sni }}
+    {{- if .Values.stream_use_sni }}
     {{- range $user := .Values.users }}
       acl host_{{ $user.name }}_and_port req.ssl_sni -i {{ $user.host }}
     {{- end }}

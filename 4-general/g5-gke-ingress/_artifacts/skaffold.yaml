@@ -54,8 +54,8 @@ profiles:
         context: discovery/workload/src/fastapi/http
       - image: europe-west2-docker.pkg.dev/YOUR_SPOKE_PROJECT_ID/g5-spoke2-eu-repo/https
         context: discovery/workload/src/fastapi/https
-      - image: europe-west2-docker.pkg.dev/YOUR_SPOKE_PROJECT_ID/g5-spoke2-eu-repo/bolt
-        context: discovery/workload/src/fastapi/bolt
+      - image: europe-west2-docker.pkg.dev/YOUR_SPOKE_PROJECT_ID/g5-spoke2-eu-repo/stream
+        context: discovery/workload/src/fastapi/stream
 
     deploy:
       helm:

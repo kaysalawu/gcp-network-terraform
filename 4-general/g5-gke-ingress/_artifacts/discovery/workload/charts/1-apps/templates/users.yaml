@@ -18,7 +18,7 @@ spec:
     name: https
   - port: {{ $.Values.portAppyBolt }}
     targetPort: {{ $.Values.portAppyBolt }}
-    name: bolt
+    name: stream
 ---
 apiVersion: v1
 kind: Pod
@@ -60,11 +60,11 @@ spec:
         port: {{ $.Values.portAppyHttps }}
       initialDelaySeconds: 5
       periodSeconds: 5
-  - name: {{ .name }}-container-bolt
+  - name: {{ .name }}-container-stream
     image: {{ $.Values.imageAppyBolt }}
     ports:
     - containerPort: {{ $.Values.portAppyBolt }}
-      name: bolt
+      name: stream
     livenessProbe:
       tcpSocket:
         port: {{ $.Values.portAppyBolt }}

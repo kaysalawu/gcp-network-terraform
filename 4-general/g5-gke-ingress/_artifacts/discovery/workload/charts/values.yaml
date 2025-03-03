@@ -2,7 +2,7 @@
 serviceAccountName: cluster-ksa
 imageAppyHttp: europe-west2-docker.pkg.dev/YOUR_SPOKE_PROJECT_ID/g5-spoke2-eu-repo/http
 imageAppyHttps: europe-west2-docker.pkg.dev/YOUR_SPOKE_PROJECT_ID/g5-spoke2-eu-repo/https
-imageAppyBolt: europe-west2-docker.pkg.dev/YOUR_SPOKE_PROJECT_ID/g5-spoke2-eu-repo/bolt
+imageAppyBolt: europe-west2-docker.pkg.dev/YOUR_SPOKE_PROJECT_ID/g5-spoke2-eu-repo/stream
 portAppyHttp: 8000
 portAppyHttps: 7000
 portAppyBolt: 9000

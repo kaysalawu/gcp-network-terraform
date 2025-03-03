@@ -760,7 +760,7 @@ The frontend configurations:
    <summary>🟢 HAProxy TCP Frontend:</summary>
 
    ```yaml
-       frontend fe-bolt
+       frontend fe-stream
          bind *:9000 #ssl crt /etc/ssl/certs/tls-combined.pem
          mode tcp
          default_backend be_user1-orch01_tcp
