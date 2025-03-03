@@ -18,7 +18,6 @@ locals {
 ####################################################
 
 module "spoke2_vpc" {
-  # source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc?ref=v34.1.0"
   source     = "../../modules/net-vpc"
   project_id = var.project_id_spoke2
   name       = "${local.spoke2_prefix}vpc"
@@ -103,7 +102,6 @@ resource "google_compute_address" "spoke2_us_main_addresses" {
 ####################################################
 
 module "spoke2_nat_us" {
-  # source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
   source         = "../../modules/net-cloudnat"
   project_id     = var.project_id_spoke2
   region         = local.spoke2_us_region
@@ -127,14 +125,20 @@ module "spoke2_nat_us" {
 # vpc
 
 module "spoke2_vpc_firewall" {
-  # source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc-firewall?ref=v34.1.0"
   source     = "../../modules/net-vpc-firewall"
   project_id = var.project_id_spoke2
   network    = module.spoke2_vpc.name
 
   egress_rules = {
+    # ipv4
+    "${local.spoke2_prefix}allow-egress-smtp" = {
+      priority           = 400
+      description        = "block smtp"
+      destination_ranges = ["0.0.0.0/0", ]
+      rules              = [{ protocol = "tcp", ports = [25, ] }]
+    }
     "${local.spoke2_prefix}allow-egress-all" = {
-      priority           = 1000
+      priority           = 410
       deny               = false
       description        = "allow egress"
       destination_ranges = ["0.0.0.0/0", ]
@@ -142,13 +146,13 @@ module "spoke2_vpc_firewall" {
     }
     # ipv6
     "${local.spoke2_prefix}allow-egress-smtp-ipv6" = {
-      priority           = 901
+      priority           = 600
       description        = "block smtp"
       destination_ranges = ["::/0", ]
       rules              = [{ protocol = "tcp", ports = [25, ] }]
     }
     "${local.spoke2_prefix}allow-egress-all-ipv6" = {
-      priority           = 1001
+      priority           = 610
       deny               = false
       description        = "allow egress"
       destination_ranges = ["::/0", ]
@@ -158,19 +162,19 @@ module "spoke2_vpc_firewall" {
   ingress_rules = {
     # ipv4
     "${local.spoke2_prefix}allow-ingress-internal" = {
-      priority      = 1000
+      priority      = 4000
       description   = "allow internal"
       source_ranges = local.netblocks.internal
       rules         = [{ protocol = "all", ports = [] }]
     }
     "${local.spoke2_prefix}allow-ingress-dns" = {
-      priority      = 1100
+      priority      = 4100
       description   = "allow dns"
       source_ranges = local.netblocks.dns
       rules         = [{ protocol = "all", ports = [] }]
     }
     "${local.spoke2_prefix}allow-ingress-ssh" = {
-      priority       = 1200
+      priority       = 4200
       description    = "allow ingress ssh"
       source_ranges  = ["0.0.0.0/0"]
       targets        = [local.tag_router]
@@ -178,7 +182,7 @@ module "spoke2_vpc_firewall" {
       enable_logging = {}
     }
     "${local.spoke2_prefix}allow-ingress-iap" = {
-      priority       = 1300
+      priority       = 4300
       description    = "allow ingress iap"
       source_ranges  = local.netblocks.iap
       targets        = [local.tag_router]
@@ -186,27 +190,27 @@ module "spoke2_vpc_firewall" {
       enable_logging = {}
     }
     "${local.spoke2_prefix}allow-ingress-dns-proxy" = {
-      priority      = 1400
+      priority      = 4400
       description   = "allow dns egress proxy"
       source_ranges = local.netblocks.dns
       targets       = [local.tag_dns]
       rules         = [{ protocol = "all", ports = [] }]
     }
     "${local.spoke2_prefix}allow-ingress-gfe" = {
-      priority      = 1000
+      priority      = 4500
       description   = "allow internal"
       source_ranges = local.netblocks.gfe
       rules         = [{ protocol = "all", ports = [] }]
     }
     # ipv6
     "${local.spoke2_prefix}allow-ingress-internal-ipv6" = {
-      priority      = 1000
+      priority      = 6000
       description   = "allow internal"
       source_ranges = local.netblocks_ipv6.internal
       rules         = [{ protocol = "all", ports = [] }]
     }
     "${local.spoke2_prefix}allow-ingress-ssh-ipv6" = {
-      priority       = 1200
+      priority       = 6200
       description    = "allow ingress ssh"
       source_ranges  = ["::/0"]
       targets        = [local.tag_router]
@@ -219,7 +223,6 @@ module "spoke2_vpc_firewall" {
 # policy
 
 # module "spoke2_vpc_fw_policy" {
-#   source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v34.1.0"
 #   source    = "../../modules/net-firewall-policy"
 #   name      = "${local.spoke2_prefix}vpc-fw-policy"
 #   parent_id = var.project_id_spoke2
@@ -399,7 +402,6 @@ locals {
 # policy
 
 module "spoke2_dns_response_policy" {
-  # source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns-response-policy?ref=v34.1.0"
   source     = "../../modules/dns-response-policy"
   project_id = var.project_id_spoke2
   name       = "${local.spoke2_prefix}drp"
@@ -416,7 +418,6 @@ module "spoke2_dns_response_policy" {
 # psc zone
 
 module "spoke2_dns_psc" {
-  # source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
   source      = "../../modules/dns"
   project_id  = var.project_id_spoke2
   name        = "${local.spoke2_prefix}psc"
@@ -442,7 +443,6 @@ module "spoke2_dns_psc" {
 # local zone
 
 module "spoke2_dns_private_zone" {
-  # source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
   source      = "../../modules/dns"
   project_id  = var.project_id_spoke2
   name        = "${local.spoke2_prefix}private"
@@ -466,7 +466,6 @@ module "spoke2_dns_private_zone" {
 # onprem zone
 
 module "spoke2_dns_peering_to_hub_to_onprem" {
-  # source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
   source      = "../../modules/dns"
   project_id  = var.project_id_spoke2
   name        = "${local.spoke2_prefix}to-hub-to-onprem"

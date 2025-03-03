@@ -10,7 +10,6 @@ locals {
 ####################################################
 
 module "site2_vpc" {
-  # source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc?ref=v34.1.0"
   source     = "../../modules/net-vpc"
   project_id = var.project_id_onprem
   name       = "${local.site2_prefix}vpc"
@@ -26,7 +25,6 @@ module "site2_vpc" {
 ####################################################
 
 module "site2_nat" {
-  # source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
   source         = "../../modules/net-cloudnat"
   project_id     = var.project_id_onprem
   region         = local.site2_region
@@ -52,7 +50,6 @@ module "site2_nat" {
 # vpc
 
 module "site2_vpc_firewall" {
-  # source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc-firewall?ref=v34.1.0"
   source     = "../../modules/net-vpc-firewall"
   project_id = var.project_id_onprem
   network    = module.site2_vpc.name
@@ -60,13 +57,13 @@ module "site2_vpc_firewall" {
   egress_rules = {
     # ipv4
     "${local.site2_prefix}allow-egress-smtp" = {
-      priority           = 900
+      priority           = 400
       description        = "block smtp"
       destination_ranges = ["0.0.0.0/0", ]
       rules              = [{ protocol = "tcp", ports = [25, ] }]
     }
     "${local.site2_prefix}allow-egress-all" = {
-      priority           = 1000
+      priority           = 410
       deny               = false
       description        = "allow egress"
       destination_ranges = ["0.0.0.0/0", ]
@@ -74,13 +71,13 @@ module "site2_vpc_firewall" {
     }
     # ipv6
     "${local.site2_prefix}allow-egress-smtp-ipv6" = {
-      priority           = 901
+      priority           = 600
       description        = "block smtp"
       destination_ranges = ["::/0", ]
       rules              = [{ protocol = "tcp", ports = [25, ] }]
     }
     "${local.site2_prefix}allow-egress-all-ipv6" = {
-      priority           = 1001
+      priority           = 610
       deny               = false
       description        = "allow egress"
       destination_ranges = ["::/0", ]
@@ -90,19 +87,19 @@ module "site2_vpc_firewall" {
   ingress_rules = {
     # ipv4
     "${local.site2_prefix}allow-ingress-internal" = {
-      priority      = 1000
+      priority      = 4000
       description   = "allow internal"
       source_ranges = local.netblocks.internal
       rules         = [{ protocol = "all", ports = [] }]
     }
     "${local.site2_prefix}allow-ingress-dns" = {
-      priority      = 1100
+      priority      = 4100
       description   = "allow dns"
       source_ranges = local.netblocks.dns
       rules         = [{ protocol = "all", ports = [] }]
     }
     "${local.site2_prefix}allow-ingress-ssh" = {
-      priority       = 1200
+      priority       = 4200
       description    = "allow ingress ssh"
       source_ranges  = ["0.0.0.0/0"]
       targets        = [local.tag_router]
@@ -118,21 +115,27 @@ module "site2_vpc_firewall" {
       enable_logging = {}
     }
     "${local.site2_prefix}allow-ingress-dns-proxy" = {
-      priority      = 1400
+      priority      = 4400
       description   = "allow dns egress proxy"
       source_ranges = local.netblocks.dns
       targets       = [local.tag_dns]
       rules         = [{ protocol = "all", ports = [] }]
     }
+    "${local.site2_prefix}allow-ingress-gfe" = {
+      priority      = 4500
+      description   = "allow internal"
+      source_ranges = local.netblocks.gfe
+      rules         = [{ protocol = "all", ports = [] }]
+    }
     # ipv6
     "${local.site2_prefix}allow-ingress-internal-ipv6" = {
-      priority      = 1000
+      priority      = 6000
       description   = "allow internal"
       source_ranges = local.netblocks_ipv6.internal
       rules         = [{ protocol = "all", ports = [] }]
     }
     "${local.site2_prefix}allow-ingress-ssh-ipv6" = {
-      priority       = 1200
+      priority       = 6200
       description    = "allow ingress ssh"
       source_ranges  = ["::/0"]
       targets        = [local.tag_router]
@@ -223,7 +226,6 @@ resource "time_sleep" "site2_dns_forward_to_dns_wait_120s" {
 }
 
 module "site2_dns_forward_to_dns" {
-  # source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
   source      = "../../modules/dns"
   project_id  = var.project_id_onprem
   name        = "${local.site2_prefix}to-dns"

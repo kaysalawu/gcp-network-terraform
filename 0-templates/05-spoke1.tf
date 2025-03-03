@@ -36,7 +36,6 @@ locals {
 # policy
 
 module "spoke1_dns_response_policy" {
-  # source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns-response-policy?ref=v34.1.0"
   source     = "../../modules/dns-response-policy"
   project_id = var.project_id_spoke1
   name       = "${local.spoke1_prefix}drp"
@@ -53,7 +52,6 @@ module "spoke1_dns_response_policy" {
 # psc zone
 
 module "spoke1_dns_psc" {
-  # source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
   source      = "../../modules/dns"
   project_id  = var.project_id_spoke1
   name        = "${local.spoke1_prefix}psc"
@@ -79,7 +77,6 @@ module "spoke1_dns_psc" {
 # local zone
 
 module "spoke1_dns_private_zone" {
-  # source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
   source      = "../../modules/dns"
   project_id  = var.project_id_spoke1
   name        = "${local.spoke1_prefix}private"
@@ -103,7 +100,6 @@ module "spoke1_dns_private_zone" {
 # onprem zone
 
 module "spoke1_dns_peering_to_hub_to_onprem" {
-  # source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
   source      = "../../modules/dns"
   project_id  = var.project_id_spoke1
   name        = "${local.spoke1_prefix}to-hub-to-onprem"
