@@ -17,7 +17,7 @@ spec:
       port: {{ .Values.portAppyHttps }}
       protocol: TCP
       targetPort: {{ .Values.portAppyHttps }}
-    - name: bolt
+    - name: stream
       port: {{ .Values.portAppyBolt }}
       protocol: TCP
       targetPort: {{ .Values.portAppyBolt }}
@@ -51,7 +51,7 @@ spec:
       port: {{ .Values.portAppyHttps }}
       protocol: TCP
       targetPort: {{ .Values.portAppyHttps }}
-    - name: bolt
+    - name: stream
       port: {{ .Values.portAppyBolt }}
       protocol: TCP
       targetPort: {{ .Values.portAppyBolt }}
@@ -84,7 +84,7 @@ spec:
       port: {{ .Values.portAppyHttps }}
       protocol: TCP
       targetPort: {{ .Values.portAppyHttps }}
-    - name: bolt
+    - name: stream
       port: {{ .Values.portAppyBolt }}
       protocol: TCP
       targetPort: {{ .Values.portAppyBolt }}

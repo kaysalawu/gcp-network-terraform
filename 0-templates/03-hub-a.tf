@@ -19,7 +19,6 @@ locals {
 ####################################################
 
 module "hub_vpc" {
-  # source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc?ref=v34.1.0"
   source     = "../../modules/net-vpc"
   project_id = var.project_id_hub
   name       = "${local.hub_prefix}vpc"
@@ -114,7 +113,6 @@ resource "google_compute_address" "hub_us_main_addresses" {
 ####################################################
 
 module "hub_nat_eu" {
-  # source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
   source         = "../../modules/net-cloudnat"
   project_id     = var.project_id_hub
   region         = local.hub_eu_region
@@ -128,7 +126,6 @@ module "hub_nat_eu" {
 }
 
 module "hub_nat_us" {
-  # source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
   source         = "../../modules/net-cloudnat"
   project_id     = var.project_id_hub
   region         = local.hub_us_region
@@ -151,100 +148,98 @@ module "hub_nat_us" {
 
 # vpc
 
-module "hub_vpc_firewall" {
-  # source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc-firewall?ref=v34.1.0"
-  source     = "../../modules/net-vpc-firewall"
-  project_id = var.project_id_hub
-  network    = module.hub_vpc.name
+# module "hub_vpc_firewall" {
+#   source     = "../../modules/net-vpc-firewall"
+#   project_id = var.project_id_hub
+#   network    = module.hub_vpc.name
 
-  egress_rules = {
-    "${local.hub_prefix}allow-egress-all" = {
-      priority           = 1000
-      deny               = false
-      description        = "allow egress"
-      destination_ranges = ["0.0.0.0/0", ]
-      rules              = [{ protocol = "all", ports = [] }]
-    }
-    # ipv6
-    "${local.hub_prefix}allow-egress-smtp-ipv6" = {
-      priority           = 901
-      description        = "block smtp"
-      destination_ranges = ["::/0", ]
-      rules              = [{ protocol = "tcp", ports = [25, ] }]
-    }
-    "${local.hub_prefix}allow-egress-all-ipv6" = {
-      priority           = 1001
-      deny               = false
-      description        = "allow egress"
-      destination_ranges = ["::/0", ]
-      rules              = [{ protocol = "all", ports = [] }]
-    }
-  }
-  ingress_rules = {
-    # ipv4
-    "${local.hub_prefix}allow-ingress-internal" = {
-      priority      = 1000
-      description   = "allow internal"
-      source_ranges = local.netblocks.internal
-      rules         = [{ protocol = "all", ports = [] }]
-    }
-    "${local.hub_prefix}allow-ingress-dns" = {
-      priority      = 1100
-      description   = "allow dns"
-      source_ranges = local.netblocks.dns
-      rules         = [{ protocol = "all", ports = [] }]
-    }
-    "${local.hub_prefix}allow-ingress-ssh" = {
-      priority       = 1200
-      description    = "allow ingress ssh"
-      source_ranges  = ["0.0.0.0/0"]
-      targets        = [local.tag_router]
-      rules          = [{ protocol = "tcp", ports = [22] }]
-      enable_logging = {}
-    }
-    "${local.hub_prefix}allow-ingress-iap" = {
-      priority       = 1300
-      description    = "allow ingress iap"
-      source_ranges  = local.netblocks.iap
-      targets        = [local.tag_router]
-      rules          = [{ protocol = "all", ports = [] }]
-      enable_logging = {}
-    }
-    "${local.hub_prefix}allow-ingress-dns-proxy" = {
-      priority      = 1400
-      description   = "allow dns egress proxy"
-      source_ranges = local.netblocks.dns
-      targets       = [local.tag_dns]
-      rules         = [{ protocol = "all", ports = [] }]
-    }
-    "${local.hub_prefix}allow-ingress-gfe" = {
-      priority      = 1000
-      description   = "allow internal"
-      source_ranges = local.netblocks.gfe
-      rules         = [{ protocol = "all", ports = [] }]
-    }
-    # ipv6
-    "${local.hub_prefix}allow-ingress-internal-ipv6" = {
-      priority      = 1000
-      description   = "allow internal"
-      source_ranges = local.netblocks_ipv6.internal
-      rules         = [{ protocol = "all", ports = [] }]
-    }
-    "${local.hub_prefix}allow-ingress-ssh-ipv6" = {
-      priority       = 1200
-      description    = "allow ingress ssh"
-      source_ranges  = ["::/0"]
-      targets        = [local.tag_router]
-      rules          = [{ protocol = "tcp", ports = [22] }]
-      enable_logging = {}
-    }
-  }
-}
+#   egress_rules = {
+#     "${local.hub_prefix}allow-egress-all" = {
+#       priority           = 1000
+#       deny               = false
+#       description        = "allow egress"
+#       destination_ranges = ["0.0.0.0/0", ]
+#       rules              = [{ protocol = "all", ports = [] }]
+#     }
+#     # ipv6
+#     "${local.hub_prefix}allow-egress-smtp-ipv6" = {
+#       priority           = 901
+#       description        = "block smtp"
+#       destination_ranges = ["::/0", ]
+#       rules              = [{ protocol = "tcp", ports = [25, ] }]
+#     }
+#     "${local.hub_prefix}allow-egress-all-ipv6" = {
+#       priority           = 1001
+#       deny               = false
+#       description        = "allow egress"
+#       destination_ranges = ["::/0", ]
+#       rules              = [{ protocol = "all", ports = [] }]
+#     }
+#   }
+#   ingress_rules = {
+#     # ipv4
+#     "${local.hub_prefix}allow-ingress-internal" = {
+#       priority      = 1000
+#       description   = "allow internal"
+#       source_ranges = local.netblocks.internal
+#       rules         = [{ protocol = "all", ports = [] }]
+#     }
+#     "${local.hub_prefix}allow-ingress-dns" = {
+#       priority      = 1100
+#       description   = "allow dns"
+#       source_ranges = local.netblocks.dns
+#       rules         = [{ protocol = "all", ports = [] }]
+#     }
+#     "${local.hub_prefix}allow-ingress-ssh" = {
+#       priority       = 1200
+#       description    = "allow ingress ssh"
+#       source_ranges  = ["0.0.0.0/0"]
+#       targets        = [local.tag_router]
+#       rules          = [{ protocol = "tcp", ports = [22] }]
+#       enable_logging = {}
+#     }
+#     "${local.hub_prefix}allow-ingress-iap" = {
+#       priority       = 1300
+#       description    = "allow ingress iap"
+#       source_ranges  = local.netblocks.iap
+#       targets        = [local.tag_router]
+#       rules          = [{ protocol = "all", ports = [] }]
+#       enable_logging = {}
+#     }
+#     "${local.hub_prefix}allow-ingress-dns-proxy" = {
+#       priority      = 1400
+#       description   = "allow dns egress proxy"
+#       source_ranges = local.netblocks.dns
+#       targets       = [local.tag_dns]
+#       rules         = [{ protocol = "all", ports = [] }]
+#     }
+#     "${local.hub_prefix}allow-ingress-gfe" = {
+#       priority      = 1000
+#       description   = "allow internal"
+#       source_ranges = local.netblocks.gfe
+#       rules         = [{ protocol = "all", ports = [] }]
+#     }
+#     # ipv6
+#     "${local.hub_prefix}allow-ingress-internal-ipv6" = {
+#       priority      = 1000
+#       description   = "allow internal"
+#       source_ranges = local.netblocks_ipv6.internal
+#       rules         = [{ protocol = "all", ports = [] }]
+#     }
+#     "${local.hub_prefix}allow-ingress-ssh-ipv6" = {
+#       priority       = 1200
+#       description    = "allow ingress ssh"
+#       source_ranges  = ["::/0"]
+#       targets        = [local.tag_router]
+#       rules          = [{ protocol = "tcp", ports = [22] }]
+#       enable_logging = {}
+#     }
+#   }
+# }
 
 # policy
 
 module "hub_vpc_fw_policy" {
-  # source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v34.1.0"
   source    = "../../modules/net-firewall-policy"
   name      = "${local.hub_prefix}vpc-fw-policy"
   parent_id = var.project_id_hub
@@ -255,7 +250,7 @@ module "hub_vpc_fw_policy" {
   egress_rules = {
     # ipv4
     smtp = {
-      priority = 900
+      priority = 400
       match = {
         destination_ranges = ["0.0.0.0/0"]
         layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
@@ -263,7 +258,7 @@ module "hub_vpc_fw_policy" {
     }
     # ipv6
     smtp-ipv6 = {
-      priority = 901
+      priority = 600
       match = {
         destination_ranges = ["0::/0"]
         layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
@@ -273,14 +268,14 @@ module "hub_vpc_fw_policy" {
   ingress_rules = {
     # ipv4
     internal = {
-      priority = 1000
+      priority = 4000
       match = {
         source_ranges  = local.netblocks.internal
         layer4_configs = [{ protocol = "all" }]
       }
     }
     dns = {
-      priority    = 1100
+      priority    = 4100
       target_tags = [local.hub_vpc_tags_dns.id, local.hub_vpc_tags_nva.id, ]
       match = {
         source_ranges  = local.netblocks.dns
@@ -288,7 +283,7 @@ module "hub_vpc_fw_policy" {
       }
     }
     ssh = {
-      priority       = 1200
+      priority       = 4200
       target_tags    = [local.hub_vpc_tags_nva.id, ]
       enable_logging = true
       match = {
@@ -297,7 +292,7 @@ module "hub_vpc_fw_policy" {
       }
     }
     iap = {
-      priority       = 1300
+      priority       = 4300
       enable_logging = true
       match = {
         source_ranges  = local.netblocks.iap
@@ -305,7 +300,7 @@ module "hub_vpc_fw_policy" {
       }
     }
     vpn = {
-      priority    = 1400
+      priority    = 4400
       target_tags = [local.hub_vpc_tags_nva.id, ]
       match = {
         source_ranges = ["0.0.0.0/0", ]
@@ -316,7 +311,7 @@ module "hub_vpc_fw_policy" {
       }
     }
     gfe = {
-      priority    = 1500
+      priority    = 4500
       target_tags = [local.hub_vpc_tags_gfe.id, ]
       match = {
         source_ranges  = local.netblocks.gfe
@@ -325,14 +320,14 @@ module "hub_vpc_fw_policy" {
     }
     # ipv6
     internal-6 = {
-      priority = 1001
+      priority = 6000
       match = {
         source_ranges  = local.netblocks_ipv6.internal
         layer4_configs = [{ protocol = "all" }]
       }
     }
     ssh-6 = {
-      priority       = 1201
+      priority       = 6200
       target_tags    = [local.hub_vpc_tags_nva.id, ]
       enable_logging = true
       match = {
@@ -341,7 +336,7 @@ module "hub_vpc_fw_policy" {
       }
     }
     vpn-6 = {
-      priority    = 1401
+      priority    = 6400
       target_tags = [local.hub_vpc_tags_nva.id, ]
       match = {
         source_ranges = ["0::/0", ]
@@ -352,7 +347,7 @@ module "hub_vpc_fw_policy" {
       }
     }
     gfe-6 = {
-      priority    = 1501
+      priority    = 6500
       target_tags = [local.hub_vpc_tags_gfe.id, ]
       match = {
         source_ranges  = local.netblocks_ipv6.gfe
@@ -489,7 +484,6 @@ locals {
 # policy
 
 module "hub_dns_response_policy" {
-  # source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns-response-policy?ref=v34.1.0"
   source     = "../../modules/dns-response-policy"
   project_id = var.project_id_hub
   name       = "${local.hub_prefix}drp"
@@ -506,7 +500,6 @@ module "hub_dns_response_policy" {
 # psc zone
 
 module "hub_dns_psc" {
-  # source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
   source      = "../../modules/dns"
   project_id  = var.project_id_hub
   name        = "${local.hub_prefix}psc"
@@ -530,7 +523,6 @@ module "hub_dns_psc" {
 # local zone
 
 module "hub_dns_private_zone" {
-  # source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
   source      = "../../modules/dns"
   project_id  = var.project_id_hub
   name        = "${local.hub_prefix}private"
@@ -554,7 +546,6 @@ module "hub_dns_private_zone" {
 # onprem zone
 
 module "hub_dns_forward_to_onprem" {
-  # source      = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/dns?ref=v34.1.0"
   source      = "../../modules/dns"
   project_id  = var.project_id_hub
   name        = "${local.hub_prefix}to-onprem"

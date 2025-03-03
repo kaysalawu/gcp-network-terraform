@@ -17,7 +17,6 @@ locals {
 ####################################################
 
 module "spoke1_vpc" {
-  # source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc?ref=v34.1.0"
   source     = "../../modules/net-vpc"
   project_id = var.project_id_host
   name       = "${local.spoke1_prefix}vpc"
@@ -107,7 +106,6 @@ resource "google_compute_address" "spoke1_eu_main_addresses" {
 ####################################################
 
 module "spoke1_nat_eu" {
-  # source         = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-cloudnat?ref=v34.1.0"
   source         = "../../modules/net-cloudnat"
   project_id     = var.project_id_host
   region         = local.spoke1_eu_region
@@ -127,7 +125,6 @@ module "spoke1_nat_eu" {
 # policy
 
 module "spoke1_vpc_fw_policy" {
-  # source    = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-firewall-policy?ref=v34.1.0"
   source    = "../../modules/net-firewall-policy"
   name      = "${local.spoke1_prefix}vpc-fw-policy"
   parent_id = var.project_id_host
@@ -138,7 +135,7 @@ module "spoke1_vpc_fw_policy" {
   egress_rules = {
     # ipv4
     smtp = {
-      priority = 900
+      priority = 400
       match = {
         destination_ranges = ["0.0.0.0/0"]
         layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
@@ -146,7 +143,7 @@ module "spoke1_vpc_fw_policy" {
     }
     # ipv6
     smtp-ipv6 = {
-      priority = 901
+      priority = 600
       match = {
         destination_ranges = ["0::/0"]
         layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
@@ -156,14 +153,14 @@ module "spoke1_vpc_fw_policy" {
   ingress_rules = {
     # ipv4
     internal = {
-      priority = 1000
+      priority = 4000
       match = {
         source_ranges  = local.netblocks.internal
         layer4_configs = [{ protocol = "all" }]
       }
     }
     dns = {
-      priority    = 1100
+      priority    = 4100
       target_tags = [local.spoke1_vpc_tags_dns.id, local.spoke1_vpc_tags_nva.id, ]
       match = {
         source_ranges  = local.netblocks.dns
@@ -171,7 +168,7 @@ module "spoke1_vpc_fw_policy" {
       }
     }
     ssh = {
-      priority       = 1200
+      priority       = 4200
       target_tags    = [local.spoke1_vpc_tags_nva.id, ]
       enable_logging = true
       match = {
@@ -180,7 +177,7 @@ module "spoke1_vpc_fw_policy" {
       }
     }
     iap = {
-      priority       = 1300
+      priority       = 4300
       enable_logging = true
       match = {
         source_ranges  = local.netblocks.iap
@@ -188,7 +185,7 @@ module "spoke1_vpc_fw_policy" {
       }
     }
     vpn = {
-      priority    = 1400
+      priority    = 4400
       target_tags = [local.spoke1_vpc_tags_nva.id, ]
       match = {
         source_ranges = ["0.0.0.0/0", ]
@@ -199,7 +196,7 @@ module "spoke1_vpc_fw_policy" {
       }
     }
     gfe = {
-      priority    = 1500
+      priority    = 4500
       target_tags = [local.spoke1_vpc_tags_gfe.id, ]
       match = {
         source_ranges  = local.netblocks.gfe
@@ -208,14 +205,14 @@ module "spoke1_vpc_fw_policy" {
     }
     # ipv6
     internal-6 = {
-      priority = 1001
+      priority = 6000
       match = {
         source_ranges  = local.netblocks_ipv6.internal
         layer4_configs = [{ protocol = "all" }]
       }
     }
     ssh-6 = {
-      priority       = 1201
+      priority       = 6200
       target_tags    = [local.spoke1_vpc_tags_nva.id, ]
       enable_logging = true
       match = {
@@ -224,7 +221,7 @@ module "spoke1_vpc_fw_policy" {
       }
     }
     vpn-6 = {
-      priority    = 1401
+      priority    = 6400
       target_tags = [local.spoke1_vpc_tags_nva.id, ]
       match = {
         source_ranges = ["0::/0", ]
@@ -235,7 +232,7 @@ module "spoke1_vpc_fw_policy" {
       }
     }
     gfe-6 = {
-      priority    = 1501
+      priority    = 6500
       target_tags = [local.spoke1_vpc_tags_gfe.id, ]
       match = {
         source_ranges  = local.netblocks_ipv6.gfe

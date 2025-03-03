@@ -19,7 +19,6 @@ locals {
 ####################################################
 
 module "hub_vpc" {
-  # source     = "github.com/terraform-google-modules/cloud-foundation-fabric//modules/net-vpc?ref=v34.1.0"
   source     = "../../modules/net-vpc"
   project_id = var.project_id_hub
   name       = "${local.hub_prefix}vpc"
