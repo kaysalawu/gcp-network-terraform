@@ -144,7 +144,7 @@ module "hub_nat_us" {
 # policy
 
 module "hub_vpc_fw_policy_rules" {
-  source            = "../../modules/firewall-policy-rules"
+  source            = "../../modules/firewall-policy-rules-gen"
   vpc_name          = local.hub_vpc_name
   enable_restricted = local.hub_psc_ep_api_secure
   secure_tags = {
@@ -163,11 +163,11 @@ module "hub_vpc_fw_policy" {
   attachments = {
     hub-vpc = module.hub_vpc.self_link
   }
-  description = "hub vpc firewall policy"
-  # egress_rules  = local.hub_firewall_policy_egress_rules
-  # ingress_rules = local.hub_firewall_policy_ingress_rules
+  description   = "hub vpc firewall policy"
+  egress_rules  = module.hub_vpc_fw_policy_rules.egress_rules
+  ingress_rules = module.hub_vpc_fw_policy_rules.ingress_rules
 }
-/*
+
 ####################################################
 # psc endpoint for apis
 ####################################################
