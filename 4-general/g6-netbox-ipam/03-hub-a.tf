@@ -13,10 +13,6 @@ locals {
   hub_secure_tags_ingress_private  = google_tags_tag_value.hub_secure_tags["ingress-private"]
 }
 
-output "test" {
-  value = local.hub_secure_tags_egress_internet
-}
-
 ####################################################
 # network
 ####################################################
