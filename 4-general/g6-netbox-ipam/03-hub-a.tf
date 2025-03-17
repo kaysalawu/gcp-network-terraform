@@ -1,17 +1,20 @@
 
 locals {
-  hub_vpc_tags = {
-    "${local.hub_prefix}vpc-dns" = { value = "dns", description = "custom dns servers" }
-    "${local.hub_prefix}vpc-gfe" = { value = "gfe", description = "load balancer backends" }
-    "${local.hub_prefix}vpc-nva" = { value = "nva", description = "nva appliances" }
+  hub_vpc_name = "${local.hub_prefix}vpc"
+  hub_secure_tags = {
+    "egress-internet"  = { value = "self", description = "allow internet egress traffic" }
+    "egress-private"   = { value = "self", description = "allow private egress traffic" }
+    "ingress-internet" = { value = "self", description = "allow internet egress traffic" }
+    "ingress-private"  = { value = "self", description = "allow private ingress traffic" }
   }
-  hub_vpc_tags_dns = google_tags_tag_value.hub_vpc_tags["${local.hub_prefix}vpc-dns"]
-  hub_vpc_tags_gfe = google_tags_tag_value.hub_vpc_tags["${local.hub_prefix}vpc-gfe"]
-  hub_vpc_tags_nva = google_tags_tag_value.hub_vpc_tags["${local.hub_prefix}vpc-nva"]
+  hub_secure_tags_egress_internet  = google_tags_tag_value.hub_secure_tags["egress-internet"]
+  hub_secure_tags_egress_private   = google_tags_tag_value.hub_secure_tags["egress-private"]
+  hub_secure_tags_ingress_internet = google_tags_tag_value.hub_secure_tags["ingress-internet"]
+  hub_secure_tags_ingress_private  = google_tags_tag_value.hub_secure_tags["ingress-private"]
+}
 
-  hub_vpc_ipv6_cidr   = module.hub_vpc.internal_ipv6_range
-  hub_eu_vm_main_ipv6 = module.hub_eu_vm.internal_ipv6
-  hub_us_vm_main_ipv6 = module.hub_us_vm.internal_ipv6
+output "test" {
+  value = local.hub_secure_tags_egress_internet
 }
 
 ####################################################
@@ -21,7 +24,7 @@ locals {
 module "hub_vpc" {
   source     = "../../modules/net-vpc"
   project_id = var.project_id_hub
-  name       = "${local.hub_prefix}vpc"
+  name       = local.hub_vpc_name
 
   subnets             = local.hub_subnets_list
   subnets_private_nat = local.hub_subnets_private_nat_list
@@ -32,15 +35,15 @@ module "hub_vpc" {
     enable_ula_internal = true
   }
 
-  # psa_configs = [{
-  #   ranges = {
-  #     "hub-eu-psa-range1" = local.hub_eu_psa_range1
-  #     "hub-eu-psa-range2" = local.hub_eu_psa_range2
-  #   }
-  #   export_routes  = true
-  #   import_routes  = true
-  #   peered_domains = ["gcp.example.com."]
-  # }]
+  psa_configs = [{
+    ranges = {
+      "hub-eu-psa-range1" = local.hub_eu_psa_range1
+      "hub-eu-psa-range2" = local.hub_eu_psa_range2
+    }
+    export_routes  = true
+    import_routes  = true
+    peered_domains = ["${local.hub_dns_zone}."]
+  }]
 }
 
 ####################################################
@@ -49,8 +52,8 @@ module "hub_vpc" {
 
 # keys
 
-resource "google_tags_tag_key" "hub_vpc" {
-  for_each    = local.hub_vpc_tags
+resource "google_tags_tag_key" "hub_secure_tags" {
+  for_each    = local.hub_secure_tags
   parent      = "projects/${var.project_id_hub}"
   short_name  = each.key
   description = each.value.description
@@ -62,9 +65,9 @@ resource "google_tags_tag_key" "hub_vpc" {
 
 # values
 
-resource "google_tags_tag_value" "hub_vpc_tags" {
-  for_each    = local.hub_vpc_tags
-  parent      = google_tags_tag_key.hub_vpc[each.key].id
+resource "google_tags_tag_value" "hub_secure_tags" {
+  for_each    = local.hub_secure_tags
+  parent      = google_tags_tag_key.hub_secure_tags[each.key].id
   short_name  = each.value.value
   description = each.value.description
 }
@@ -142,277 +145,33 @@ module "hub_nat_us" {
 # firewall
 ####################################################
 
-# firewall rules
-# adding vpc firewall rule to temporarily resolve the issue with firewall policy
-# not allowing health check for external passthrough load balancer
-
-# vpc
-
-# module "hub_vpc_firewall" {
-#   source     = "../../modules/net-vpc-firewall"
-#   project_id = var.project_id_hub
-#   network    = module.hub_vpc.name
-
-#   egress_rules = {
-#     "${local.hub_prefix}allow-egress-all" = {
-#       priority           = 1000
-#       deny               = false
-#       description        = "allow egress"
-#       destination_ranges = ["0.0.0.0/0", ]
-#       rules              = [{ protocol = "all", ports = [] }]
-#     }
-#     # ipv6
-#     "${local.hub_prefix}allow-egress-smtp-ipv6" = {
-#       priority           = 901
-#       description        = "block smtp"
-#       destination_ranges = ["::/0", ]
-#       rules              = [{ protocol = "tcp", ports = [25, ] }]
-#     }
-#     "${local.hub_prefix}allow-egress-all-ipv6" = {
-#       priority           = 1001
-#       deny               = false
-#       description        = "allow egress"
-#       destination_ranges = ["::/0", ]
-#       rules              = [{ protocol = "all", ports = [] }]
-#     }
-#   }
-#   ingress_rules = {
-#     # ipv4
-#     "${local.hub_prefix}allow-ingress-internal" = {
-#       priority      = 1000
-#       description   = "allow internal"
-#       source_ranges = local.netblocks.internal
-#       rules         = [{ protocol = "all", ports = [] }]
-#     }
-#     "${local.hub_prefix}allow-ingress-dns" = {
-#       priority      = 1100
-#       description   = "allow dns"
-#       source_ranges = local.netblocks.dns
-#       rules         = [{ protocol = "all", ports = [] }]
-#     }
-#     "${local.hub_prefix}allow-ingress-ssh" = {
-#       priority       = 1200
-#       description    = "allow ingress ssh"
-#       source_ranges  = ["0.0.0.0/0"]
-#       targets        = [local.tag_router]
-#       rules          = [{ protocol = "tcp", ports = [22] }]
-#       enable_logging = {}
-#     }
-#     "${local.hub_prefix}allow-ingress-iap" = {
-#       priority       = 1300
-#       description    = "allow ingress iap"
-#       source_ranges  = local.netblocks.iap
-#       targets        = [local.tag_router]
-#       rules          = [{ protocol = "all", ports = [] }]
-#       enable_logging = {}
-#     }
-#     "${local.hub_prefix}allow-ingress-dns-proxy" = {
-#       priority      = 1400
-#       description   = "allow dns egress proxy"
-#       source_ranges = local.netblocks.dns
-#       targets       = [local.tag_dns]
-#       rules         = [{ protocol = "all", ports = [] }]
-#     }
-#     "${local.hub_prefix}allow-ingress-gfe" = {
-#       priority      = 1000
-#       description   = "allow internal"
-#       source_ranges = local.netblocks.gfe
-#       rules         = [{ protocol = "all", ports = [] }]
-#     }
-#     # ipv6
-#     "${local.hub_prefix}allow-ingress-internal-ipv6" = {
-#       priority      = 1000
-#       description   = "allow internal"
-#       source_ranges = local.netblocks_ipv6.internal
-#       rules         = [{ protocol = "all", ports = [] }]
-#     }
-#     "${local.hub_prefix}allow-ingress-ssh-ipv6" = {
-#       priority       = 1200
-#       description    = "allow ingress ssh"
-#       source_ranges  = ["::/0"]
-#       targets        = [local.tag_router]
-#       rules          = [{ protocol = "tcp", ports = [22] }]
-#       enable_logging = {}
-#     }
-#   }
-# }
-
 # policy
+
+module "hub_vpc_fw_policy_rules" {
+  source            = "../../modules/firewall-policy-rules"
+  vpc_name          = local.hub_vpc_name
+  enable_restricted = local.hub_psc_ep_api_secure
+  secure_tags = {
+    egress_internet  = local.hub_secure_tags_egress_internet.id
+    egress_private   = local.hub_secure_tags_egress_private.id
+    ingress_internet = local.hub_secure_tags_ingress_internet.id
+    ingress_private  = local.hub_secure_tags_ingress_private.id
+  }
+}
 
 module "hub_vpc_fw_policy" {
   source    = "../../modules/net-firewall-policy"
-  name      = "${local.hub_prefix}vpc-fw-policy"
   parent_id = var.project_id_hub
+  name      = "${local.hub_prefix}fw-policy"
   region    = "global"
   attachments = {
     hub-vpc = module.hub_vpc.self_link
   }
-  egress_rules = {
-    # ipv4
-    smtp = {
-      priority = 400
-      match = {
-        destination_ranges = ["0.0.0.0/0"]
-        layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
-      }
-    }
-    # ipv6
-    smtp-ipv6 = {
-      priority = 600
-      match = {
-        destination_ranges = ["0::/0"]
-        layer4_configs     = [{ protocol = "tcp", ports = ["25"] }]
-      }
-    }
-  }
-  ingress_rules = {
-    # ipv4
-    internal = {
-      priority = 4000
-      match = {
-        source_ranges  = local.netblocks.internal
-        layer4_configs = [{ protocol = "all" }]
-      }
-    }
-    dns = {
-      priority    = 4100
-      target_tags = [local.hub_vpc_tags_dns.id, local.hub_vpc_tags_nva.id, ]
-      match = {
-        source_ranges  = local.netblocks.dns
-        layer4_configs = [{ protocol = "all", ports = [] }]
-      }
-    }
-    ssh = {
-      priority       = 4200
-      target_tags    = [local.hub_vpc_tags_nva.id, ]
-      enable_logging = true
-      match = {
-        source_ranges  = ["0.0.0.0/0", ]
-        layer4_configs = [{ protocol = "tcp", ports = ["22"] }]
-      }
-    }
-    iap = {
-      priority       = 4300
-      enable_logging = true
-      match = {
-        source_ranges  = local.netblocks.iap
-        layer4_configs = [{ protocol = "all", ports = [] }]
-      }
-    }
-    vpn = {
-      priority    = 4400
-      target_tags = [local.hub_vpc_tags_nva.id, ]
-      match = {
-        source_ranges = ["0.0.0.0/0", ]
-        layer4_configs = [
-          { protocol = "udp", ports = ["500", "4500", ] },
-          { protocol = "esp", ports = [] }
-        ]
-      }
-    }
-    gfe = {
-      priority    = 4500
-      target_tags = [local.hub_vpc_tags_gfe.id, ]
-      match = {
-        source_ranges  = local.netblocks.gfe
-        layer4_configs = [{ protocol = "all", ports = [] }]
-      }
-    }
-    # ipv6
-    internal-6 = {
-      priority = 6000
-      match = {
-        source_ranges  = local.netblocks_ipv6.internal
-        layer4_configs = [{ protocol = "all" }]
-      }
-    }
-    ssh-6 = {
-      priority       = 6200
-      target_tags    = [local.hub_vpc_tags_nva.id, ]
-      enable_logging = true
-      match = {
-        source_ranges  = ["0::/0", ]
-        layer4_configs = [{ protocol = "tcp", ports = ["22"] }]
-      }
-    }
-    vpn-6 = {
-      priority    = 6400
-      target_tags = [local.hub_vpc_tags_nva.id, ]
-      match = {
-        source_ranges = ["0::/0", ]
-        layer4_configs = [
-          { protocol = "udp", ports = ["500", "4500", ] },
-          { protocol = "esp", ports = [] }
-        ]
-      }
-    }
-    gfe-6 = {
-      priority    = 6500
-      target_tags = [local.hub_vpc_tags_gfe.id, ]
-      match = {
-        source_ranges  = local.netblocks_ipv6.gfe
-        layer4_configs = [{ protocol = "all", ports = [] }]
-      }
-    }
-  }
+  description = "hub vpc firewall policy"
+  # egress_rules  = local.hub_firewall_policy_egress_rules
+  # ingress_rules = local.hub_firewall_policy_ingress_rules
 }
-
-####################################################
-# custom dns
-####################################################
-
-# eu
-
-module "hub_eu_dns" {
-  source     = "../../modules/compute-vm"
-  project_id = var.project_id_hub
-  name       = "${local.hub_prefix}eu-dns"
-  zone       = "${local.hub_eu_region}-b"
-  tags       = [local.tag_dns, local.tag_ssh]
-  tag_bindings_firewall = {
-    (local.hub_vpc_tags_dns.parent) = local.hub_vpc_tags_dns.id
-  }
-  network_interfaces = [{
-    stack_type = local.enable_ipv6 ? "IPV4_IPV6" : "IPV4_ONLY"
-    network    = module.hub_vpc.self_link
-    subnetwork = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
-    addresses = {
-      internal = local.hub_eu_ns_addr
-    }
-  }]
-  service_account = {
-    email  = module.hub_sa.email
-    scopes = ["cloud-platform"]
-  }
-  metadata_startup_script = local.hub_unbound_config
-}
-
-# us
-
-module "hub_us_dns" {
-  source     = "../../modules/compute-vm"
-  project_id = var.project_id_hub
-  name       = "${local.hub_prefix}us-dns"
-  zone       = "${local.hub_us_region}-b"
-  tags       = [local.tag_dns, local.tag_ssh]
-  tag_bindings_firewall = {
-    (local.hub_vpc_tags_dns.parent) = local.hub_vpc_tags_dns.id
-  }
-  network_interfaces = [{
-    stack_type = local.enable_ipv6 ? "IPV4_IPV6" : "IPV4_ONLY"
-    network    = module.hub_vpc.self_link
-    subnetwork = module.hub_vpc.subnet_self_links["${local.hub_us_region}/us-main"]
-    addresses = {
-      internal = local.hub_us_ns_addr
-    }
-  }]
-  service_account = {
-    email  = module.hub_sa.email
-    scopes = ["cloud-platform"]
-  }
-  metadata_startup_script = local.hub_unbound_config
-}
-
+/*
 ####################################################
 # psc endpoint for apis
 ####################################################
@@ -631,3 +390,4 @@ resource "local_file" "hub_files" {
   filename = each.key
   content  = each.value
 }
+*/
