@@ -2,7 +2,7 @@
 
 terraform_destroy() {
   terraform init
-  terraform destroy -auto-approve -lock=false -parallelism=50
+  terraform destroy -auto-approve -lock=false
 }
 
 tfswitch 1.8.3 && source ~/.profile
