@@ -142,10 +142,26 @@ module "hub_nat_us" {
 # firewall
 ####################################################
 
-# policy
+# vpc firewall
 
-module "hub_vpc_fw_policy_rules" {
-  source            = "../../modules/firewall-policy-rules-gen"
+module "hub_vpc_firewall_rules_gen" {
+  source            = "../../modules/net-vpc-firewall-rules-gen"
+  vpc_name          = local.hub_vpc_name
+  enable_restricted = local.hub_psc_ep_api_secure
+}
+
+# module "hub_vpc_firewall_rules" {
+#   source        = "../../modules/net-vpc-firewall"
+#   project_id    = var.project_id_hub
+#   network       = module.hub_vpc.name
+#   egress_rules  = module.hub_vpc_firewall_rules_gen.egress_rules
+#   ingress_rules = module.hub_vpc_firewall_rules_gen.ingress_rules
+# }
+
+# firewall policy
+
+module "hub_vpc_firewall_policy_rules_gen" {
+  source            = "../../modules/net-firewall-policy-rules-gen"
   vpc_name          = local.hub_vpc_name
   enable_restricted = local.hub_psc_ep_api_secure
   secure_tags = {
@@ -165,8 +181,8 @@ module "hub_vpc_fw_policy" {
     hub-vpc = module.hub_vpc.self_link
   }
   description   = "hub vpc firewall policy"
-  egress_rules  = module.hub_vpc_fw_policy_rules.egress_rules
-  ingress_rules = module.hub_vpc_fw_policy_rules.ingress_rules
+  egress_rules  = module.hub_vpc_firewall_policy_rules_gen.egress_rules
+  ingress_rules = module.hub_vpc_firewall_policy_rules_gen.ingress_rules
 }
 
 ####################################################
@@ -309,7 +325,7 @@ module "hub_dns_forward_to_onprem" {
 # workload
 ####################################################
 
-# # instance
+# instance
 
 # module "hub_eu_vm" {
 #   source     = "../../modules/compute-vm"

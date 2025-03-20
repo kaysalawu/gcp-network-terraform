@@ -3,12 +3,8 @@
 set -e
 
 dir_base=$(pwd)
-dir_netbox=${NETBOX_DIR}
+dir_netbox=${NETBOX_APP_DIR}
 log_systemd=$dir_bridge/log_systemd.txt
-service_name=netbox
-
-HOSTNAME=$(hostname)
-LOCAL_IP=$(hostname -I | awk '{print $1}')
 
 display_delimiter() {
   echo "####################################################################################"

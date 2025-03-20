@@ -3,7 +3,7 @@
 set -e
 
 base_dir=$(pwd)
-init_dir=${INIT_DIR}
+init_dir=${NETBOX_INIT_DIR}
 log_init=$init_dir/log_init.txt
 
 if [ ! -d "$init_dir" ]; then mkdir -p "$init_dir"; fi

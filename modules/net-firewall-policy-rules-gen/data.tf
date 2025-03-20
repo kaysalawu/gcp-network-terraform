@@ -47,5 +47,4 @@ locals {
     "sheet"   = 8080
     "plotter" = 9000
   }
-  flow_logs_config = { flow_sampling = 0.5, aggregation_interval = "INTERVAL_10_MIN" }
 }

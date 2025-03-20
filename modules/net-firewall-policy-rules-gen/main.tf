@@ -113,16 +113,16 @@ locals {
         var.secure_tags.ingress_private,
       ]
     }
-    "${var.vpc_name}-4300-i-a-tcp-all-iap" = {
-      description    = "Allow IAP ingress traffic."
-      priority       = 4300
-      action         = "allow"
-      enable_logging = true
-      match = {
-        source_ranges  = local.netblocks_iap
-        layer4_configs = [{ protocol = "all", ports = [] }]
-      }
-    }
+    # "${var.vpc_name}-4300-i-a-tcp-all-iap" = {
+    #   description    = "Allow IAP ingress traffic."
+    #   priority       = 4300
+    #   action         = "allow"
+    #   enable_logging = true
+    #   match = {
+    #     source_ranges  = local.netblocks_iap
+    #     layer4_configs = [{ protocol = "all", ports = [] }]
+    #   }
+    # }
     "${var.vpc_name}-4400-i-a-all-all-gfe" = {
       description = "Allow all GFE ingress traffic."
       priority    = 4400
@@ -192,16 +192,16 @@ locals {
         var.secure_tags.ingress_private,
       ]
     }
-    "${var.vpc_name}-6300-i-a-tcp-all-iap-ipv6" = {
-      description    = "Allow IAP ingress traffic."
-      priority       = 6300
-      action         = "allow"
-      enable_logging = true
-      match = {
-        source_ranges  = local.netblocks_iap_ipv6
-        layer4_configs = [{ protocol = "all", ports = [] }]
-      }
-    }
+    # "${var.vpc_name}-6300-i-a-tcp-all-iap-ipv6" = {
+    #   description    = "Allow IAP ingress traffic."
+    #   priority       = 6300
+    #   action         = "allow"
+    #   enable_logging = true
+    #   match = {
+    #     source_ranges  = local.netblocks_iap_ipv6
+    #     layer4_configs = [{ protocol = "all", ports = [] }]
+    #   }
+    # }
     "${var.vpc_name}-6400-i-a-all-all-gfe-ipv6" = {
       description = "(IPv6) Allow all GFE ingress traffic."
       priority    = 6400

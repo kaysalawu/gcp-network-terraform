@@ -3,7 +3,7 @@
 set -e
 
 dir_base=$(pwd)
-dir_netbox=${NETBOX_DIR}
+dir_netbox=${NETBOX_APP_DIR}
 log_netbox=$dir_netbox/log_netbox.txt
 service_name=netbox
 
@@ -65,10 +65,10 @@ systemd_config() {
   echo -e "\n**********************************************************"
   echo "STEP 4: Systemd Config"
   echo "**********************************************************"
-  echo "Create: /etc/systemd/system/${service_name}.service"
-  cat <<EOF > /etc/systemd/system/${service_name}.service
+  echo "Create: /etc/systemd/system/$service_name.service"
+  cat <<EOF > /etc/systemd/system/$service_name.service
   [Unit]
-  Description=Script for ${service_name}
+  Description=Script for $service_name
 
   [Service]
   Type=oneshot
@@ -80,9 +80,9 @@ systemd_config() {
   [Install]
   WantedBy=multi-user.target
 EOF
-  cat /etc/systemd/system/${service_name}.service
-  systemctl start ${service_name}
-  systemctl enable ${service_name}
+  cat /etc/systemd/system/$service_name.service
+  systemctl start $service_name
+  systemctl enable $service_name
 }
 
 start=$(date +%s)
