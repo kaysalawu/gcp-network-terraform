@@ -17,7 +17,7 @@ display_delimiter() {
 }
 
 clone_repo() {
-  echo "**********************************************************"
+  echo -e "\n**********************************************************"
   echo "STEP 1: Clone ${NETBOX_REPO}"
   echo "**********************************************************"
   echo "git clone ${NETBOX_REPO}"
@@ -25,7 +25,7 @@ clone_repo() {
 }
 
 configure_netbox_settings() {
-  echo "**********************************************************"
+  echo -e "\n**********************************************************"
   echo "STEP 2: Configure Netbox Settings"
   echo "**********************************************************"
 
@@ -40,17 +40,17 @@ EOF
 }
 
 start_services() {
-  echo "**********************************************************"
+  echo -e "\n**********************************************************"
   echo "STEP 2: Start Services"
   echo "**********************************************************"
-  cd "$dir_netbox"
+  cd "$dir_netbox/netbox-docker"
   echo "docker compose up -d"
   docker compose up -d
   cd "$dir_base"
 }
 
 check_services() {
-  echo "**********************************************************"
+  echo -e "\n**********************************************************"
   echo "STEP 3: Check Services"
   echo "**********************************************************"
   echo "sleep 3 ..." && sleep 3
@@ -62,7 +62,7 @@ check_services() {
 }
 
 systemd_config() {
-  echo "**********************************************************"
+  echo -e "\n**********************************************************"
   echo "STEP 4: Systemd Config"
   echo "**********************************************************"
   echo "Create: /etc/systemd/system/${service_name}.service"
@@ -91,7 +91,7 @@ clone_repo | tee -a $log_netbox
 configure_netbox_settings | tee -a $log_netbox
 start_services | tee -a $log_netbox
 check_services | tee -a $log_netbox
-# systemd_config | tee -a $log_netbox
+systemd_config | tee -a $log_netbox
 end=$(date +%s)
 elapsed=$(($end-$start))
 echo "Completed in $(($elapsed/60))m $(($elapsed%60))s!" | tee -a $log_netbox
