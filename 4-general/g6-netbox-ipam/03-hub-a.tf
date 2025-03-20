@@ -1,6 +1,7 @@
 
 locals {
-  hub_vpc_name = "${local.hub_prefix}vpc"
+  hub_vpc_name      = "${local.hub_prefix}vpc"
+  hub_vpc_ipv6_cidr = module.hub_vpc.internal_ipv6_range
   hub_secure_tags = {
     "egress-internet"  = { value = "self", description = "allow internet egress traffic" }
     "egress-private"   = { value = "self", description = "allow private egress traffic" }
@@ -31,15 +32,15 @@ module "hub_vpc" {
     enable_ula_internal = true
   }
 
-  psa_configs = [{
-    ranges = {
-      "hub-eu-psa-range1" = local.hub_eu_psa_range1
-      "hub-eu-psa-range2" = local.hub_eu_psa_range2
-    }
-    export_routes  = true
-    import_routes  = true
-    peered_domains = ["${local.hub_dns_zone}."]
-  }]
+  # psa_configs = [{
+  #   ranges = {
+  #     (local.hub_eu_psa_range1.name) = local.hub_eu_psa_range1.cidr
+  #     (local.hub_eu_psa_range2.name) = local.hub_eu_psa_range2.cidr
+  #   }
+  #   export_routes  = true
+  #   import_routes  = true
+  #   peered_domains = ["${local.hub_dns_zone}."]
+  # }]
 }
 
 ####################################################
@@ -213,14 +214,6 @@ resource "google_dns_policy" "hub_dns_policy" {
 # dns response policy
 ####################################################
 
-resource "time_sleep" "hub_dns_forward_to_dns_wait" {
-  create_duration = "120s"
-  depends_on = [
-    module.hub_eu_dns,
-    module.hub_us_dns,
-  ]
-}
-
 # rules - local
 
 locals {
@@ -270,9 +263,6 @@ module "hub_dns_psc" {
   recordsets = {
     "A " = { ttl = 300, records = [local.hub_psc_ep_api_fr_addr] }
   }
-  depends_on = [
-    time_sleep.hub_dns_forward_to_dns_wait,
-  ]
 }
 
 # local zone
@@ -291,10 +281,8 @@ module "hub_dns_private_zone" {
     }
   }
   recordsets = {
-    "A ${local.hub_eu_vm_dns_prefix}"    = { ttl = 300, records = [local.hub_eu_vm_addr, ] },
-    "A ${local.hub_us_vm_dns_prefix}"    = { ttl = 300, records = [local.hub_us_vm_addr, ] },
-    "AAAA ${local.hub_eu_vm_dns_prefix}" = { ttl = 300, records = [local.hub_eu_vm_main_ipv6, ] },
-    "AAAA ${local.hub_us_vm_dns_prefix}" = { ttl = 300, records = [local.hub_us_vm_main_ipv6, ] },
+    "A ${local.hub_eu_vm_dns_prefix}" = { ttl = 300, records = [local.hub_eu_vm_addr, ] },
+    "A ${local.hub_us_vm_dns_prefix}" = { ttl = 300, records = [local.hub_us_vm_addr, ] },
   }
 }
 
@@ -321,64 +309,38 @@ module "hub_dns_forward_to_onprem" {
 # workload
 ####################################################
 
-# instance
+# # instance
 
-module "hub_eu_vm" {
-  source     = "../../modules/compute-vm"
-  project_id = var.project_id_hub
-  name       = "${local.hub_prefix}eu-vm"
-  zone       = "${local.hub_eu_region}-b"
-  tags       = [local.tag_ssh, local.tag_gfe]
-  tag_bindings_firewall = {
-    (local.hub_vpc_tags_gfe.parent) = local.hub_vpc_tags_gfe.id
-  }
-  network_interfaces = [{
-    stack_type = local.enable_ipv6 ? "IPV4_IPV6" : "IPV4_ONLY"
-    network    = module.hub_vpc.self_link
-    subnetwork = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
-    addresses  = { internal = local.hub_eu_vm_addr }
-  }]
-  service_account = {
-    email  = module.hub_sa.email
-    scopes = ["cloud-platform"]
-  }
-  metadata = {
-    user-data = module.vm_cloud_init.cloud_config
-  }
-}
-
-module "hub_us_vm" {
-  source     = "../../modules/compute-vm"
-  project_id = var.project_id_hub
-  name       = "${local.hub_prefix}us-vm"
-  zone       = "${local.hub_us_region}-b"
-  tags       = [local.tag_ssh, local.tag_gfe]
-  tag_bindings_firewall = {
-    (local.hub_vpc_tags_gfe.parent) = local.hub_vpc_tags_gfe.id
-  }
-  network_interfaces = [{
-    stack_type = local.enable_ipv6 ? "IPV4_IPV6" : "IPV4_ONLY"
-    network    = module.hub_vpc.self_link
-    subnetwork = module.hub_vpc.subnet_self_links["${local.hub_us_region}/us-main"]
-    addresses  = { internal = local.hub_us_vm_addr }
-  }]
-  service_account = {
-    email  = module.hub_sa.email
-    scopes = ["cloud-platform"]
-  }
-  metadata = {
-    user-data = module.vm_cloud_init.cloud_config
-  }
-}
+# module "hub_eu_vm" {
+#   source     = "../../modules/compute-vm"
+#   project_id = var.project_id_hub
+#   name       = "${local.hub_prefix}eu-vm"
+#   zone       = "${local.hub_eu_region}-b"
+#   tags       = [local.tag_ssh, local.tag_gfe]
+#   tag_bindings_firewall = {
+#     (local.hub_vpc_tags_gfe.parent) = local.hub_vpc_tags_gfe.id
+#   }
+#   network_interfaces = [{
+#     stack_type = local.enable_ipv6 ? "IPV4_IPV6" : "IPV4_ONLY"
+#     network    = module.hub_vpc.self_link
+#     subnetwork = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
+#     addresses  = { internal = local.hub_eu_vm_addr }
+#   }]
+#   service_account = {
+#     email  = module.hub_sa.email
+#     scopes = ["cloud-platform"]
+#   }
+#   metadata = {
+#     user-data = module.vm_cloud_init.cloud_config
+#   }
+# }
 
 ####################################################
 # output files
 ####################################################
 
 locals {
-  hub_files = {
-    "output/hub-unbound.sh" = local.hub_unbound_config
-  }
+  hub_files = {}
 }
 
 resource "local_file" "hub_files" {
@@ -386,4 +348,3 @@ resource "local_file" "hub_files" {
   filename = each.key
   content  = each.value
 }
-*/

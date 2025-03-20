@@ -211,8 +211,10 @@ locals {
 
   hub_eu_gke_master_cidr1 = "172.16.11.0/28"
   hub_eu_gke_master_cidr2 = "172.16.11.16/28"
-  hub_eu_psa_range1       = "10.1.120.0/22"
-  hub_eu_psa_range2       = "10.1.124.0/22"
+  hub_eu_psa_range1       = { name = "hub-eu-psa-range1", cidr = "10.1.120.0/22" }
+  hub_eu_psa_range2       = { name = "hub-eu-psa-range2", cidr = "10.1.124.0/22" }
+  hub_eu_psa_range3       = { name = "hub-eu-psa-range3", cidr = "10.1.128.0/22" }
+  hub_eu_psa_range4       = { name = "hub-eu-psa-range4", cidr = "10.1.132.0/22" }
 
   hub_us_gke_master_cidr1 = "172.16.11.32/28"
   hub_us_gke_master_cidr2 = "172.16.11.48/28"
