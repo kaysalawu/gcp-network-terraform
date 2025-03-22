@@ -216,10 +216,18 @@ locals {
   hub_eu_psa_range3       = { name = "hub-eu-psa-range3", cidr = "10.1.128.0/22" }
   hub_eu_psa_range4       = { name = "hub-eu-psa-range4", cidr = "10.1.132.0/22" }
 
+  hub_eu_vpc_connector_range1 = "10.1.140.0/28"
+  hub_eu_vpc_connector_range2 = "10.1.140.16/28"
+
   hub_us_gke_master_cidr1 = "172.16.11.32/28"
   hub_us_gke_master_cidr2 = "172.16.11.48/28"
-  hub_us_psa_range1       = "10.1.220.0/22"
-  hub_us_psa_range2       = "10.1.224.0/22"
+  hub_us_psa_range1       = { name = "hub-us-psa-range1", cidr = "10.1.220.0/22" }
+  hub_us_psa_range2       = { name = "hub-us-psa-range2", cidr = "10.1.224.0/22" }
+  hub_us_psa_range3       = { name = "hub-us-psa-range3", cidr = "10.1.228.0/22" }
+  hub_us_psa_range4       = { name = "hub-us-psa-range4", cidr = "10.1.232.0/22" }
+
+  hub_us_vpc_connector_range1 = "10.1.240.0/28"
+  hub_us_vpc_connector_range2 = "10.1.240.16/28"
 
   # external
   #--------------------------------
@@ -358,10 +366,16 @@ locals {
     us-psc-alb-nat6 = { region = local.spoke1_us_region, ip_cidr_range = "10.11.29.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
   }
 
-  spoke1_gke_master_cidr1     = "172.16.11.0/28"
-  spoke1_gke_master_cidr2     = "172.16.11.16/28"
-  spoke1_eu_psa_range1        = "10.11.120.0/22"
-  spoke1_eu_psa_range2        = "10.11.124.0/22"
+  spoke1_gke_master_cidr1 = "172.16.11.0/28"
+  spoke1_gke_master_cidr2 = "172.16.11.16/28"
+  spoke1_eu_psa_range1    = { name = "spoke1-eu-psa-range1", cidr = "10.11.120.0/22" }
+  spoke1_eu_psa_range2    = { name = "spoke1-eu-psa-range2", cidr = "10.11.124.0/22" }
+  spoke1_eu_psa_range3    = { name = "spoke1-eu-psa-range3", cidr = "10.11.128.0/22" }
+  spoke1_eu_psa_range4    = { name = "spoke1-eu-psa-range4", cidr = "10.11.132.0/22" }
+
+  spoke1_eu_vpc_connector_range1 = "10.11.140.0/28"
+  spoke1_eu_vpc_connector_range2 = "10.11.140.16/28"
+
   spoke1_psc_ep_api_fr_range  = "10.11.0.0/24" # vip range
   spoke1_eu_psc4_producer_nat = "192.168.101.0/24"
   spoke1_us_psc4_producer_nat = "192.168.102.0/24"
@@ -471,10 +485,16 @@ locals {
     us-psc-alb-nat6 = { region = local.spoke2_us_region, ip_cidr_range = "10.22.29.0/24", ipv6 = {}, enable_private_access = false, purpose = "PRIVATE_SERVICE_CONNECT" }
   }
 
-  spoke2_gke_master_cidr1     = "172.16.22.0/28"
-  spoke2_gke_master_cidr2     = "172.16.22.16/28"
-  spoke2_us_psa_range1        = "10.22.120.0/22"
-  spoke2_us_psa_range2        = "10.22.124.0/22"
+  spoke2_gke_master_cidr1 = "172.16.22.0/28"
+  spoke2_gke_master_cidr2 = "172.16.22.16/28"
+  spoke2_us_psa_range1    = { name = "spoke2-us-psa-range1", cidr = "10.22.120.0/22" }
+  spoke2_us_psa_range2    = { name = "spoke2-us-psa-range2", cidr = "10.22.124.0/22" }
+  spoke2_us_psa_range3    = { name = "spoke2-us-psa-range3", cidr = "10.22.228.0/22" }
+  spoke2_us_psa_range4    = { name = "spoke2-us-psa-range4", cidr = "10.22.232.0/22" }
+
+  spoke2_eu_vpc_connector_range1 = "10.22.140.0/28"
+  spoke2_eu_vpc_connector_range2 = "10.22.140.16/28"
+
   spoke2_psc_ep_api_fr_range  = "10.22.0.0/24" # vip range
   spoke2_eu_psc4_producer_nat = "192.168.201.0/24"
   spoke2_us_psc4_producer_nat = "192.168.202.0/24"

@@ -5,7 +5,7 @@ exec > /var/log/$CLOUD_ENV-startup.log 2>&1
 export DEBIAN_FRONTEND=noninteractive
 
 apt update
-apt install -y unzip jq tcpdump dnsutils net-tools nmap apache2-utils iperf3
+apt install -y unzip jq tcpdump dnsutils net-tools nmap apache2-utils iperf3 netcat
 
 # cloud-init install for docker did not work so installing manually here
 apt install -y ca-certificates curl gnupg lsb-release

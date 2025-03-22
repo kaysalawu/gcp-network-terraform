@@ -17,19 +17,18 @@ display_delimiter() {
 }
 
 clone_repo() {
-  echo -e "\n**********************************************************"
+  echo "**********************************************************"
   echo "STEP 1: Clone ${NETBOX_REPO}"
   echo "**********************************************************"
-  echo "git clone ${NETBOX_REPO}"
-  git clone ${NETBOX_REPO} || true
+  echo "git clone -b release ${NETBOX_REPO}"
+  git clone -b release ${NETBOX_REPO} || true
 }
 
 configure_netbox_settings() {
-  echo -e "\n**********************************************************"
+  echo "**********************************************************"
   echo "STEP 2: Configure Netbox Settings"
   echo "**********************************************************"
-
-  cat <<EOF > $dir_netbox/docker-compose.override.yml
+tee $dir_netbox/netbox-docker/docker-compose.override.yml <<EOF
 services:
   netbox:
     ports:
@@ -40,7 +39,7 @@ EOF
 }
 
 start_services() {
-  echo -e "\n**********************************************************"
+  echo "**********************************************************"
   echo "STEP 2: Start Services"
   echo "**********************************************************"
   cd "$dir_netbox/netbox-docker"
@@ -50,7 +49,7 @@ start_services() {
 }
 
 check_services() {
-  echo -e "\n**********************************************************"
+  echo "**********************************************************"
   echo "STEP 3: Check Services"
   echo "**********************************************************"
   echo "sleep 3 ..." && sleep 3
@@ -62,7 +61,7 @@ check_services() {
 }
 
 systemd_config() {
-  echo -e "\n**********************************************************"
+  echo "**********************************************************"
   echo "STEP 4: Systemd Config"
   echo "**********************************************************"
   echo "Create: /etc/systemd/system/$service_name.service"

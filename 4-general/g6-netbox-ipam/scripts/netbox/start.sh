@@ -14,7 +14,7 @@ display_delimiter() {
 }
 
 start_services() {
-  echo -e "\n**********************************************************"
+  echo "**********************************************************"
   echo "STEP 1: Start Services"
   echo "**********************************************************"
   cd "$dir_netbox/netbox-docker"
@@ -24,8 +24,8 @@ start_services() {
 }
 
 check_services() {
-  echo -e "\n**********************************************************"
-  echo "STEP 3: Check Services"
+  echo "**********************************************************"
+  echo "STEP 2: Check Services"
   echo "**********************************************************"
   echo "sleep 3 ..." && sleep 3
   echo "docker ps"

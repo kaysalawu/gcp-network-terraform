@@ -1,7 +1,7 @@
 
 variable "prefix" {
   description = "prefix used for all resources"
-  default     = "a"
+  default     = "g6"
 }
 
 variable "organization_id" {

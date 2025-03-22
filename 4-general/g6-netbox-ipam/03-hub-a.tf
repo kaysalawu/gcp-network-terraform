@@ -32,15 +32,17 @@ module "hub_vpc" {
     enable_ula_internal = true
   }
 
-  # psa_configs = [{
-  #   ranges = {
-  #     (local.hub_eu_psa_range1.name) = local.hub_eu_psa_range1.cidr
-  #     (local.hub_eu_psa_range2.name) = local.hub_eu_psa_range2.cidr
-  #   }
-  #   export_routes  = true
-  #   import_routes  = true
-  #   peered_domains = ["${local.hub_dns_zone}."]
-  # }]
+  psa_configs = [{
+    ranges = {
+      (local.hub_eu_psa_range1.name) = local.hub_eu_psa_range1.cidr
+      (local.hub_eu_psa_range2.name) = local.hub_eu_psa_range2.cidr
+      (local.hub_eu_psa_range3.name) = local.hub_eu_psa_range3.cidr
+      (local.hub_eu_psa_range4.name) = local.hub_eu_psa_range4.cidr
+    }
+    export_routes  = true
+    import_routes  = true
+    peered_domains = ["${local.hub_dns_zone}."]
+  }]
 }
 
 ####################################################
@@ -327,29 +329,37 @@ module "hub_dns_forward_to_onprem" {
 
 # instance
 
-# module "hub_eu_vm" {
-#   source     = "../../modules/compute-vm"
-#   project_id = var.project_id_hub
-#   name       = "${local.hub_prefix}eu-vm"
-#   zone       = "${local.hub_eu_region}-b"
-#   tags       = [local.tag_ssh, local.tag_gfe]
-#   tag_bindings_firewall = {
-#     (local.hub_vpc_tags_gfe.parent) = local.hub_vpc_tags_gfe.id
-#   }
-#   network_interfaces = [{
-#     stack_type = local.enable_ipv6 ? "IPV4_IPV6" : "IPV4_ONLY"
-#     network    = module.hub_vpc.self_link
-#     subnetwork = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
-#     addresses  = { internal = local.hub_eu_vm_addr }
-#   }]
-#   service_account = {
-#     email  = module.hub_sa.email
-#     scopes = ["cloud-platform"]
-#   }
-#   metadata = {
-#     user-data = module.vm_cloud_init.cloud_config
-#   }
-# }
+module "hub_eu_vm" {
+  source     = "../../modules/compute-vm"
+  project_id = var.project_id_hub
+  name       = "${local.hub_prefix}eu-vm"
+  zone       = "${local.hub_eu_region}-b"
+  tags = [
+    "egress-internet",
+    "egress-private",
+    "ingress-internet",
+    "ingress-private"
+  ]
+  tag_bindings_firewall = {
+    (local.hub_secure_tags_egress_internet.parent)  = local.hub_secure_tags_egress_internet.id
+    (local.hub_secure_tags_egress_private.parent)   = local.hub_secure_tags_egress_private.id
+    (local.hub_secure_tags_ingress_internet.parent) = local.hub_secure_tags_ingress_internet.id
+    (local.hub_secure_tags_ingress_private.parent)  = local.hub_secure_tags_ingress_private.id
+  }
+  network_interfaces = [{
+    stack_type = local.enable_ipv6 ? "IPV4_IPV6" : "IPV4_ONLY"
+    network    = module.hub_vpc.self_link
+    subnetwork = module.hub_vpc.subnet_self_links["${local.hub_eu_region}/eu-main"]
+    addresses  = { internal = local.hub_eu_vm_addr }
+  }]
+  service_account = {
+    email  = module.hub_sa.email
+    scopes = ["cloud-platform"]
+  }
+  metadata = {
+    user-data = module.vm_cloud_init.cloud_config
+  }
+}
 
 ####################################################
 # output files

@@ -103,7 +103,7 @@ gcloud auth activate-service-account --key-file=${KEY_FILE_PATH}
 Proceed to **step 3.3**.
 
 
-**3.3** Run the following commands to enable the required APIs and services used in the lab:
+**3.3** Run the following commands to enable the required APIs and services used in the lab project:
 
 ```sh
 gcloud services enable compute.googleapis.com
