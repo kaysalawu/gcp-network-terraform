@@ -7,7 +7,7 @@ locals {
 }
 
 ####################################################
-# internal passthrough lb: eu
+# external passthrough lb: eu
 ####################################################
 
 # instance
@@ -36,7 +36,7 @@ module "hub_eu_elb_vm" {
 }
 
 ####################################################
-# internal passthrough lb: eu
+# external passthrough lb: eu
 ####################################################
 
 # address
@@ -93,7 +93,7 @@ module "hub_eu_elb" {
 }
 /*
 ####################################################
-# internal proxy lb: eu
+# external proxy lb: eu
 ####################################################
 
 # instance
@@ -165,7 +165,7 @@ module "hub_eu_nlb" {
 }
 
 ####################################################
-# internal application lb: eu
+# external application lb: eu
 ####################################################
 
 # instance
@@ -274,7 +274,7 @@ module "hub_eu_alb" {
 }
 
 ####################################################
-# internal passthrough lb: hub-us
+# external passthrough lb: hub-us
 ####################################################
 
 # elb
@@ -337,7 +337,7 @@ module "hub_us_elb" {
 }
 
 ####################################################
-# internal proxy lb: us
+# external proxy lb: us
 ####################################################
 
 # instance
@@ -409,7 +409,7 @@ module "hub_us_nlb" {
 }
 
 ####################################################
-# internal application lb: us
+# external application lb: us
 ####################################################
 
 # instance
